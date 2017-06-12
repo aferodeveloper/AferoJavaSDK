@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.afero.sdk.DeviceEventStreamInstance;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.api.AferoClientAPI;
 import io.afero.sdk.client.afero.models.ActionResponse;
@@ -53,6 +52,10 @@ import static io.afero.sdk.conclave.models.DeviceSync.UPDATE_STATE_LENGTH_EXCEED
 import static io.afero.sdk.conclave.models.DeviceSync.UPDATE_STATE_UNKNOWN_UUID;
 
 
+/**
+ * This class manages the attribute state and events associated with a particular instance of an
+ * Afero peripheral device.
+ */
 public class DeviceModel implements ControlModel {
 
     public static class ApiClientError implements AferoError {
@@ -605,24 +608,6 @@ public class DeviceModel implements ControlModel {
         }
 
         return false;
-    }
-
-    public void startViewing() {
-        if (mViewingCount == 0) {
-            DeviceEventStreamInstance.get().viewDevice(getId(), true);
-        }
-
-        mViewingCount++;
-    }
-
-    public void stopViewing() {
-        if (mViewingCount > 0) {
-            mViewingCount--;
-
-            if (mViewingCount == 0) {
-                DeviceEventStreamInstance.get().viewDevice(getId(), false);
-            }
-        }
     }
 
     public void putTag(String key, String value) {

@@ -7,7 +7,6 @@ package io.afero.sdk.client.afero;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 
-import io.afero.sdk.DeviceEventStreamInstance;
 import io.afero.sdk.client.AccountServiceClient;
 import io.afero.sdk.client.AfHttpClient;
 import io.afero.sdk.client.afero.api.AferoClientAPI;
@@ -224,9 +223,6 @@ public class AferoClient implements AccountServiceClient {
 
     public void signOut(String userId, String mobileClientId) {
         rx.Observable<ResponseBody> observable;
-
-        DeviceEventStreamInstance.get().stop();
-        DeviceEventStreamInstance.get().setAccountId(null);
 
         if (userId != null && (!userId.isEmpty()) && mobileClientId != null && (!mobileClientId.isEmpty())) {
             observable = deleteDeviceInfo(userId, mobileClientId);

@@ -24,7 +24,6 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class io.kiban.hubby.** { *; }
 -keep class io.afero.sdk.client.** { *; }
 -keep class io.afero.sdk.conclave.** { *; }
 -keep class io.afero.sdk.device.** { *; }
