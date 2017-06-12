@@ -1,0 +1,359 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
+package io.afero.sdk.device;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+
+import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.conclave.models.DeviceError;
+import io.afero.sdk.conclave.models.DeviceMute;
+import io.afero.sdk.conclave.models.DeviceState;
+import io.afero.sdk.conclave.models.DeviceSync;
+import io.afero.sdk.conclave.models.InvalidateMessage;
+import io.afero.sdk.conclave.models.OTAInfo;
+import io.afero.sdk.conclave.ConclaveAccessManager;
+import io.afero.sdk.conclave.ConclaveClient;
+import io.afero.sdk.conclave.ConclaveMessage;
+import io.afero.sdk.conclave.ConclaveMessageSource;
+import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.utils.JSONUtils;
+import rx.Observable;
+import rx.Observer;
+import rx.Subscription;
+import rx.functions.Func1;
+import rx.subjects.PublishSubject;
+
+public class DeviceEventStream implements ConclaveMessageSource {
+
+    private ConclaveClient mConclaveClient = new ConclaveClient();
+    private ConclaveAccessManager mConclaveAccessManager;
+
+    private PublishSubject<DeviceSync[]> mSnapshotSubject = PublishSubject.create();
+    private PublishSubject<DeviceSync> mAttributeChangeSubject = PublishSubject.create();
+    private PublishSubject<DeviceError> mDeviceErrorSubject = PublishSubject.create();
+    private PublishSubject<DeviceState> mStatusChange = PublishSubject.create();
+    private PublishSubject<DeviceMute> mDeviceMuteSubject = PublishSubject.create();
+    private PublishSubject<OTAInfo> mOTASubject = PublishSubject.create();
+    private PublishSubject<InvalidateMessage> mInvalidateSubject = PublishSubject.create();
+
+    private static final String KEY_EVENT = "event";
+    private static final String KEY_DATA = "data";
+
+    private String mAccountId;
+    private String mUserId;
+    private String mToken;
+    private String mType;
+    private String mClientId;
+    private boolean mSessionTrace;
+
+    private ConclaveAccessDetails mConclaveAccessDetails;
+
+    private long mGeneration;
+    private int mSequenceNum;
+
+    private Subscription mConclaveSubscription;
+
+    private Observer<JsonNode> mConclaveObserver = new Observer<JsonNode>() {
+        @Override
+        public void onCompleted() {
+
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            // should never get here
+            AfLog.e("DeviceEventStream Conclave Observer error!");
+            AfLog.e(e);
+        }
+
+        @Override
+        public void onNext(JsonNode node) {
+            try {
+                onNextConclave(node);
+            } catch (Exception e) {
+                // eat all exceptions - the spice must flow
+                AfLog.e(e);
+            }
+        }
+    };
+
+    public DeviceEventStream(ConclaveAccessManager cam) {
+        mConclaveAccessManager = cam;
+        cam.getObservable().subscribe(mConclaveAccessObserver);
+    }
+
+    public ConclaveAccessManager getConclaveAccessManager() {
+        return mConclaveAccessManager;
+    }
+
+    public Observable<ConclaveClient.Status> observeConclaveStatus() {
+        return mConclaveClient.statusObservable();
+    }
+
+    public rx.Observable<Object> start(final String accountId, final String userId, final String type, final String clientId) {
+        mAccountId = accountId;
+        mUserId = userId;
+        mType = type;
+        mClientId = clientId;
+        mGeneration = 0;
+        mSequenceNum = 0;
+
+        return reconnect();
+    }
+
+    public boolean hasStarted() {
+        return mAccountId != null;
+    }
+
+    public void setAccountId(String accountId) {
+        mAccountId = accountId;
+        mConclaveAccessManager.resetAccess();
+        mConclaveAccessDetails = null;
+    }
+
+    public void setSessionTracing(boolean enabled) {
+        mSessionTrace = enabled;
+    }
+
+    public boolean isSessionTracingEnabled() {
+        return mSessionTrace;
+    }
+
+    public void viewDevice(String deviceId, boolean isViewing) {
+        mConclaveClient.sayAsync("device:view", new ConclaveMessage.ViewDeviceFields(deviceId, isViewing));
+    }
+
+    public void sendMetrics(ConclaveMessage.Metric metric) {
+        mConclaveClient.sayAsync("metrics", metric);
+    }
+
+    private void onNextConclave(JsonNode node) {
+        Map.Entry<String,JsonNode> entry = node.fields().next();
+        String key = entry.getKey().toLowerCase();
+
+        if (key.equals("public") || key.equals("private")) {
+            onMessage(entry.getValue());
+        }
+        else if (key.equals("hello")) {
+            mConclaveClient.login(mAccountId, mUserId, mToken, mType, mClientId, mSessionTrace);
+        }
+        else if (key.equals("welcome")) {
+            long generation = mGeneration;
+            JsonNode genNode = entry.getValue().get("generation");
+            if (genNode != null) {
+                generation = genNode.asLong();
+            }
+
+            int seq = mSequenceNum;
+            JsonNode seqNode = entry.getValue().get("seq");
+            if (seqNode != null) {
+                seq = seqNode.asInt();
+            }
+
+            if (mGeneration != generation || mSequenceNum != seq) {
+                AfLog.i("DeviceEventStream: generation/sequence # mismatch " + mGeneration + " != " + generation + " || " + mSequenceNum + " != " + seq);
+                mGeneration = generation;
+                mSequenceNum = seq;
+//                mConclaveClient.say("snapshot?", null);
+            } else {
+                AfLog.i("DeviceEventStream: generation/sequence # match " + mGeneration + "/" + mSequenceNum);
+            }
+        }
+        else if (key.equals("error")) {
+            JsonNode errNode = entry.getValue().get("code");
+            if (errNode != null) {
+                int err = errNode.asInt();
+                if (err == ConclaveClient.ERROR_CODE_INVALID_TOKEN) {
+                    mConclaveAccessManager.updateAccess(mClientId);
+                }
+            }
+        }
+    }
+
+    private void onMessage(JsonNode node) {
+        try {
+            String event = node.get(KEY_EVENT).asText().toLowerCase();
+            JsonNode data = node.get(KEY_DATA);
+            final ObjectMapper mapper = JSONUtils.getObjectMapper();
+
+            int seq = 0;
+            JsonNode seqNode = node.get("seq");
+            if (seqNode != null) {
+                mSequenceNum = seqNode.asInt();
+            }
+
+            if (event.equals("attr_change")) {
+                DeviceSync deviceSync = mapper.treeToValue(data, DeviceSync.class);
+                deviceSync.seq = seq;
+                mAttributeChangeSubject.onNext(deviceSync);
+            }
+            else if (event.equals("peripherallist")) {
+                if (data.has("currentSeq")) {
+                    seq = data.get("currentSeq").asInt();
+                }
+
+                DeviceSync[] deviceSync = mapper.treeToValue(data.get("peripherals"), DeviceSync[].class);
+                for (DeviceSync ds : deviceSync) {
+                    ds.seq = seq;
+                }
+
+                mSnapshotSubject.onNext(deviceSync);
+            }
+            else if (event.equals("invalidate")) {
+                mInvalidateSubject.onNext(new InvalidateMessage(data.get("kind").asText(), data));
+            }
+            else if (event.equals("status_change")) {
+                DeviceState state = mapper.treeToValue(data, DeviceState.class);
+                mStatusChange.onNext(state);
+            }
+            else if (event.equals("device:error")) {
+                DeviceError err = mapper.treeToValue(data, DeviceError.class);
+                mDeviceErrorSubject.onNext(err);
+            }
+            else if (event.equals("device:mute")) {
+                DeviceMute mute = mapper.treeToValue(data, DeviceMute.class);
+                mDeviceMuteSubject.onNext(mute);
+            }
+            else if (event.equals("device:ota_progress")) {
+                OTAInfo otaInfo = mapper.treeToValue(data, OTAInfo.class);
+                mOTASubject.onNext(otaInfo);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void resetSequence() {
+        mGeneration = 0;
+        mSequenceNum = 0;
+    }
+
+    public void stop() {
+
+        if (mConclaveSubscription != null) {
+            mConclaveSubscription.unsubscribe();
+            mConclaveSubscription = null;
+        }
+
+        mConclaveClient.close();
+    }
+
+    public void setConclaveAccessDetails(ConclaveAccessDetails cad) {
+        mConclaveAccessDetails = cad;
+        mToken = null;
+
+        for (ConclaveAccessDetails.ConclaveAccess ca : cad.tokens) {
+            if (ca.client != null) {
+                String type = ca.client.get("type");
+                if (type != null && type.equalsIgnoreCase("application")) {
+                    mToken = ca.token;
+                }
+            }
+        }
+    }
+
+    public rx.Observable<Object> reconnect() {
+
+        if (mConclaveSubscription != null) {
+            mConclaveSubscription.unsubscribe();
+        }
+
+        mConclaveSubscription = mConclaveClient.messageObservable()
+            .subscribe(mConclaveObserver);
+
+        rx.Observable<Object> connectObservable;
+
+        if (mConclaveAccessDetails == null) {
+            connectObservable = mConclaveAccessManager.getAccess(mClientId)
+                .flatMap(new Func1<ConclaveAccessDetails, Observable<Object>>() {
+                    @Override
+                    public Observable<Object> call(ConclaveAccessDetails conclaveAccessDetails) {
+                        mToken = null;
+
+                        setConclaveAccessDetails(conclaveAccessDetails);
+
+                        if (mToken == null) {
+                            return rx.Observable.error(new Exception("DeviceEventStream: couldn't find suitable Conclave token"));
+                        }
+
+                        AfLog.i("DeviceEventStream.reconnect: mAccountId = " + mAccountId);
+
+                        return mConclaveClient.connect(conclaveAccessDetails);
+                    }
+                });
+        } else {
+            connectObservable = mConclaveClient.connect(mConclaveAccessDetails);
+        }
+
+        return connectObservable;
+    }
+
+    public boolean isConnected() {
+        return mConclaveSubscription != null && mConclaveClient.isConnected();
+    }
+
+    @Override
+    public Observable<DeviceSync[]> observeSnapshot() {
+        return mSnapshotSubject;
+    }
+
+    @Override
+    public Observable<DeviceSync> observeAttributeChange() {
+        return mAttributeChangeSubject;
+    }
+
+    @Override
+    public Observable<DeviceError> observeError() {
+        return mDeviceErrorSubject;
+    }
+
+    @Override
+    public Observable<DeviceState> observeStatusChange() {
+        return mStatusChange;
+    }
+
+    @Override
+    public Observable<DeviceMute> observeMute() {
+        return mDeviceMuteSubject;
+    }
+
+    @Override
+    public Observable<OTAInfo> observeOTA() {
+        return mOTASubject;
+    }
+
+    @Override
+    public Observable<InvalidateMessage> observeInvalidate() {
+        return mInvalidateSubject;
+    }
+
+
+    private Observer<ConclaveAccessDetails> mConclaveAccessObserver = new Observer<ConclaveAccessDetails>() {
+
+        @Override
+        public void onCompleted() {
+
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            e.printStackTrace();
+        }
+
+        @Override
+        public void onNext(ConclaveAccessDetails cad) {
+            setConclaveAccessDetails(cad);
+        }
+    };
+
+    public void triggerAttributeChange(DeviceModel deviceModel) {
+        DeviceSync ds = new DeviceSync();
+        ds.id = deviceModel.getId();
+        mAttributeChangeSubject.onNext(ds);
+    }
+}
