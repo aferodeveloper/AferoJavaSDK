@@ -5,9 +5,7 @@
 package io.afero.sdk.device;
 
 
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
-import android.util.SparseArray;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -38,6 +36,7 @@ import io.afero.sdk.conclave.models.DeviceMute;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.conclave.models.OTAInfo;
 import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.utils.Clock;
 import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.MetricUtil;
 import io.afero.sdk.utils.RxUtils;
@@ -47,9 +46,6 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
-
-import static io.afero.sdk.conclave.models.DeviceSync.UPDATE_STATE_LENGTH_EXCEEDED;
-import static io.afero.sdk.conclave.models.DeviceSync.UPDATE_STATE_UNKNOWN_UUID;
 
 
 /**
@@ -103,7 +99,7 @@ public class DeviceModel implements ControlModel {
 
     private final String mId;
     private final AferoClient mAferoClient;
-    private final SparseArray<AttributeData> mAttributes = new SparseArray<>();
+    private final HashMap<Integer,AttributeData> mAttributes = new HashMap<>();
 
     private String mProfileId;
 
@@ -175,10 +171,9 @@ public class DeviceModel implements ControlModel {
     @JsonProperty
     public State getState() {
         State state = State.NORMAL;
-        long now = SystemClock.elapsedRealtime();
+        long now = Clock.getElapsedMillis();
 
-        for (int i = 0, n = mAttributes.size(); i < n; ++i) {
-            AttributeData data = mAttributes.valueAt(i);
+        for (AttributeData data : mAttributes.values()) {
             if (data.mExpectedUpdateTime != 0) {
                 if (now > data.mExpectedUpdateTime) {
                     state = State.UPDATE_TIMED_OUT;
@@ -197,7 +192,7 @@ public class DeviceModel implements ControlModel {
         mDeviceSyncUpdateSubject.onNext(deviceSync);
 
         if (deviceSync.requestId != null && deviceSync.requestId != 0) {
-            MetricUtil.getInstance().end(deviceSync.requestId, SystemClock.elapsedRealtime(),true, null);
+            MetricUtil.getInstance().end(deviceSync.requestId, Clock.getElapsedMillis(), true, null);
         }
 
         // See https://kibanlabs.atlassian.net/browse/ANDROID-606
@@ -210,8 +205,8 @@ public class DeviceModel implements ControlModel {
         boolean hasValidValues = true;
         if (deviceSync.state != null) {
             switch (deviceSync.state) {
-                case UPDATE_STATE_UNKNOWN_UUID:
-                case UPDATE_STATE_LENGTH_EXCEEDED:
+                case DeviceSync.UPDATE_STATE_UNKNOWN_UUID:
+                case DeviceSync.UPDATE_STATE_LENGTH_EXCEEDED:
                     hasValidValues = false;
                     break;
             }
@@ -420,12 +415,12 @@ public class DeviceModel implements ControlModel {
     @JsonProperty("attributes")
     public HashMap<Integer,AttributeDebug> getAttributeValues() {
         HashMap<Integer,AttributeDebug> result = new HashMap<>();
-        for (int i = 0, n = mAttributes.size(); i < n; ++i) {
+        for (Map.Entry<Integer, AttributeData> attrEntry : mAttributes.entrySet()) {
+            AttributeData data = attrEntry.getValue();
             AttributeDebug ad = new AttributeDebug();
-            AttributeData data = mAttributes.valueAt(i);
             ad.current = data.mCurrentValue != null ? data.mCurrentValue.toString() : null;
             ad.pending = data.mPendingValue != null ? data.mPendingValue.toString() : null;
-            result.put(mAttributes.keyAt(i), ad);
+            result.put(attrEntry.getKey(), ad);
         }
         return result;
     }
@@ -438,12 +433,12 @@ public class DeviceModel implements ControlModel {
         PostActionBody body = new PostActionBody(attrId, value.toString());
         mAferoClient.postAction(getId(), body)
                 .retryWhen(mWriteAttributeRetry)
-                .subscribe(new ActionObserver(this, SystemClock.elapsedRealtime()));
+                .subscribe(new ActionObserver(this, Clock.getElapsedMillis()));
 
         AttributeData data = mAttributes.get(attrId);
         if (data != null) {
             data.mPendingValue = value;
-            data.mExpectedUpdateTime = SystemClock.elapsedRealtime() + WRITE_TIMEOUT_INTERVAL;
+            data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
 
             startWaitingForUpdate();
         }
@@ -462,7 +457,7 @@ public class DeviceModel implements ControlModel {
             DeviceProfile.Attribute attribute = getAttributeById(dr.attrId);
             if (data != null && attribute != null) {
                 data.mPendingValue = new AttributeValue(dr.value, attribute.getDataType());
-                data.mExpectedUpdateTime = SystemClock.elapsedRealtime() + WRITE_TIMEOUT_INTERVAL;
+                data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
 
                 startWaitingForUpdate();
             }
@@ -655,7 +650,7 @@ public class DeviceModel implements ControlModel {
     void onError(DeviceError deviceError) {
         // Only report hub errors that are the result of requests (See ANDROID-580)
         if (deviceError.requestId != 0) {
-            MetricUtil.getInstance().end(deviceError.requestId, SystemClock.elapsedRealtime(),false, ConclaveMessage.Metric.FailureReason.HUB_ERROR);
+            MetricUtil.getInstance().end(deviceError.requestId, Clock.getElapsedMillis(), false, ConclaveMessage.Metric.FailureReason.HUB_ERROR);
         }
 
         mLastError = deviceError;
