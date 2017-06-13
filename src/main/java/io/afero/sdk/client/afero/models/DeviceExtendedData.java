@@ -9,4 +9,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DeviceExtendedData {
     public String macAddress;
+    public String serialNumber;
 }
