@@ -2,11 +2,11 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.sdk.utils;
+package io.afero.sdk.log;
 
 public class AfLog {
 
-    private static Impl mImpl = new AndroidLog("AFERO");
+    private static Impl mImpl = new JavaLog();
 
     public static void init(AfLog.Impl impl) {
         mImpl = impl;

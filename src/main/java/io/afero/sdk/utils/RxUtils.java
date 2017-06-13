@@ -4,11 +4,10 @@
 
 package io.afero.sdk.utils;
 
-import android.support.annotation.CallSuper;
-
 import java.lang.ref.WeakReference;
 import java.util.concurrent.TimeUnit;
 
+import io.afero.sdk.log.AfLog;
 import retrofit2.HttpException;
 import rx.Observable;
 import rx.Subscription;
@@ -66,7 +65,6 @@ public class RxUtils {
         public abstract void onError(U strongRef, Throwable e);
         public abstract void onNext(U strongRef, T obj);
 
-        @CallSuper
         @Override
         public void onCompleted() {
             U strongRef = mRef.get();
@@ -75,7 +73,6 @@ public class RxUtils {
             }
         }
 
-        @CallSuper
         @Override
         public void onError(Throwable e) {
             e.printStackTrace();
@@ -85,7 +82,6 @@ public class RxUtils {
             }
         }
 
-        @CallSuper
         @Override
         public void onNext(T obj) {
             U strongRef = mRef.get();

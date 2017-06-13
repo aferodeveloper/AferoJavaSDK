@@ -2,22 +2,9 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.sdk.utils;
+package io.afero.sdk.log;
 
-import android.util.Log;
-
-class AndroidLog implements AfLog.Impl {
-
-    private String mTag = "";
-
-    public AndroidLog(String tag) {
-        setTag(tag);
-    }
-
-    public void setTag(String tag) {
-        mTag = tag;
-    }
-
+public class JavaLog implements AfLog.Impl {
     @Override
     public void setUserEmail(String email) {
 
@@ -35,27 +22,26 @@ class AndroidLog implements AfLog.Impl {
 
     @Override
     public void i(String s) {
-        Log.i(mTag, s);
+        System.out.println(s);
     }
 
     @Override
     public void d(String s) {
-        Log.d(mTag, s);
+        System.out.println(s);
     }
 
     @Override
     public void w(String s) {
-        Log.w(mTag, s);
+        System.out.println(s);
     }
 
     @Override
     public void e(String s) {
-        Log.e(mTag, s);
+        System.err.println(s);
     }
 
     @Override
     public void e(Throwable t) {
-        Log.e(mTag, t.getMessage());
         t.printStackTrace();
     }
 

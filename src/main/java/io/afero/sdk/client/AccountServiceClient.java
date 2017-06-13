@@ -5,7 +5,6 @@
 package io.afero.sdk.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.afero.sdk.client.afero.models.AccessToken;
 import okhttp3.ResponseBody;

@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class DeviceProfile {

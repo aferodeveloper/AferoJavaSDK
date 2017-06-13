@@ -4,8 +4,6 @@
 
 package io.afero.sdk.conclave;
 
-import android.os.AsyncTask;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +22,7 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.zip.DeflaterOutputStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -32,7 +31,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
@@ -137,8 +136,10 @@ public class ConclaveClient {
         write(new ConclaveMessage.Say(event, data));
     }
 
-    public void sayAsync(String event, Object data) {
-        new WriteTask().execute(new ConclaveMessage.Say(event, data));
+    public rx.Observable<ConclaveMessage.Say> sayAsync(String event, Object data) {
+        ConclaveMessage.Say say = new ConclaveMessage.Say(event, data);
+        return rx.Observable.fromCallable(new SayCallable(say))
+            .subscribeOn(Schedulers.io());
     }
 
     public void whisper(int sessionId, String event, Object data) {
@@ -158,7 +159,8 @@ public class ConclaveClient {
 
             if (mSocket != null) {
                 mStatusSubject.onNext(ConclaveClient.Status.DISCONNECTED);
-                new CloseSocketTask(mSocket).execute();
+                rx.Observable.fromCallable(new CloseSocketCallable(mSocket))
+                    .subscribeOn(Schedulers.io());
                 mSocket = null;
             }
         } catch (Exception e) {
@@ -346,34 +348,6 @@ public class ConclaveClient {
         }
     }
 
-    private class WriteTask extends AsyncTask<Object, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Object... objects) {
-            write(objects[0]);
-            return null;
-        }
-    }
-
-    private static class CloseSocketTask extends AsyncTask<Void, Void, Void> {
-        private Socket mSocket;
-
-        public CloseSocketTask(Socket socket) {
-            mSocket = socket;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                AfLog.d("ConclaveClient: closing socket " + mSocket.toString());
-                mSocket.close();
-            } catch (Exception e) {
-                // I'll alert the president.
-            }
-            return null;
-        }
-    }
-
     private static void printServerCertificate(SSLSocket socket) {
         try {
             Certificate[] serverCerts =
@@ -408,5 +382,36 @@ public class ConclaveClient {
         SSLSession ss = s.getSession();
         AfLog.i("   Cipher suite = "+ss.getCipherSuite());
         AfLog.i("   Protocol = "+ss.getProtocol());
+    }
+
+    private class SayCallable implements Callable<ConclaveMessage.Say> {
+
+        private final ConclaveMessage.Say mSay;
+
+        public SayCallable(ConclaveMessage.Say say) {
+            mSay = say;
+        }
+
+        @Override
+        public ConclaveMessage.Say call() throws Exception {
+            write(mSay);
+            return mSay;
+        }
+    }
+
+    private static class CloseSocketCallable implements Callable<Socket> {
+
+        private final Socket mSocket;
+
+        public CloseSocketCallable(Socket socket) {
+            mSocket = socket;
+        }
+
+        @Override
+        public Socket call() throws Exception {
+            AfLog.d("ConclaveClient: closing socket " + mSocket.toString());
+            mSocket.close();
+            return mSocket;
+        }
     }
 }

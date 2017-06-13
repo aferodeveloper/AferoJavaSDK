@@ -4,11 +4,11 @@
 
 package io.afero.sdk.scheduler;
 
-import android.support.annotation.NonNull;
-import android.util.SparseArray;
-
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.TimeZone;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
@@ -16,7 +16,7 @@ import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
 import rx.Subscription;
@@ -33,7 +33,7 @@ public class OfflineScheduler {
     private static final int SCHEDULE_FLAGS_ENABLED = 1;
 
     private DeviceModel mDeviceModel;
-    private final SparseArray<OfflineScheduleEvent> mScheduleItems = new SparseArray<>();
+    private final HashMap<Integer,OfflineScheduleEvent> mScheduleItems = new HashMap<>();
     private int mEventMaxCount = 0;
     private Subscription mDeviceSyncSubscription;
     private final AttributeValue mNullValue = new AttributeValue(OfflineScheduleEvent.ZERO_DATA, AttributeValue.DataType.BYTES);
@@ -105,8 +105,7 @@ public class OfflineScheduler {
         final int maxCountPerDay = getMaxCountPerDay();
         int count = 0;
 
-        for (int i = 0, n = getCount(); i < n; ++i) {
-            OfflineScheduleEvent event = mScheduleItems.valueAt(i);
+        for (OfflineScheduleEvent event : mScheduleItems.values()) {
             if (event.getDayLocal() == day) {
                 ++count;
                 if (count >= maxCountPerDay) {
@@ -121,8 +120,7 @@ public class OfflineScheduler {
     public synchronized int getEventCountForDay(int day) {
         int count = 0;
 
-        for (int i = 0, n = getCount(); i < n; ++i) {
-            OfflineScheduleEvent event = mScheduleItems.valueAt(i);
+        for (OfflineScheduleEvent event : mScheduleItems.values()) {
             if (event.getDayLocal() == day) {
                 ++count;
             }
@@ -201,10 +199,6 @@ public class OfflineScheduler {
         if (id != 0 && mScheduleItems.get(id) != null) {
             mScheduleItems.remove(event.getId());
         }
-    }
-
-    public synchronized int findItem(OfflineScheduleEvent event) {
-        return mScheduleItems.indexOfValue(event);
     }
 
     public DeviceModel getDeviceModel() {
@@ -302,7 +296,7 @@ public class OfflineScheduler {
         return av == null || av.getByteCount() == 0 || mNullValue.compareTo(av) == 0;
     }
 
-    private AttributeValue makeAttributeValue(@NonNull OfflineScheduleEvent event) {
+    private AttributeValue makeAttributeValue(OfflineScheduleEvent event) {
         return new AttributeValue(event.toAttributeValueString(), AttributeValue.DataType.BYTES);
     }
 
@@ -310,14 +304,14 @@ public class OfflineScheduler {
         return DeviceProfile.SCHEDULE_ATTRIBUTE_ID + index;
     }
 
-    private boolean writeToAttributeIfChanged(@NonNull DeviceProfile.Attribute attribute, OfflineScheduleEvent event) {
+    private boolean writeToAttributeIfChanged(DeviceProfile.Attribute attribute, OfflineScheduleEvent event) {
         String data = event != null ? event.toAttributeValueString() : null;
         AttributeValue newValue = data != null ? new AttributeValue(data, AttributeValue.DataType.BYTES) : null;
 
         return writeToAttributeIfChanged(attribute, newValue);
     }
 
-    private boolean writeToAttributeIfChanged(@NonNull DeviceProfile.Attribute attribute, AttributeValue newValue) {
+    private boolean writeToAttributeIfChanged(DeviceProfile.Attribute attribute, AttributeValue newValue) {
         AttributeValue currentValue = mDeviceModel.getAttributePendingValue(attribute);
         boolean isCurrentValueEmpty = isValueNullOrEmpty(currentValue);
         boolean isNewValueEmpty = isValueNullOrEmpty(newValue);
@@ -334,7 +328,7 @@ public class OfflineScheduler {
         return false;
     }
 
-    private boolean hasAttributeChanged(@NonNull DeviceProfile.Attribute attribute, AttributeValue newValue) {
+    private boolean hasAttributeChanged(DeviceProfile.Attribute attribute, AttributeValue newValue) {
         AttributeValue currentValue = mDeviceModel.getAttributePendingValue(attribute);
         boolean isCurrentValueEmpty = isValueNullOrEmpty(currentValue);
         boolean isNewValueEmpty = isValueNullOrEmpty(newValue);
@@ -392,22 +386,22 @@ public class OfflineScheduler {
     }
 
     public synchronized void forEach(Action1<OfflineScheduleEvent> action) {
-        for (int i = 0, n = getCount(); i < n; ++i) {
-            action.call(mScheduleItems.valueAt(i));
+        for (OfflineScheduleEvent event : mScheduleItems.values()) {
+            action.call(event);
         }
     }
 
     public synchronized void removeWhere(Func1<OfflineScheduleEvent, Boolean> filterFunc) {
-        for (int i = getCount(); --i >= 0; ) {
-            if (filterFunc.call(mScheduleItems.valueAt(i))) {
-                mScheduleItems.removeAt(i);
+        Iterator<Map.Entry<Integer, OfflineScheduleEvent>> it = mScheduleItems.entrySet().iterator();
+        while (it.hasNext()) {
+            if (filterFunc.call(it.next().getValue())) {
+                it.remove();
             }
         }
     }
 
     public synchronized OfflineScheduleEvent findEventAtTime(ArrayList<Integer> days, int hour, int minute) {
-        for (int i = 0, n = getCount(); i < n; ++i) {
-            OfflineScheduleEvent event = mScheduleItems.valueAt(i);
+        for (OfflineScheduleEvent event : mScheduleItems.values()) {
             if ((days == null || days.isEmpty() || days.contains(event.getDayGMT())) &&
                     event.getHourGMT() == hour &&
                     event.getMinuteGMT() == minute) {

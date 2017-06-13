@@ -20,7 +20,7 @@ repositories {
 android {
     publishNonDefault true
     compileSdkVersion 25
-    buildToolsVersion "26"
+    buildToolsVersion "26.0.0"
 
     defaultConfig {
         minSdkVersion 19

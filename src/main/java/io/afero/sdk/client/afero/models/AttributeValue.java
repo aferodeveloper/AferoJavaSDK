@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.HexUtils;
 
 public class AttributeValue implements Comparable<AttributeValue> {

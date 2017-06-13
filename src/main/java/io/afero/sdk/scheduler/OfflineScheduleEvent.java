@@ -4,16 +4,16 @@
 
 package io.afero.sdk.scheduler;
 
-import android.support.annotation.NonNull;
-import android.util.SparseArray;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
-import io.afero.sdk.utils.AfLog;
 import io.afero.sdk.device.DeviceProfile;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.HexUtils;
 
 public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
@@ -55,28 +55,28 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     private int mDayGMT;
     private int mHourGMT;
     private int mMinuteGMT;
-    private SparseArray<AttributeValue> mAttributeValues = new SparseArray<>();
+    private HashMap<Integer,AttributeValue> mAttributeValues = new HashMap<>();
 
 
     public OfflineScheduleEvent() {
     }
 
-    public OfflineScheduleEvent(int id, @NonNull AttributeValue value, @NonNull DeviceProfile dp) {
+    public OfflineScheduleEvent(int id, AttributeValue value, DeviceProfile dp) {
         setId(id);
         read(value, dp);
     }
 
-    public OfflineScheduleEvent(int id, @NonNull ByteBuffer bb, @NonNull DeviceProfile dp) {
+    public OfflineScheduleEvent(int id, ByteBuffer bb, DeviceProfile dp) {
         setId(id);
         read(bb, dp);
     }
 
-    public void read(@NonNull AttributeValue value, @NonNull DeviceProfile dp) {
+    public void read(AttributeValue value, DeviceProfile dp) {
         ByteBuffer bb = ByteBuffer.wrap(value.getByteValue()).order(ByteOrder.LITTLE_ENDIAN);
         read(bb, dp);
     }
 
-    public void read(@NonNull ByteBuffer bb, @NonNull DeviceProfile dp) {
+    public void read(ByteBuffer bb, DeviceProfile dp) {
         mFlags = bb.get();
         setDayGMT(bb.get());
         setHourGMT(bb.get());
@@ -167,16 +167,12 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         return mMinuteGMT;
     }
 
-    public void addAttributeValue(int id, @NonNull AttributeValue value) {
+    public void addAttributeValue(int id, AttributeValue value) {
         mAttributeValues.put(id, value);
     }
 
-    public int getAttributeIdAt(int index) {
-        return mAttributeValues.keyAt(index);
-    }
-
-    public AttributeValue getAttributeValueAt(int index) {
-        return mAttributeValues.valueAt(index);
+    public Set<Map.Entry<Integer, AttributeValue>> getAttributeEntrySet() {
+        return mAttributeValues.entrySet();
     }
 
     public AttributeValue getAttributeValue(int id) {
@@ -191,7 +187,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         mAttributeValues.clear();
     }
 
-    public static OfflineScheduleEvent fromAttributeValueString(int id, @NonNull String s, @NonNull DeviceProfile dp) {
+    public static OfflineScheduleEvent fromAttributeValueString(int id, String s, DeviceProfile dp) {
 
         try {
             ByteBuffer bb = HexUtils.hexDecode(s);
@@ -207,8 +203,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     public String toAttributeValueString() {
 
         int byteCount = TIME_SPEC_BYTE_COUNT;
-        for (int i = 0, n = mAttributeValues.size(); i < n; ++i) {
-            AttributeValue av = mAttributeValues.valueAt(i);
+        for (AttributeValue av : mAttributeValues.values()) {
             byteCount += ATTRIBUTE_ID_BYTE_COUNT;
             byteCount += av.getByteCount();
         }
@@ -220,9 +215,10 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         bb.put((byte) mHourGMT);
         bb.put((byte) mMinuteGMT);
 
-        for (int i = 0, n = mAttributeValues.size(); i < n; ++i) {
-            AttributeValue av = mAttributeValues.valueAt(i);
-            bb.putShort((short)mAttributeValues.keyAt(i));
+        for (Map.Entry<Integer,AttributeValue> entry : mAttributeValues.entrySet()) {
+            AttributeValue av = entry.getValue();
+            int attrId = entry.getKey();
+            bb.putShort((short)attrId);
             av.getValueBytes(bb);
         }
 
@@ -232,7 +228,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     }
 
     @Override
-    public int compareTo(@NonNull OfflineScheduleEvent another) {
+    public int compareTo(OfflineScheduleEvent another) {
         if (this == another) return 0;
 
         int result = Integer.compare(getDayGMT(), another.getDayGMT());

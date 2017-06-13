@@ -37,7 +37,7 @@ import io.afero.sdk.client.afero.models.SetupStateBody;
 import io.afero.sdk.client.afero.models.TermsOfServiceBody;
 import io.afero.sdk.client.afero.models.UserDetails;
 import io.afero.sdk.device.DeviceProfile;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.RxUtils;
 import okhttp3.Authenticator;

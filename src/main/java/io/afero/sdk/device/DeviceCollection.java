@@ -18,7 +18,7 @@ import io.afero.sdk.conclave.models.DeviceState;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.conclave.models.InvalidateMessage;
 import io.afero.sdk.conclave.models.OTAInfo;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.MetricUtil;
 import io.afero.sdk.utils.RxUtils;
 import okhttp3.ResponseBody;

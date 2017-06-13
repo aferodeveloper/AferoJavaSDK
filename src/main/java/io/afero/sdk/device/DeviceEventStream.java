@@ -20,8 +20,9 @@ import io.afero.sdk.conclave.ConclaveAccessManager;
 import io.afero.sdk.conclave.ConclaveClient;
 import io.afero.sdk.conclave.ConclaveMessage;
 import io.afero.sdk.conclave.ConclaveMessageSource;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
+import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
@@ -125,11 +126,13 @@ public class DeviceEventStream implements ConclaveMessageSource {
     }
 
     public void viewDevice(String deviceId, boolean isViewing) {
-        mConclaveClient.sayAsync("device:view", new ConclaveMessage.ViewDeviceFields(deviceId, isViewing));
+        mConclaveClient.sayAsync("device:view", new ConclaveMessage.ViewDeviceFields(deviceId, isViewing))
+            .subscribe(new RxUtils.IgnoreResponseObserver<ConclaveMessage.Say>());
     }
 
     public void sendMetrics(ConclaveMessage.Metric metric) {
-        mConclaveClient.sayAsync("metrics", metric);
+        mConclaveClient.sayAsync("metrics", metric)
+            .subscribe(new RxUtils.IgnoreResponseObserver<ConclaveMessage.Say>());
     }
 
     private void onNextConclave(JsonNode node) {

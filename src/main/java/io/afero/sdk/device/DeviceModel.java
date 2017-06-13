@@ -5,8 +5,6 @@
 package io.afero.sdk.device;
 
 
-import android.support.annotation.NonNull;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,7 +33,7 @@ import io.afero.sdk.conclave.models.DeviceError;
 import io.afero.sdk.conclave.models.DeviceMute;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.conclave.models.OTAInfo;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.Clock;
 import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.MetricUtil;
@@ -299,7 +297,6 @@ public class DeviceModel implements ControlModel {
         return mId;
     }
 
-    @NonNull
     @JsonIgnore
     public String getName() {
 
@@ -448,7 +445,7 @@ public class DeviceModel implements ControlModel {
         mUpdateSubject.onNext(this);
     }
 
-    private Observable<RequestResponse> attributeWrite(@NonNull DeviceRequest[] requests) {
+    private Observable<RequestResponse> attributeWrite(DeviceRequest[] requests) {
 
         mLastError = null;
 
@@ -545,7 +542,7 @@ public class DeviceModel implements ControlModel {
     }
 
     @Override
-    public Observable<RequestResponse> writeModelValues(@NonNull ArrayList<DeviceRequest> req) {
+    public Observable<RequestResponse> writeModelValues(ArrayList<DeviceRequest> req) {
         return attributeWrite(req.toArray(new DeviceRequest[req.size()]));
     }
 

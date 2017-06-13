@@ -6,7 +6,7 @@ package io.afero.sdk.client;
 
 import java.util.concurrent.TimeUnit;
 
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 
