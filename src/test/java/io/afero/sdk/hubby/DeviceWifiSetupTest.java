@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2014-2016 Afero, Inc. All rights reserved.
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
 package io.afero.sdk.hubby;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -11,24 +13,28 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
-import io.afero.sdk.AferoTest;
 import io.afero.sdk.BuildConfig;
+import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceModel;
-import io.afero.sdk.device.DeviceModelTest;
+import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.hubby.mock.DeviceWifiSetupMock;
 import io.kiban.hubby.SetupWifiCallback;
 import io.kiban.hubby.WifiSSIDEntry;
 import rx.Observer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class, sdk = 21)
-public class DeviceWifiSetupTest extends AferoTest {
+public class DeviceWifiSetupTest {
+
+    protected final ObjectMapper mObjectMapper = new ObjectMapper();
 
     private static class SendWifiCredsObserver implements Observer<SetupWifiCallback.SetupWifiState> {
 
@@ -74,8 +80,27 @@ public class DeviceWifiSetupTest extends AferoTest {
         }
     }
 
+    public DeviceProfile loadDeviceProfile(String path) throws IOException {
+        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+        assertNotNull(is);
+        return mObjectMapper.readValue(is, DeviceProfile.class);
+    }
+
+    private static final String DEVICE_ID = "bogus-device-id";
+
+    private static class DeviceModelMock extends DeviceModel {
+
+        protected DeviceModelMock(String deviceId, DeviceProfile profile, AferoClient aferoClient) {
+            super(deviceId, profile, aferoClient);
+        }
+    }
+
+    public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) throws IOException {
+        return new DeviceModelMock(DEVICE_ID, deviceProfile, aferoClient);
+    }
+
     DeviceModel createDeviceModel() throws IOException {
-        return DeviceModelTest.createDeviceModel(loadDeviceProfile("deviceModelTestProfile.json"), null);
+        return createDeviceModel(loadDeviceProfile("deviceModelTestProfile.json"), null);
     }
 
     @Before
