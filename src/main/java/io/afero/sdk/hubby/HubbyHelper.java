@@ -21,7 +21,7 @@ import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.conclave.ConclaveAccessManager;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.RxUtils;
 import io.kiban.hubby.Account;

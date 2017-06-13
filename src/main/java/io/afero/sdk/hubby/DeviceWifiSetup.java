@@ -14,7 +14,7 @@ import io.afero.sdk.client.afero.models.SetupStateBody;
 import io.afero.sdk.device.ControlModel;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
-import io.afero.sdk.utils.AfLog;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import io.kiban.hubby.Hubby;
 import io.kiban.hubby.SetupWifiCallback;
