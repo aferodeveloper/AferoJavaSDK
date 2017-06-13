@@ -4,10 +4,8 @@
 
 package io.afero.sdk.device;
 
-import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -40,7 +38,7 @@ public class DeviceProfile {
 
     private Service[] mServices;
 
-    private SparseArray<Attribute> mAttributeMap = new SparseArray<Attribute>();
+    private final HashMap<Integer,Attribute> mAttributeMap = new HashMap<>();
 
     private HashMap<String, Presentation> mPresentationOverrides;
 
@@ -604,7 +602,7 @@ public class DeviceProfile {
         private DisplayRule[] mDisplayRules;
         private String mLabel;
         private String mLabelSize;
-        private int mLabelColor = Color.BLACK;
+        private String mLabelColor = "#000";
 
         public Gauge() {
         }
@@ -656,10 +654,10 @@ public class DeviceProfile {
 
         @JsonProperty
         public void setLabelColor(String color) {
-            mLabelColor = Color.parseColor(color);
+            mLabelColor = color;
         }
 
-        public int getLabelColor() {
+        public String getLabelColor() {
             return mLabelColor;
         }
 
