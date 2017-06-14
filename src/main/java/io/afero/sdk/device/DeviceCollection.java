@@ -21,11 +21,9 @@ import io.afero.sdk.conclave.models.OTAInfo;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.MetricUtil;
 import io.afero.sdk.utils.RxUtils;
-import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
@@ -294,9 +292,8 @@ public class DeviceCollection {
         }
     }
 
-    public Observable<ResponseBody> deleteDevice(DeviceModel deviceModel) {
+    public Observable<Void> deleteDevice(DeviceModel deviceModel) {
         return mAferoClient.deviceDisassociate(deviceModel.getId())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnCompleted(new DeviceDisassociateAction(this, deviceModel));
     }
 

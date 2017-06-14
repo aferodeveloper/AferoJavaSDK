@@ -66,11 +66,11 @@ public interface AccountServiceClient {
 
     Observable<CreateAccountResult> createAccount(CreateAccountParams body);
 
-    Observable<ResponseBody> resetPassword(String email);
+    Observable<Void> resetPassword(String email);
 
     Observable<LoginResult> login(String email, String password);
 
-    Observable<ResponseBody> resendVerificationEmail(String email);
+    Observable<Void> resendVerificationEmail(String email);
 
     ResponseError getResponseError(Throwable e);
 
@@ -78,7 +78,7 @@ public interface AccountServiceClient {
 
     Observable<Profile> getProfile();
 
-    Observable<ResponseBody> updateProfile(Profile profile);
+    Observable<Void> updateProfile(Profile profile);
 
     boolean isUserInfoRequired();
 

@@ -44,7 +44,6 @@ import okhttp3.Authenticator;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.ResponseBody;
 import okhttp3.Route;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
@@ -148,7 +147,7 @@ public class AferoClient implements AccountServiceClient {
     }
 
     @Override
-    public Observable<ResponseBody> resetPassword(String email) {
+    public Observable<Void> resetPassword(String email) {
         return mAferoService.resetPassword(email, "");
     }
 
@@ -166,7 +165,7 @@ public class AferoClient implements AccountServiceClient {
     }
 
     @Override
-    public Observable<ResponseBody> resendVerificationEmail(String email) {
+    public Observable<Void> resendVerificationEmail(String email) {
         return Observable.error(new Exception("Not supported"));
     }
 
@@ -207,7 +206,7 @@ public class AferoClient implements AccountServiceClient {
     }
 
     @Override
-    public Observable<ResponseBody> updateProfile(Profile profile) {
+    public Observable<Void> updateProfile(Profile profile) {
         return Observable.just(null);
     }
 
@@ -222,7 +221,7 @@ public class AferoClient implements AccountServiceClient {
     }
 
     public void signOut(String userId, String mobileClientId) {
-        rx.Observable<ResponseBody> observable;
+        rx.Observable<Void> observable;
 
         if (userId != null && (!userId.isEmpty()) && mobileClientId != null && (!mobileClientId.isEmpty())) {
             observable = deleteDeviceInfo(userId, mobileClientId);
@@ -243,7 +242,7 @@ public class AferoClient implements AccountServiceClient {
                     }
                 }
             }
-        }).subscribe(new RxUtils.IgnoreResponseObserver<ResponseBody>());
+        }).subscribe(new RxUtils.IgnoreResponseObserver<Void>());
     }
 
     public void setToken(AccessToken token) {
@@ -293,7 +292,7 @@ public class AferoClient implements AccountServiceClient {
         return mAferoService.usersMe();
     }
 
-    public Observable<ResponseBody> putUserTermsOfService(String userId, TermsOfServiceBody body) {
+    public Observable<Void> putUserTermsOfService(String userId, TermsOfServiceBody body) {
         return mAferoService.putUserTermsOfService(userId, body);
     }
 
@@ -301,7 +300,7 @@ public class AferoClient implements AccountServiceClient {
         return mAferoService.postDeviceInfo(userId, body);
     }
 
-    public Observable<ResponseBody> deleteDeviceInfo(String userId, String mobileDeviceId) {
+    public Observable<Void> deleteDeviceInfo(String userId, String mobileDeviceId) {
         return mAferoService.deleteDeviceInfo(userId, mobileDeviceId);
     }
 
@@ -343,11 +342,11 @@ public class AferoClient implements AccountServiceClient {
 
     public static class TransferVerificationRequired extends Throwable {}
 
-    public Observable<ResponseBody> deviceDisassociate(String deviceId) {
+    public Observable<Void> deviceDisassociate(String deviceId) {
         return mAferoService.deviceDisassociate(mActiveAccountId, deviceId);
     }
 
-    public Observable<ResponseBody> putDeviceLocation(String deviceId, Location body) {
+    public Observable<Void> putDeviceLocation(String deviceId, Location body) {
         return mAferoService.putDeviceLocation(mActiveAccountId, deviceId, body);
     }
 
@@ -395,7 +394,7 @@ public class AferoClient implements AccountServiceClient {
         return mAferoService.putRule(mActiveAccountId, ruleId, rule);
     }
 
-    public Observable<ResponseBody> deleteRule(String ruleId) {
+    public Observable<Void> deleteRule(String ruleId) {
         return mAferoService.deleteRule(mActiveAccountId, ruleId);
     }
 
@@ -419,15 +418,15 @@ public class AferoClient implements AccountServiceClient {
         return mAferoService.getAccountUserSummary(mActiveAccountId);
     }
 
-    public Observable<ResponseBody> postInvite(InvitationDetails details) {
+    public Observable<Void> postInvite(InvitationDetails details) {
         return mAferoService.postInvite(mActiveAccountId, details);
     }
 
-    public Observable<ResponseBody> deleteInvite(String invitationId) {
+    public Observable<Void> deleteInvite(String invitationId) {
         return mAferoService.deleteInvite(mActiveAccountId, invitationId);
     }
 
-    public Observable<ResponseBody> deleteUser(String userId) {
+    public Observable<Void> deleteUser(String userId) {
         return mAferoService.deleteUser(mActiveAccountId, userId);
     }
 
@@ -435,7 +434,7 @@ public class AferoClient implements AccountServiceClient {
         return mAferoService.postConclaveAccess(mActiveAccountId, mobileDeviceId, new ConclaveAccessBody());
     }
 
-    public Observable<ResponseBody> putSetupState(String deviceId, SetupStateBody body) {
+    public Observable<Void> putSetupState(String deviceId, SetupStateBody body) {
         return mAferoService.putSetupState(mActiveAccountId, deviceId, body);
     }
 

@@ -30,7 +30,6 @@ import io.afero.sdk.client.afero.models.SetupStateBody;
 import io.afero.sdk.client.afero.models.TermsOfServiceBody;
 import io.afero.sdk.client.afero.models.UserDetails;
 import io.afero.sdk.device.DeviceProfile;
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.http.Body;
@@ -110,7 +109,7 @@ public interface AferoClientAPI {
     Observable<UserDetails> usersMe();
 
     @PUT(VERSION + "users/{userId}/tos")
-    Observable<ResponseBody> putUserTermsOfService(
+    Observable<Void> putUserTermsOfService(
             @Path("userId") String userId,
             @Body TermsOfServiceBody body
     );
@@ -122,14 +121,14 @@ public interface AferoClientAPI {
     );
 
     @DELETE(VERSION + "users/{userId}/mobileDevices/{mobileDeviceId}")
-    Observable<ResponseBody> deleteDeviceInfo(
+    Observable<Void> deleteDeviceInfo(
             @Path("userId") String userId,
             @Path("mobileDeviceId") String mobileDeviceId
     );
 
     @Headers(BASIC_AUTH_HEADER)
     @POST(VERSION + "credentials/{email}/passwordReset")
-    Observable<ResponseBody> resetPassword(
+    Observable<Void> resetPassword(
             @Path("email") String email,
             @Body String string
     );
@@ -162,13 +161,13 @@ public interface AferoClientAPI {
     );
 
     @DELETE(VERSION + "accounts/{accountId}/devices/{deviceId}")
-    Observable<ResponseBody> deviceDisassociate(
+    Observable<Void> deviceDisassociate(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId
     );
 
     @PUT(VERSION + "accounts/{accountId}/devices/{deviceId}/location")
-    Observable<ResponseBody> putDeviceLocation(
+    Observable<Void> putDeviceLocation(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body Location body
@@ -247,7 +246,7 @@ public interface AferoClientAPI {
     );
 
     @DELETE(VERSION + "accounts/{accountId}/rules/{ruleId}")
-    Observable<ResponseBody> deleteRule(
+    Observable<Void> deleteRule(
             @Path("accountId") String accountId,
             @Path("ruleId") String ruleId
     );
@@ -289,19 +288,19 @@ public interface AferoClientAPI {
     );
 
     @POST(VERSION + "accounts/{accountId}/invitations")
-    Observable<ResponseBody> postInvite(
+    Observable<Void> postInvite(
             @Path("accountId") String accountId,
             @Body InvitationDetails details
     );
 
     @DELETE(VERSION + "accounts/{accountId}/invitations/{invitationId}")
-    Observable<ResponseBody> deleteInvite(
+    Observable<Void> deleteInvite(
             @Path("accountId") String accountId,
             @Path("invitationId") String invitationId
     );
 
     @DELETE(VERSION + "accounts/{accountId}/userAccountAccess/{userId}")
-    Observable<ResponseBody> deleteUser(
+    Observable<Void> deleteUser(
             @Path("accountId") String accountId,
             @Path("userId") String userId
     );
@@ -314,7 +313,7 @@ public interface AferoClientAPI {
     );
 
     @PUT(VERSION + "/accounts/{accountId}/devices/{deviceId}/state/setupState")
-    Observable<ResponseBody> putSetupState(
+    Observable<Void> putSetupState(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body SetupStateBody body

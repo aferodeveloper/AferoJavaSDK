@@ -18,10 +18,8 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.CreateAccountBody;
 import io.afero.sdk.client.afero.models.CreateAccountResponse;
-import io.afero.sdk.client.afero.models.CreateSceneBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceGroup;
 import io.afero.sdk.client.afero.models.DeviceInfoBody;
 import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
 import io.afero.sdk.client.afero.models.DeviceRequest;
@@ -33,13 +31,10 @@ import io.afero.sdk.client.afero.models.NameDeviceBody;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.client.afero.models.RuleExecuteBody;
-import io.afero.sdk.client.afero.models.Scene;
-import io.afero.sdk.client.afero.models.SceneExecuteBody;
 import io.afero.sdk.client.afero.models.SetupStateBody;
 import io.afero.sdk.client.afero.models.TermsOfServiceBody;
 import io.afero.sdk.client.afero.models.UserDetails;
 import io.afero.sdk.device.DeviceProfile;
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.mock.BehaviorDelegate;
@@ -80,7 +75,7 @@ public class MockAferoClientAPI implements AferoClientAPI {
     }
 
     @Override
-    public Observable<ResponseBody> putUserTermsOfService(String userId, TermsOfServiceBody body) {
+    public Observable<Void> putUserTermsOfService(String userId, TermsOfServiceBody body) {
         return null;
     }
 
@@ -90,12 +85,12 @@ public class MockAferoClientAPI implements AferoClientAPI {
     }
 
     @Override
-    public Observable<ResponseBody> deleteDeviceInfo(String userId, String mobileDeviceId) {
+    public Observable<Void> deleteDeviceInfo(String userId, String mobileDeviceId) {
         return null;
     }
 
     @Override
-    public Observable<ResponseBody> resetPassword(String email, String string) {
+    public Observable<Void> resetPassword(String email, String string) {
         return null;
     }
 
@@ -120,12 +115,12 @@ public class MockAferoClientAPI implements AferoClientAPI {
     }
 
     @Override
-    public Observable<ResponseBody> deviceDisassociate(String accountId, String deviceId) {
+    public Observable<Void> deviceDisassociate(String accountId, String deviceId) {
         return null;
     }
 
     @Override
-    public Observable<ResponseBody> putDeviceLocation(String accountId, String deviceId, Location body) {
+    public Observable<Void> putDeviceLocation(String accountId, String deviceId, Location body) {
         return null;
     }
 
@@ -209,7 +204,7 @@ public class MockAferoClientAPI implements AferoClientAPI {
     }
 
     @Override
-    public Observable<ResponseBody> deleteRule(String accountId, String ruleId) {
+    public Observable<Void> deleteRule(String accountId, String ruleId) {
         return null;
     }
 
@@ -239,17 +234,17 @@ public class MockAferoClientAPI implements AferoClientAPI {
     }
 
     @Override
-    public Observable<ResponseBody> postInvite(String accountId, InvitationDetails details) {
+    public Observable<Void> postInvite(String accountId, InvitationDetails details) {
         return null;
     }
 
     @Override
-    public Observable<ResponseBody> deleteInvite(String accountId, String invitationId) {
+    public Observable<Void> deleteInvite(String accountId, String invitationId) {
         return null;
     }
 
     @Override
-    public Observable<ResponseBody> deleteUser(String accountId, String userId) {
+    public Observable<Void> deleteUser(String accountId, String userId) {
         return null;
     }
 
@@ -259,7 +254,7 @@ public class MockAferoClientAPI implements AferoClientAPI {
     }
 
     @Override
-    public Observable<ResponseBody> putSetupState(String accountId, String deviceId, SetupStateBody body) {
+    public Observable<Void> putSetupState(String accountId, String deviceId, SetupStateBody body) {
         return null;
     }
 
