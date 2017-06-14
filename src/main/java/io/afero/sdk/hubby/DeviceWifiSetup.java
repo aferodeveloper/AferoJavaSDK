@@ -20,7 +20,6 @@ import io.kiban.hubby.Hubby;
 import io.kiban.hubby.SetupWifiCallback;
 import io.kiban.hubby.SetupWifiCallback.SetupWifiState;
 import io.kiban.hubby.WifiSSIDEntry;
-import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
@@ -442,7 +441,7 @@ public class DeviceWifiSetup {
 
     public void updateDeviceSetupState() {
         mAferoClient.putSetupState(mDeviceModel.getId(), new SetupStateBody())
-            .subscribe(new RxUtils.IgnoreResponseObserver<ResponseBody>());
+            .subscribe(new RxUtils.IgnoreResponseObserver<Void>());
     }
 
     public DeviceModel getDeviceModel() {

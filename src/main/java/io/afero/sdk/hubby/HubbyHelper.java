@@ -29,7 +29,6 @@ import io.kiban.hubby.Hubby;
 import io.kiban.hubby.InitCallback;
 import io.kiban.hubby.NewTokenCallback;
 import io.kiban.hubby.OtaCallback;
-import okhttp3.ResponseBody;
 import rx.Observer;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -401,7 +400,7 @@ public class HubbyHelper {
                         aferoLocation.locationSourceType = "HUB_LOCATION_GPS";
 
                         // send it to the service
-                        mAferoClient.putDeviceLocation(deviceId, aferoLocation).subscribe(new Observer<ResponseBody>() {
+                        mAferoClient.putDeviceLocation(deviceId, aferoLocation).subscribe(new Observer<Void>() {
                             @Override
                             public void onCompleted() {
                                 AfLog.i("HubbyManager: Successfully stored new location for softhub " + deviceId);
@@ -413,7 +412,7 @@ public class HubbyHelper {
                             }
 
                             @Override
-                            public void onNext(ResponseBody baseResponse) {}
+                            public void onNext(Void v) {}
                         });
 
                     } else {
