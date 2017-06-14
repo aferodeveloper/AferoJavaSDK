@@ -4,8 +4,6 @@
 
 package io.afero.sdk.utils;
 
-import android.os.SystemClock;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -108,7 +106,7 @@ public class MetricUtil {
     }
 
     public void purgeTimedOutWrites() {
-        purgeTimedOutWrites(SystemClock.elapsedRealtime());
+        purgeTimedOutWrites(Clock.getElapsedMillis());
 
     }
 

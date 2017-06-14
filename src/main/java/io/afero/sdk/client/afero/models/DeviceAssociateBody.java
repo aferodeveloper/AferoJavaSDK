@@ -25,13 +25,7 @@ public class DeviceAssociateBody {
     public DeviceAssociateBody() {
     }
 
-    public DeviceAssociateBody(String id, android.location.Location loc) {
+    public DeviceAssociateBody(String id) {
         associationId = id;
-        if (loc != null) {
-            location = new Location();
-            location.latitude = String.valueOf(loc.getLatitude());
-            location.longitude = String.valueOf(loc.getLongitude());
-            location.locationSourceType = "INITIAL_DEVICE_ASSOCIATE";
-        }
     }
 }

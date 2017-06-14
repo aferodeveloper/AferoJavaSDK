@@ -4,9 +4,6 @@
 
 package io.afero.sdk.client.afero.models;
 
-import android.text.TextUtils;
-
-
 public class LocationState {
 
     public enum State {
@@ -55,8 +52,21 @@ public class LocationState {
 
     public String getAddress() {
         if (state.equals(State.Valid) && location.formattedAddressLines != null) {
-            return TextUtils.join(System.getProperty("line.separator"), location.formattedAddressLines);
+            final StringBuilder sb = new StringBuilder();
+            final String delim = System.getProperty("line.separator");
+            int i = 0, n = location.formattedAddressLines.length;
+
+            for (String s : location.formattedAddressLines) {
+                sb.append(s);
+                if (i < n) {
+                    sb.append(delim);
+                }
+                ++i;
+            }
+
+            return sb.toString();
         }
+
         return "";
     }
 

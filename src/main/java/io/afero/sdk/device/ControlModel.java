@@ -4,8 +4,6 @@
 
 package io.afero.sdk.device;
 
-import android.support.annotation.NonNull;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
@@ -34,5 +32,5 @@ public interface ControlModel {
 
     boolean enableReadOnlyControls();
 
-    Observable<RequestResponse> writeModelValues(@NonNull ArrayList<DeviceRequest> req);
+    Observable<RequestResponse> writeModelValues(ArrayList<DeviceRequest> req);
 }

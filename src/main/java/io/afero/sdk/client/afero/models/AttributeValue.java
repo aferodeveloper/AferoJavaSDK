@@ -4,8 +4,6 @@
 
 package io.afero.sdk.client.afero.models;
 
-import android.support.annotation.NonNull;
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
@@ -206,7 +204,7 @@ public class AttributeValue implements Comparable<AttributeValue> {
     }
 
     @Override
-    public int compareTo(@NonNull AttributeValue value) {
+    public int compareTo(AttributeValue value) {
         int result = 0;
 
         switch (mDataType) {

@@ -4,9 +4,6 @@
 
 package io.afero.sdk.device;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -189,7 +186,7 @@ public class DeviceProfile {
         private Gauge mGauge;
         private Group mGroups[];
         private Control mControls[];
-        private HashMap<Integer, Control> mControlMap = new HashMap<Integer, Control>();
+        private HashMap<Integer, Control> mControlMap = new HashMap<>();
         private HashMap<Integer, AttributeOptions> mAttributeOptions;
         private DisplayRule[] mDisplayRules;
 
@@ -305,24 +302,6 @@ public class DeviceProfile {
         }
 
         @JsonIgnore
-        public Group findGroupThatReferencesAttributeId(int attrId) {
-            if (mGroups != null && mControls != null) {
-                for (Group g : mGroups) {
-                    int[] controlIds = g.getControls();
-                    if (controlIds != null) {
-                        for (int ctrlId : controlIds) {
-                            Control ctrl = mControlMap.get(ctrlId);
-                            if (ctrl != null && ctrl.refersToAttributeId(attrId)) {
-                                return g;
-                            }
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
-        @JsonIgnore
         public Group findGroupThatReferencesControl(Control control) {
             final int controlId = control.getId();
 
@@ -355,7 +334,7 @@ public class DeviceProfile {
             return false;
         }
 
-        public Control findControlThatReferencesAttribute(@NonNull Attribute attribute, @Nullable String controlType) {
+        public Control findControlThatReferencesAttribute(Attribute attribute, String controlType) {
             final int attrId = attribute.getId();
 
             for (Control control : mControls) {

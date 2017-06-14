@@ -41,7 +41,6 @@ import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
@@ -673,7 +672,6 @@ public class DeviceModel implements ControlModel {
     void updateLocation() {
         setLocation(new LocationState(LocationState.State.Invalid));
         mAferoClient.getDeviceLocation(getId())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe(new Observer<Location>() {
                 @Override
                 public void onCompleted() {
@@ -720,7 +718,6 @@ public class DeviceModel implements ControlModel {
     private void startWaitingForUpdate() {
         mPendingWriteSubscription = Observable.just(this)
             .delay(WRITE_TIMEOUT_INTERVAL, TimeUnit.MILLISECONDS)
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe(new RxUtils.WeakAction1<DeviceModel, DeviceModel>(this) {
                 @Override
                 public void call(DeviceModel strongRef, DeviceModel deviceModel) {
@@ -760,7 +757,6 @@ public class DeviceModel implements ControlModel {
 
         mOTAWatchdogSubscription = Observable.just(mOTAProgress)
                 .delay(OTA_WATCHDOG_DELAY, TimeUnit.MILLISECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new RxUtils.WeakAction1<Integer, DeviceModel>(this) {
                     @Override
                     public void call(DeviceModel deviceModel, Integer progress) {
