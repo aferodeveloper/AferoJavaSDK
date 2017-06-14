@@ -71,7 +71,7 @@ public class HubbyHelper {
         mHandler = new Handler();
     }
 
-    public void start(Context context, String accountId, String clientId) {
+    public void start(Context context, String clientId) {
 
         if (mIsNativeHubbyDisabled) {
             return;
@@ -83,7 +83,7 @@ public class HubbyHelper {
 
         mContext = context;
 
-        mHubbyAccountId = null;
+        mHubbyAccountId = mAferoClient.getActiveAccountId();
         mClientId = clientId;
 
         if (!sIsHubbyInitialized) {
