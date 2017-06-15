@@ -119,6 +119,7 @@ public class DeviceModel implements ControlModel {
 
     private int mRSSI;
     private boolean mIsLinked;
+    private boolean mDirect;
 
     private LocationState mLocationState = new LocationState(LocationState.State.Invalid);
 
@@ -362,6 +363,9 @@ public class DeviceModel implements ControlModel {
     public boolean isLinked() {
         return mIsLinked;
     }
+
+    @JsonProperty
+    public boolean isDirect() { return mDirect; }
 
     @JsonIgnore
     public LocationState getLocationState() {
@@ -755,6 +759,11 @@ public class DeviceModel implements ControlModel {
 
         if (deviceStatus.available != null) {
             mAvailableState = deviceStatus.available ? AvailableState.AVAILABLE : AvailableState.UNAVAILABLE;
+            hasChanged = true;
+        }
+
+        if (deviceStatus.direct != null) {
+            mDirect = deviceStatus.direct;
             hasChanged = true;
         }
 
