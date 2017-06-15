@@ -292,9 +292,9 @@ public class DeviceCollection {
         }
     }
 
-    public Observable<Void> deleteDevice(DeviceModel deviceModel) {
-        return mAferoClient.deviceDisassociate(deviceModel.getId())
-                .doOnCompleted(new DeviceDisassociateAction(this, deviceModel));
+    public Observable<DeviceModel> deleteDevice(DeviceModel deviceModel) {
+        return deviceModel.disassociate()
+            .doOnNext(new DeviceDisassociateAction(this));
     }
 
     public void reset() {
@@ -307,23 +307,23 @@ public class DeviceCollection {
         mModels.clear();
     }
 
-    public rx.Observable<DeviceModel> getDevices() {
+    public Observable<DeviceModel> getDevices() {
         return Observable.from(mModels);
     }
 
-    public rx.Observable<DeviceModel> observeCreates() {
+    public Observable<DeviceModel> observeCreates() {
         return mModelCreateSubject;
     }
 
-    public rx.Observable<DeviceModel> observeProfileChanges() {
+    public Observable<DeviceModel> observeProfileChanges() {
         return mModelProfileChangeSubject;
     }
 
-    public rx.Observable<Vector<DeviceModel>> observeSnapshots() {
+    public Observable<Vector<DeviceModel>> observeSnapshots() {
         return mModelSnapshotSubject;
     }
 
-    public rx.Observable<DeviceModel> observeDeletes() {
+    public Observable<DeviceModel> observeDeletes() {
         return mModelDeleteSubject.onBackpressureBuffer();
     }
 
@@ -445,18 +445,15 @@ public class DeviceCollection {
         mModelDeleteSubject.onNext(deviceModel);
     }
 
-    private static class DeviceDisassociateAction extends RxUtils.WeakAction0<DeviceCollection> {
+    private static class DeviceDisassociateAction extends RxUtils.WeakAction1<DeviceModel, DeviceCollection> {
 
-        private DeviceModel mDeviceModel;
-
-        DeviceDisassociateAction(DeviceCollection dc, DeviceModel model) {
+        DeviceDisassociateAction(DeviceCollection dc) {
             super(dc);
-            mDeviceModel = model;
         }
 
         @Override
-        public void call(DeviceCollection dc) {
-            dc.onDeleteDevice(mDeviceModel);
+        public void call(DeviceCollection deviceCollection, DeviceModel deviceModel) {
+            deviceCollection.onDeleteDevice(deviceModel);
         }
     }
 }

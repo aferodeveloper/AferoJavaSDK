@@ -4,13 +4,12 @@
 
 package io.afero.sdk.client.afero.models;
 
-import android.util.SparseArray;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.Vector;
 
@@ -69,7 +68,7 @@ public class DeviceRules {
     public static class DeviceAction {
 
         private String mDeviceId;
-        private SparseArray<ActionValue> mAttributes;
+        private HashMap<Integer,ActionValue> mAttributes;
         private int mDurationSeconds;
 
         public DeviceAction() {
@@ -82,10 +81,9 @@ public class DeviceRules {
 
             ActionValue[] oldValues = action.getAttributes();
             if (oldValues != null) {
-                SparseArray<ActionValue> newValues = new SparseArray<>(oldValues.length);
+                HashMap<Integer,ActionValue> newValues = new HashMap<>(oldValues.length);
 
-                for (int i = 0, n = oldValues.length; i < n; ++i) {
-                    ActionValue av = oldValues[i];
+                for (ActionValue av : oldValues) {
                     newValues.put(av.getId(), new ActionValue(av));
                 }
 
@@ -105,7 +103,7 @@ public class DeviceRules {
         @JsonProperty
         public void setAttributes(ActionValue[] as) {
             if (mAttributes == null) {
-                mAttributes = new SparseArray<>();
+                mAttributes = new HashMap<>();
             }
             for (ActionValue a : as) {
                 mAttributes.put(a.getId(), a);
@@ -118,8 +116,10 @@ public class DeviceRules {
 
             if (size > 0) {
                 ActionValue[] as = new ActionValue[size];
-                for (int i = 0; i < size; ++i) {
-                    as[i] = mAttributes.valueAt(i);
+                int i = 0;
+                for (ActionValue av : mAttributes.values()) {
+                    as[i] = av;
+                    ++i;
                 }
                 return as;
             }
@@ -133,23 +133,18 @@ public class DeviceRules {
         }
 
         @JsonIgnore
-        public ActionValue getAttribute(int index) {
-            return mAttributes != null ? mAttributes.valueAt(index) : null;
-        }
-
-        @JsonIgnore
         public boolean hasAttribute(int id) {
             return getAttributeById(id) != null;
         }
 
-        private void useAttributes(SparseArray<ActionValue> as) {
+        private void useAttributes(HashMap<Integer,ActionValue> as) {
             mAttributes = as;
         }
 
         @JsonIgnore
         public void addAttribute(int id, String value) {
             if (mAttributes == null) {
-                mAttributes = new SparseArray<>();
+                mAttributes = new HashMap<>();
             }
             mAttributes.put(id, new ActionValue(id, value));
         }
@@ -157,14 +152,14 @@ public class DeviceRules {
         @JsonIgnore
         public void addAttribute(ActionValue av) {
             if (mAttributes == null) {
-                mAttributes = new SparseArray<>();
+                mAttributes = new HashMap<>();
             }
             mAttributes.put(av.getId(), av);
         }
 
         @JsonIgnore
         public ActionValue getFirstAttribute() {
-            return mAttributes != null && mAttributes.size() > 0 ? mAttributes.valueAt(0) : null;
+            return mAttributes != null && mAttributes.size() > 0 ? mAttributes.values().iterator().next() : null;
         }
 
         @JsonIgnore
@@ -181,12 +176,8 @@ public class DeviceRules {
 
         @JsonIgnore
         public void copyAttributesFrom(DeviceAction otherAction) {
-            int attributeCount = otherAction.getAttributeCount();
-
             clearAttributes();
-            for (int i = 0; i < attributeCount; ++i) {
-                addAttribute(new ActionValue(otherAction.getAttribute(i)));
-            }
+            mAttributes.putAll(otherAction.mAttributes);
         }
 
         @JsonProperty

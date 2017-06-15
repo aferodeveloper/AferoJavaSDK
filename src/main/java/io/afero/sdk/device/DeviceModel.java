@@ -135,6 +135,15 @@ public class DeviceModel implements ControlModel {
         mUpdateObservable = mUpdateSubject.onBackpressureBuffer();
     }
 
+    Observable<DeviceModel> disassociate() {
+        return mAferoClient.deviceDisassociate(getId()).map(new Func1<Void, DeviceModel>() {
+            @Override
+            public DeviceModel call(Void v) {
+                return DeviceModel.this;
+            }
+        });
+    }
+
     @JsonIgnore
     @Override
     public rx.Observable<ControlModel> getUpdateObservable() {
