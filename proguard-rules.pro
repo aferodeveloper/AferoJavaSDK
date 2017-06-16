@@ -25,6 +25,7 @@
 #-renamesourcefileattribute SourceFile
 
 -keep class io.afero.sdk.client.** { *; }
+-keep class io.afero.sdk.client.afero.models.** { *; }
 -keep class io.afero.sdk.conclave.** { *; }
 -keep class io.afero.sdk.device.** { *; }
 
