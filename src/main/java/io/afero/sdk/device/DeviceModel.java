@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
-import io.afero.sdk.client.afero.api.AferoClientAPI;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.AferoError;
 import io.afero.sdk.client.afero.models.AttributeValue;
@@ -86,7 +85,9 @@ public class DeviceModel implements ControlModel {
     }
 
 
-    private static final RxUtils.RetryOnError mWriteAttributeRetry = new RxUtils.RetryOnError(WRITE_ATTRIBUTE_RETRY_COUNT, AferoClientAPI.HTTP_LOCKED);
+    static final int HTTP_LOCKED = 423; // https://tools.ietf.org/html/rfc4918#section-11.3
+
+    private static final RxUtils.RetryOnError mWriteAttributeRetry = new RxUtils.RetryOnError(WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED);
 
     private Subscription mPendingWriteSubscription;
     private Subscription mOTAWatchdogSubscription;
@@ -706,7 +707,7 @@ public class DeviceModel implements ControlModel {
 
     private void onError(Throwable e) {
         ApiClientError error = new ApiClientError();
-        error.code = AferoClient.getStatusCode(e);
+        error.code = mAferoClient.getStatusCode(e);
 
         final ConclaveMessage.Metric.FailureReason fr = e instanceof SocketTimeoutException
                 ? ConclaveMessage.Metric.FailureReason.SERVICE_API_TIMEOUT
