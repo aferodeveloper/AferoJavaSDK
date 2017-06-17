@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import java.util.Vector;
 
 import io.afero.sdk.client.afero.AferoClient;
+import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceStatus;
 import io.afero.sdk.conclave.ConclaveMessage;
 import io.afero.sdk.conclave.ConclaveMessageSource;
@@ -280,20 +281,23 @@ public class DeviceCollection {
         mMetricSubscription = RxUtils.safeUnSubscribe(mMetricSubscription);
     }
 
-    public DeviceModel addOrUpdate(String deviceId, DeviceStatus ds, DeviceProfile deviceProfile) {
-        synchronized (mModels) {
-            DeviceModel deviceModel = getModel(deviceId);
-            if (deviceModel != null) {
-                deviceModel.update(ds);
-            } else {
-                deviceModel = add(deviceId, ds, deviceProfile);
-            }
-            return deviceModel;
-        }
+    public Observable<DeviceModel> addDevice(String associationId, boolean isOwnershipVerified) {
+        return mAferoClient.deviceAssociate(associationId, isOwnershipVerified, mDeviceProfileCollection.getLocale(), mDeviceProfileCollection.getImageSize())
+            .onErrorResumeNext(new Func1<Throwable, Observable<? extends DeviceAssociateResponse>>() {
+                @Override
+                public Observable<? extends DeviceAssociateResponse> call(Throwable t) {
+                    if (mAferoClient.isTransferVerificationError(t)) {
+                        return Observable.error(new AferoClient.TransferVerificationRequired());
+                    }
+
+                    return Observable.error(t);
+                }
+            })
+            .map(new MapDeviceAssociateResponseToDeviceModel());
     }
 
-    public Observable<DeviceModel> deleteDevice(DeviceModel deviceModel) {
-        return deviceModel.disassociate()
+    public Observable<DeviceModel> removeDevice(DeviceModel deviceModel) {
+        return mAferoClient.deviceDisassociate(deviceModel)
             .doOnNext(new DeviceDisassociateAction(this));
     }
 
@@ -365,6 +369,18 @@ public class DeviceCollection {
         return mModelMap.get(id);
     }
 
+    private DeviceModel addOrUpdate(String deviceId, DeviceStatus ds, DeviceProfile deviceProfile) {
+        synchronized (mModels) {
+            DeviceModel deviceModel = getModel(deviceId);
+            if (deviceModel != null) {
+                deviceModel.update(ds);
+            } else {
+                deviceModel = add(deviceId, ds, deviceProfile);
+            }
+            return deviceModel;
+        }
+    }
+
     private DeviceModel addOrUpdate(DeviceSync ds) {
         synchronized (mModels) {
             DeviceModel deviceModel = getModel(ds.id);
@@ -402,7 +418,7 @@ public class DeviceCollection {
         DeviceProfile profile = mDeviceProfileCollection.getProfileFromID(ds.profileId);
 
         if (profile != null) {
-            DeviceModel deviceModel = new DeviceModel(ds.id, profile, mAferoClient);
+            DeviceModel deviceModel = new DeviceModel(ds.id, profile, false, mAferoClient);
             deviceModel.update(ds);
 
             return add(deviceModel);
@@ -414,7 +430,7 @@ public class DeviceCollection {
     private DeviceModel add(String deviceId, DeviceStatus ds, DeviceProfile profile) {
 
         if (profile != null) {
-            DeviceModel deviceModel = new DeviceModel(deviceId, profile, mAferoClient);
+            DeviceModel deviceModel = new DeviceModel(deviceId, profile, false, mAferoClient);
             deviceModel.update(ds);
 
             return add(deviceModel);
@@ -454,6 +470,13 @@ public class DeviceCollection {
         @Override
         public void call(DeviceCollection deviceCollection, DeviceModel deviceModel) {
             deviceCollection.onDeleteDevice(deviceModel);
+        }
+    }
+
+    private class MapDeviceAssociateResponseToDeviceModel implements Func1<DeviceAssociateResponse, DeviceModel> {
+        @Override
+        public DeviceModel call(DeviceAssociateResponse response) {
+            return addOrUpdate(response.deviceId, response.deviceState, response.profile);
         }
     }
 }

@@ -5,7 +5,6 @@
 package io.afero.sdk.conclave;
 
 import io.afero.sdk.client.afero.AferoClient;
-import io.afero.sdk.client.afero.api.AferoClientAPI;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;

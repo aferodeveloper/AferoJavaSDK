@@ -7,7 +7,6 @@ package io.afero.sdk.device;
 import java.util.HashMap;
 
 import io.afero.sdk.client.afero.AferoClient;
-import io.afero.sdk.client.afero.api.AferoClientAPI;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.subjects.PublishSubject;
@@ -17,12 +16,12 @@ public class DeviceProfileCollection {
     private final AferoClient mAferoClient;
     private HashMap<String, DeviceProfile> mProfiles = new HashMap<>();
     private PublishSubject<DeviceProfile> mProfileSubject = PublishSubject.create();
-    private String mImageSizeSpecifier;
+    private AferoClient.ImageSize mImageSize;
     private String mLocale;
 
-    public DeviceProfileCollection(AferoClient aferoClient, AferoClientAPI.ImageSize imageSize, String locale) {
+    public DeviceProfileCollection(AferoClient aferoClient, AferoClient.ImageSize imageSize, String locale) {
         mAferoClient = aferoClient;
-        mImageSizeSpecifier = imageSize.toImageSizeSpecifier();
+        mImageSize = imageSize;
         mLocale = locale;
     }
 
@@ -37,7 +36,7 @@ public class DeviceProfileCollection {
     }
 
     Observable<DeviceProfile[]> fetchAccountProfiles() {
-        return mAferoClient.getAccountDeviceProfiles(mLocale, mImageSizeSpecifier)
+        return mAferoClient.getAccountDeviceProfiles(mLocale, mImageSize)
             .doOnNext(new Action1<DeviceProfile[]>() {
                 @Override
                 public void call(DeviceProfile[] deviceProfiles) {
@@ -49,7 +48,7 @@ public class DeviceProfileCollection {
     }
 
     Observable<DeviceProfile> fetchDeviceProfile(String profileId) {
-        return mAferoClient.getDeviceProfile(profileId, mLocale, mImageSizeSpecifier)
+        return mAferoClient.getDeviceProfile(profileId, mLocale, mImageSize)
             .doOnNext(new Action1<DeviceProfile>() {
                 @Override
                 public void call(DeviceProfile dp) {
@@ -60,5 +59,13 @@ public class DeviceProfileCollection {
 
     Observable<DeviceProfile> getObservable() {
         return mProfileSubject;
+    }
+
+    String getLocale() {
+        return mLocale;
+    }
+
+    AferoClient.ImageSize getImageSize() {
+        return mImageSize;
     }
 }

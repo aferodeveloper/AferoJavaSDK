@@ -6,68 +6,95 @@ package io.afero.sdk.device;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
-import java.util.concurrent.TimeUnit;
-
-import io.afero.sdk.BuildConfig;
 import io.afero.sdk.MockConclaveMessageSource;
 import io.afero.sdk.ResourceLoader;
 import io.afero.sdk.client.afero.AferoClient;
-import io.afero.sdk.client.afero.api.AferoClientAPI;
-import io.afero.sdk.client.afero.api.MockAferoClientAPI;
+import io.afero.sdk.client.afero.models.ActionResponse;
+import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceRequest;
+import io.afero.sdk.client.afero.models.Location;
+import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.conclave.ConclaveMessageSource;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.log.JavaLog;
-import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.jackson.JacksonConverterFactory;
-import retrofit2.mock.BehaviorDelegate;
-import retrofit2.mock.MockRetrofit;
-import retrofit2.mock.NetworkBehavior;
+import rx.Observable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk=21)
 public class DeviceCollectionTest {
 
     private final ResourceLoader mLoader = new ResourceLoader();
 
-    static class MockAferoClient extends AferoClient {
+    private static class MockAferoClient implements AferoClient {
 
         private final ResourceLoader mLoader = new ResourceLoader();
 
-        MockAferoClient(String baseUrl, HttpLoggingInterceptor.Level logLevel, int defaultTimeout) {
-            super(baseUrl, logLevel, defaultTimeout);
+        MockAferoClient() {
         }
 
         @Override
-        protected AferoClientAPI createAdapter(String baseUrl, HttpLoggingInterceptor.Level logLevel, int defaultTimeout) {
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl(baseUrl)
-                    .addCallAdapterFactory(RxJavaCallAdapterFactory.create()) // synchronous
-                    .addConverterFactory(JacksonConverterFactory.create(mLoader.objectMapper))
-                    .build();
+        public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode) {
+            return null;
+        }
 
-            // Create a MockRetrofit object with a NetworkBehavior which manages the fake behavior of calls.
-            NetworkBehavior behavior = NetworkBehavior.create();
-            behavior.setDelay(0, TimeUnit.MILLISECONDS);
-            behavior.setErrorPercent(0);
-            behavior.setFailurePercent(0);
-            behavior.setVariancePercent(0);
+        @Override
+        public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
+            return null;
+        }
 
-            MockRetrofit mockRetrofit = new MockRetrofit.Builder(retrofit)
-                    .networkBehavior(behavior)
-                    .build();
+        @Override
+        public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize) {
+            return null;
+        }
 
-            BehaviorDelegate<AferoClientAPI> delegate = mockRetrofit.create(AferoClientAPI.class);
-            return new MockAferoClientAPI(delegate);
+        @Override
+        public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize) {
+            return null;
+        }
+
+        @Override
+        public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
+            return null;
+        }
+
+        @Override
+        public Observable<Location> putDeviceLocation(DeviceModel deviceModel, Location location) {
+            return null;
+        }
+
+        @Override
+        public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
+            return null;
+        }
+
+        @Override
+        public Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+            return null;
+        }
+
+        @Override
+        public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
+            return null;
+        }
+
+        @Override
+        public String getActiveAccountId() {
+            return null;
+        }
+
+        @Override
+        public int getStatusCode(Throwable t) {
+            return 0;
+        }
+
+        @Override
+        public boolean isTransferVerificationError(Throwable t) {
+            return false;
         }
     }
 
@@ -78,8 +105,8 @@ public class DeviceCollectionTest {
 
     private DeviceCollection makeDeviceCollection(ConclaveMessageSource source) {
 
-        MockAferoClient aferoClient = new MockAferoClient("http://mock.afero.io", HttpLoggingInterceptor.Level.BASIC, 20);
-        DeviceProfileCollection profileCollection = new DeviceProfileCollection(aferoClient, AferoClientAPI.ImageSize.SIZE_3X, "mock-locale");
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceProfileCollection profileCollection = new DeviceProfileCollection(aferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
 
         return new DeviceCollection(source, profileCollection, aferoClient);
     }

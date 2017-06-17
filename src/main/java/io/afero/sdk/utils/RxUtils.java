@@ -5,16 +5,13 @@
 package io.afero.sdk.utils;
 
 import java.lang.ref.WeakReference;
-import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.log.AfLog;
-import retrofit2.HttpException;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
-import rx.functions.Func2;
 
 public class RxUtils {
 
@@ -37,6 +34,20 @@ public class RxUtils {
 
         @Override
         public void onNext(T response) {
+        }
+    }
+
+    public static class Mapper<T,U> implements Func1<T, U> {
+
+        private final U mObject;
+
+        public Mapper(U o) {
+            mObject = o;
+        }
+
+        @Override
+        public U call(T o) {
+            return mObject;
         }
     }
 
@@ -136,54 +147,4 @@ public class RxUtils {
         }
     }
 
-    private static class Retry {
-        int retryCount;
-        Throwable throwable;
-
-        Retry(int r, Throwable t) {
-            retryCount = r;
-            throwable = t;
-        }
-    }
-
-    public static class RetryOnError implements Func1<Observable<? extends Throwable>, Observable<?>> {
-
-        private int mMaxRetryCount;
-        private int mRetryOnStatus;
-
-        public RetryOnError(int maxRetryCount, int retryOnStatus) {
-            mMaxRetryCount = maxRetryCount;
-            mRetryOnStatus = retryOnStatus;
-        }
-
-        public RetryOnError(int maxRetryCount) {
-            this(maxRetryCount, 0);
-        }
-
-        @Override
-        public Observable<?> call(Observable<? extends Throwable> observable) {
-            return observable.zipWith(Observable.range(1, mMaxRetryCount), new Func2<Throwable, Integer, Retry>() {
-                @Override
-                public Retry call(Throwable throwable, Integer retry) {
-                    return new Retry(retry, throwable);
-                }
-            })
-            .flatMap(new Func1<Retry, Observable<?>>() {
-                @Override
-                public Observable<?> call(Retry retry) {
-                    if (retry.throwable instanceof HttpException) {
-                        int status = ((HttpException) retry.throwable).code();
-
-                        AfLog.e("RetryOnError: retry=" + retry.retryCount + " '" + retry.throwable.getMessage() + "' status=" + status);
-
-                        if (mRetryOnStatus == 0 || mRetryOnStatus == status) {
-                            return Observable.timer(retry.retryCount, TimeUnit.SECONDS);
-                        }
-                    }
-
-                    return Observable.error(retry.throwable);
-                }
-            });
-        }
-    }
 }

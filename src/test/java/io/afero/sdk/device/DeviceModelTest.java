@@ -30,7 +30,7 @@ public class DeviceModelTest extends AferoTest {
     private static final String DEVICE_ID = "bogus-device-id";
 
     public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) throws IOException {
-        return new DeviceModel(DEVICE_ID, deviceProfile, aferoClient);
+        return new DeviceModel(DEVICE_ID, deviceProfile, response.developerDevice, aferoClient);
     }
 
     @Before
@@ -40,7 +40,7 @@ public class DeviceModelTest extends AferoTest {
     @Test
     public void testDefaults() throws IOException {
         DeviceProfile dp = loadDeviceProfile("deviceModelTestProfile.json");
-        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, null);
+        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, response.developerDevice, null);
 
         assertEquals(DeviceModel.State.NORMAL, dm.getState());
         assertFalse(dm.isOTAInProgress());
@@ -52,7 +52,7 @@ public class DeviceModelTest extends AferoTest {
     public void testUpdateFromJson() throws IOException {
         DeviceSync ds = loadDeviceSync("deviceSync.json");
         DeviceProfile dp = loadDeviceProfile("deviceModelTestProfile.json");
-        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, null);
+        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, response.developerDevice, null);
 
         dm.update(ds);
 

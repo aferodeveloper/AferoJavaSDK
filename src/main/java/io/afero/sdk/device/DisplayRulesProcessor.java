@@ -319,7 +319,7 @@ public class DisplayRulesProcessor {
             }
 
             if (mMatcher.match(mValue.get(model))) {
-                for (ApplyParams.Entry<String,Object> applyEntry: mApply.entrySet()) {
+                for (Map.Entry<String,Object> applyEntry: mApply.entrySet()) {
                     Object applyValue = applyEntry.getValue();
                     if (applyValue instanceof Map) {
                         Object resultValue = result.get(applyEntry.getKey());

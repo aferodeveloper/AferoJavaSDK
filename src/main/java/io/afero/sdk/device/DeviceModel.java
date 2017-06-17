@@ -84,29 +84,22 @@ public class DeviceModel implements ControlModel {
         public String current;
     }
 
-
-    static final int HTTP_LOCKED = 423; // https://tools.ietf.org/html/rfc4918#section-11.3
-
-    private static final RxUtils.RetryOnError mWriteAttributeRetry = new RxUtils.RetryOnError(WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED);
+    private static final int HTTP_LOCKED = 423; // https://tools.ietf.org/html/rfc4918#section-11.3
 
     private Subscription mPendingWriteSubscription;
     private Subscription mOTAWatchdogSubscription;
-
-    private AvailableState mAvailableState = AvailableState.NONE;
-    private boolean mIsVirtual;
 
     private final String mId;
     private final AferoClient mAferoClient;
     private final HashMap<Integer,AttributeData> mAttributes = new HashMap<>();
 
-    private String mProfileId;
-
     private String mName;
 
+    private String mProfileId;
     private DeviceProfile mProfile;
     private int mPendingUpdateCount;
 
-    private int mViewingCount;
+    private AvailableState mAvailableState = AvailableState.NONE;
 
     private final PublishSubject<DeviceSync> mDeviceSyncUpdateSubject = PublishSubject.create();
     private final PublishSubject<AferoError> mErrorSubject = PublishSubject.create();
@@ -121,6 +114,8 @@ public class DeviceModel implements ControlModel {
     private int mRSSI;
     private boolean mIsLinked;
     private boolean mDirect;
+    private boolean mIsVirtual;
+    private final boolean mIsDeveloperDevice;
 
     private LocationState mLocationState = new LocationState(LocationState.State.Invalid);
 
@@ -130,20 +125,12 @@ public class DeviceModel implements ControlModel {
     private OnErrorDeviceRequest mOnErrorDeviceRequestResponse;
 
 
-    protected DeviceModel(String deviceId, DeviceProfile profile, AferoClient aferoClient) {
+    DeviceModel(String deviceId, DeviceProfile profile, boolean isDeveloperDevice, AferoClient aferoClient) {
         mId = deviceId;
         mAferoClient = aferoClient;
+        mIsDeveloperDevice = isDeveloperDevice;
         setProfile(profile);
         mUpdateObservable = mUpdateSubject.onBackpressureBuffer();
-    }
-
-    Observable<DeviceModel> disassociate() {
-        return mAferoClient.deviceDisassociate(getId()).map(new Func1<Void, DeviceModel>() {
-            @Override
-            public DeviceModel call(Void v) {
-                return DeviceModel.this;
-            }
-        });
     }
 
     @JsonIgnore
@@ -356,6 +343,11 @@ public class DeviceModel implements ControlModel {
     }
 
     @JsonProperty
+    public boolean isDeveloperDevice() {
+        return mIsDeveloperDevice;
+    }
+
+    @JsonProperty
     public int getRSSI() {
         return mRSSI;
     }
@@ -441,8 +433,7 @@ public class DeviceModel implements ControlModel {
 
         final int attrId = attribute.getId();
         PostActionBody body = new PostActionBody(attrId, value.toString());
-        mAferoClient.postAction(getId(), body)
-                .retryWhen(mWriteAttributeRetry)
+        mAferoClient.postAttributeWrite(this, body, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
                 .subscribe(new ActionObserver(this, Clock.getElapsedMillis()));
 
         AttributeData data = mAttributes.get(attrId);
@@ -482,8 +473,7 @@ public class DeviceModel implements ControlModel {
             mOnErrorDeviceRequestResponse = new OnErrorDeviceRequest(this);
         }
 
-        return mAferoClient.postDeviceRequest(getId(), requests)
-            .retryWhen(mWriteAttributeRetry)
+        return mAferoClient.postBatchAttributeWrite(this, requests, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
             .flatMap(new Func1<RequestResponse[], Observable<RequestResponse>>() {
                 @Override
                 public Observable<RequestResponse> call(RequestResponse[] requestResponses) {
@@ -685,7 +675,7 @@ public class DeviceModel implements ControlModel {
 
     void updateLocation() {
         setLocation(new LocationState(LocationState.State.Invalid));
-        mAferoClient.getDeviceLocation(getId())
+        mAferoClient.getDeviceLocation(this)
             .subscribe(new Observer<Location>() {
                 @Override
                 public void onCompleted() {
