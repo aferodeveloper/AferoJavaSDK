@@ -10,7 +10,6 @@ import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.SetupStateBody;
 import io.afero.sdk.device.ControlModel;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
@@ -201,7 +200,7 @@ public class DeviceWifiSetup {
         return new Observable.OnSubscribe<SetupWifiState>() {
             @Override
             public void call(final Subscriber<? super SetupWifiState> subscriber) {
-                SendWifiCredentialCallback cb = new SendWifiCredentialCallback(subscriber, mAferoClient);
+                SendWifiCredentialCallback cb = new SendWifiCredentialCallback(subscriber, mDeviceModel, mAferoClient);
                 subscriber.add(getSendWifiCredentialSubscription(cb));
                 Hubby.sendWifiCredentialToHub(mDeviceModel.getId(), ssid, password, cb);
             }
@@ -243,7 +242,7 @@ public class DeviceWifiSetup {
         return new Observable.OnSubscribe<WifiSSIDEntry>() {
             @Override
             public void call(final Subscriber<? super WifiSSIDEntry> subscriber) {
-                GetWifiListCallback cb = new GetWifiListCallback(subscriber, mAferoClient);
+                GetWifiListCallback cb = new GetWifiListCallback(subscriber, mDeviceModel, mAferoClient);
                 subscriber.add(getWifiSSIDListSubscription(cb));
                 Hubby.getWifiSSIDListFromHub(mDeviceModel.getId(), cb);
             }
@@ -281,8 +280,8 @@ public class DeviceWifiSetup {
 
         private Subscriber<? super WifiSSIDEntry> mSubscriber;
 
-        public GetWifiListCallback(Subscriber<? super WifiSSIDEntry> subscriber, AferoClient aferoClient) {
-            super(subscriber, aferoClient);
+        public GetWifiListCallback(Subscriber<? super WifiSSIDEntry> subscriber, DeviceModel deviceModel, AferoClient aferoClient) {
+            super(subscriber, deviceModel, aferoClient);
             mSubscriber = subscriber;
         }
 
@@ -299,8 +298,8 @@ public class DeviceWifiSetup {
 
         private Subscriber<? super SetupWifiState> mSubscriber;
 
-        public SendWifiCredentialCallback(Subscriber<? super SetupWifiState> subscriber, AferoClient aferoClient) {
-            super(subscriber, aferoClient);
+        public SendWifiCredentialCallback(Subscriber<? super SetupWifiState> subscriber, DeviceModel deviceModel, AferoClient aferoClient) {
+            super(subscriber, deviceModel, aferoClient);
             mSubscriber = subscriber;
         }
 
@@ -324,11 +323,13 @@ public class DeviceWifiSetup {
     protected static class SetupWifiSubscriberCallback implements SetupWifiCallback {
 
         private final AferoClient mAferoClient;
+        private final DeviceModel mDeviceModel;
         private Subscriber<?> mSubscriber;
         private SetupWifiState mCurrentState;
 
-        public SetupWifiSubscriberCallback(Subscriber<?> subscriber, AferoClient aferoClient) {
+        public SetupWifiSubscriberCallback(Subscriber<?> subscriber, DeviceModel deviceModel, AferoClient aferoClient) {
             mSubscriber = subscriber;
+            mDeviceModel = deviceModel;
             mAferoClient = aferoClient;
         }
 
@@ -405,7 +406,7 @@ public class DeviceWifiSetup {
             body.attrId = attributeId;
             body.data = hexData;
 
-            mAferoClient.postAction(deviceId, body)
+            mAferoClient.postAttributeWrite(mDeviceModel, body, 0, 0)
                 .subscribe(new Observer<ActionResponse>() {
                     @Override
                     public void onCompleted() {}
@@ -437,11 +438,6 @@ public class DeviceWifiSetup {
             }
         }
         return null;
-    }
-
-    public void updateDeviceSetupState() {
-        mAferoClient.putSetupState(mDeviceModel.getId(), new SetupStateBody())
-            .subscribe(new RxUtils.IgnoreResponseObserver<Void>());
     }
 
     public DeviceModel getDeviceModel() {

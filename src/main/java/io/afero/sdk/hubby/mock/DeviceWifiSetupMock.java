@@ -37,7 +37,7 @@ public class DeviceWifiSetupMock extends DeviceWifiSetup {
         return new Observable.OnSubscribe<SetupWifiCallback.SetupWifiState>() {
             @Override
             public void call(final Subscriber<? super SetupWifiCallback.SetupWifiState> subscriber) {
-                mCallback = new SendWifiCredentialCallback(subscriber, mAferoClient);
+                mCallback = new SendWifiCredentialCallback(subscriber, mDeviceModel, mAferoClient);
 
                 new Thread(new Runnable() {
                     @Override
@@ -76,7 +76,7 @@ public class DeviceWifiSetupMock extends DeviceWifiSetup {
         return new Observable.OnSubscribe<WifiSSIDEntry>() {
             @Override
             public void call(final Subscriber<? super WifiSSIDEntry> subscriber) {
-                mCallback = new GetWifiListCallback(subscriber, mAferoClient);
+                mCallback = new GetWifiListCallback(subscriber, mDeviceModel, mAferoClient);
 
                 new Thread(new Runnable() {
                     @Override

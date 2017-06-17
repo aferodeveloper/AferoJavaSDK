@@ -269,7 +269,7 @@ public class HubbyHelper {
         WeakReference<HubbyHelper> mRef;
 
         public NewConclaveTokenCallback(HubbyHelper hm) {
-            mRef = new WeakReference<HubbyHelper>(hm);
+            mRef = new WeakReference<>(hm);
         }
 
         @Override
@@ -399,21 +399,22 @@ public class HubbyHelper {
                         aferoLocation.longitude = String.valueOf(location.getLongitude());
                         aferoLocation.locationSourceType = "HUB_LOCATION_GPS";
 
-                        // send it to the service
-                        mAferoClient.putDeviceLocation(deviceId, aferoLocation).subscribe(new Observer<Void>() {
-                            @Override
-                            public void onCompleted() {
-                                AfLog.i("HubbyManager: Successfully stored new location for softhub " + deviceId);
-                            }
-                            @Override
-                            public void onError(Throwable e) {
-                                AfLog.i("HubbyManager: Problem storing location for softhub " + deviceId);
-                                e.printStackTrace();
-                            }
-
-                            @Override
-                            public void onNext(Void v) {}
-                        });
+// FIXME: Remove this?
+//                        // send it to the service
+//                        mAferoClient.putDeviceLocation(deviceId, aferoLocation).subscribe(new Observer<Location>() {
+//                            @Override
+//                            public void onCompleted() {
+//                                AfLog.i("HubbyManager: Successfully stored new location for softhub " + deviceId);
+//                            }
+//                            @Override
+//                            public void onError(Throwable e) {
+//                                AfLog.i("HubbyManager: Problem storing location for softhub " + deviceId);
+//                                e.printStackTrace();
+//                            }
+//
+//                            @Override
+//                            public void onNext(Location loc) {}
+//                        });
 
                     } else {
                         AfLog.i("HubbyManager: Could not resolve softhub deviceId after location resolution");

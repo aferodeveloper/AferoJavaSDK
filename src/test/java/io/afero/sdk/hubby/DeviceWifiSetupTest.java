@@ -91,7 +91,7 @@ public class DeviceWifiSetupTest {
     private static class DeviceModelMock extends DeviceModel {
 
         protected DeviceModelMock(String deviceId, DeviceProfile profile, AferoClient aferoClient) {
-            super(deviceId, profile, aferoClient);
+            super(deviceId, profile, response.developerDevice, aferoClient);
         }
     }
 
