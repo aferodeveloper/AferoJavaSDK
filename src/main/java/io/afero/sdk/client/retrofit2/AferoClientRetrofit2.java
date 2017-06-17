@@ -5,11 +5,15 @@
 package io.afero.sdk.client.retrofit2;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.client.afero.models.DeviceAssociateBody;
+import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.Location;
@@ -19,6 +23,7 @@ import io.afero.sdk.client.retrofit2.api.AferoClientAPI;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
+import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
@@ -29,7 +34,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Route;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Call;
 import retrofit2.HttpException;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -37,6 +41,8 @@ import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 import rx.Observable;
 import rx.functions.Action0;
+import rx.functions.Func1;
+import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
@@ -82,10 +88,6 @@ public class AferoClientRetrofit2 implements AferoClient {
         mActiveAccountSubject.onNext(mActiveAccountId);
     }
 
-    public String getActiveAccountId() {
-        return mActiveAccountId;
-    }
-
     public boolean isOwnerAccountActive() {
         return mOwnerAccountId.equals(mActiveAccountId);
     }
@@ -118,21 +120,87 @@ public class AferoClientRetrofit2 implements AferoClient {
         return mAferoService.usersMe();
     }
 
-    public Observable<Void> deviceDisassociate(String deviceId) {
-        return mAferoService.deviceDisassociate(mActiveAccountId, deviceId);
-    }
-
-    public Observable<RequestResponse[]> postDeviceRequest(String deviceId, DeviceRequest[] body) {
-        return mAferoService.postDeviceRequest(mActiveAccountId, deviceId, body);
+    @Override
+    public String getActiveAccountId() {
+        return mActiveAccountId;
     }
 
     @Override
-    public Observable<Location> getDeviceLocation(String deviceId) {
-        return mAferoService.getDeviceLocation(mActiveAccountId, deviceId);
+    public Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+        DeviceAssociateBody body = new DeviceAssociateBody(associationId);
+        return isOwnershipVerified ? mAferoService.deviceAssociateVerified(mActiveAccountId, body, locale, imageSize.toImageSizeSpecifier())
+                : mAferoService.deviceAssociate(mActiveAccountId, body, locale, imageSize.toImageSizeSpecifier());
     }
 
-    public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileDeviceId) {
-        return mAferoService.postConclaveAccess(mActiveAccountId, mobileDeviceId, new ConclaveAccessBody());
+    @Override
+    public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
+        return mAferoService.deviceDisassociate(mActiveAccountId, deviceModel.getId())
+            .map(new RxUtils.Mapper<Void, DeviceModel>(deviceModel));
+    }
+
+    @Override
+    public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int retryCount, int statusCode) {
+        Observable<ActionResponse> observable = mAferoService.postAction(mActiveAccountId, deviceModel.getId(), body);
+        return retryCount > 0 ? observable.retryWhen(new RetryOnError(retryCount, statusCode)) : observable;
+    }
+
+    @Override
+    public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int retryCount, int statusCode) {
+        Observable<RequestResponse[]> observable = mAferoService.postDeviceRequest(mActiveAccountId, deviceModel.getId(), body);
+        return retryCount > 0 ? observable.retryWhen(new RetryOnError(retryCount, statusCode)) : observable;
+    }
+
+    @Override
+    public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize) {
+        return mAferoService.deviceProfiles(mActiveAccountId, locale, imageSize.toImageSizeSpecifier());
+    }
+
+    @Override
+    public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize) {
+        return mAferoService.deviceProfiles(mActiveAccountId, profileId, locale, imageSize.toImageSizeSpecifier());
+    }
+
+    @Override
+    public Observable<Location> putDeviceLocation(String deviceId, Location location) {
+        return mAferoService.putDeviceLocation(mActiveAccountId, deviceId, location)
+            .map(new RxUtils.Mapper<Void, Location>(location));
+    }
+
+    @Override
+    public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
+        return mAferoService.getDeviceLocation(mActiveAccountId, deviceModel.getId());
+    }
+
+    @Override
+    public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
+        return mAferoService.postConclaveAccess(mActiveAccountId, mobileClientId, new ConclaveAccessBody());
+    }
+
+    @Override
+    public int getStatusCode(Throwable t) {
+        return getStatusCodeInternal(t);
+    }
+
+    public static int getStatusCodeInternal(Throwable t) {
+
+        if (t instanceof HttpException) {
+            return ((HttpException)t).code();
+        }
+
+        return 0;
+    }
+
+    @Override
+    public boolean isTransferVerificationError(Throwable t) {
+        try {
+            if (t instanceof HttpException) {
+                HttpException e = (HttpException)t;
+                return (e.code() == HttpURLConnection.HTTP_FORBIDDEN &&
+                        "true".equalsIgnoreCase(e.response().headers().get("transfer-verification-enabled")));
+            }
+        } catch (Throwable ignore) {} // belt & suspenders
+
+        return false;
     }
 
     public Observable<Response<Void>> postDeviceInfo(String userId, DeviceInfoBody body) {
@@ -141,18 +209,6 @@ public class AferoClientRetrofit2 implements AferoClient {
 
     public Observable<Void> deleteDeviceInfo(String userId, String mobileDeviceId) {
         return mAferoService.deleteDeviceInfo(userId, mobileDeviceId);
-    }
-
-    public Observable<ActionResponse> postAction(String deviceId, PostActionBody body) {
-        return mAferoService.postAction(mActiveAccountId, deviceId, body);
-    }
-
-    public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, String imageSize) {
-        return mAferoService.deviceProfiles(mActiveAccountId, locale, imageSize);
-    }
-
-    public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, String imageSize) {
-        return mAferoService.deviceProfiles(mActiveAccountId, profileId, locale, imageSize);
     }
 
     public void signOut(String userId, String mobileClientId) {
@@ -193,15 +249,6 @@ public class AferoClientRetrofit2 implements AferoClient {
             mTokenSubject = BehaviorSubject.create();
         }
         return mTokenSubject;
-    }
-
-    public static int getStatusCode(Throwable t) {
-
-        if (t instanceof HttpException) {
-            return ((HttpException)t).code();
-        }
-
-        return 0;
     }
 
     public static ErrorBody getErrorBody(Throwable e) {
@@ -316,4 +363,54 @@ public class AferoClientRetrofit2 implements AferoClient {
         }
     }
 
+    public static class RetryOnError implements Func1<Observable<? extends Throwable>, Observable<?>> {
+
+        private int mMaxRetryCount;
+        private int mRetryOnStatus;
+
+        public RetryOnError(int maxRetryCount, int retryOnStatus) {
+            mMaxRetryCount = maxRetryCount;
+            mRetryOnStatus = retryOnStatus;
+        }
+
+        public RetryOnError(int maxRetryCount) {
+            this(maxRetryCount, 0);
+        }
+
+        @Override
+        public Observable<?> call(Observable<? extends Throwable> observable) {
+            return observable.zipWith(Observable.range(1, mMaxRetryCount), new Func2<Throwable, Integer, Retry>() {
+                @Override
+                public Retry call(Throwable throwable, Integer retry) {
+                    return new Retry(retry, throwable);
+                }
+            })
+            .flatMap(new Func1<Retry, Observable<?>>() {
+                @Override
+                public Observable<?> call(Retry retry) {
+                    if (retry.throwable instanceof HttpException) {
+                        int status = ((HttpException) retry.throwable).code();
+
+                        AfLog.e("RetryOnError: retry=" + retry.retryCount + " '" + retry.throwable.getMessage() + "' status=" + status);
+
+                        if (mRetryOnStatus == 0 || mRetryOnStatus == status) {
+                            return Observable.timer(retry.retryCount, TimeUnit.SECONDS);
+                        }
+                    }
+
+                    return Observable.error(retry.throwable);
+                }
+            });
+        }
+    }
+
+    private static class Retry {
+        int retryCount;
+        Throwable throwable;
+
+        Retry(int r, Throwable t) {
+            retryCount = r;
+            throwable = t;
+        }
+    }
 }

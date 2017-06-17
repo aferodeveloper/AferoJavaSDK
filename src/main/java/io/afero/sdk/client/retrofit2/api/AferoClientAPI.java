@@ -15,7 +15,7 @@ import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
-import io.afero.sdk.client.retrofit2.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.NameDeviceBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
@@ -149,7 +149,7 @@ public interface AferoClientAPI {
     @POST(V1 + "accounts/{accountId}/mobileDevices/{mobileDeviceId}/conclaveAccess")
     Observable<ConclaveAccessDetails> postConclaveAccess(
             @Path("accountId") String accountId,
-            @Path("mobileDeviceId") String mobileDeviceId,
+            @Path("mobileDeviceId") String mobileClientId,
             @Body ConclaveAccessBody body
     );
 
