@@ -1,0 +1,90 @@
+{
+    "profileId": "94f11dea-4250-4ba6-8187-6b0fcdef04d4",
+    "schemaVersion": 1,
+    "profileVersion": 1,
+    "partnerId": "kiban-839f59e6-18a3-4d82-818d-42df5cc0c3cf",
+    "services": [
+        {
+            "id": 100,
+            "attributes": [
+                {
+                    "id": 100,
+                    "dataType": "sint8",
+                    "semanticType": "fan-speed",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 120,
+                    "dataType": "sint8",
+                    "semanticType": "mode",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 200,
+                    "dataType": "sint16",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 300,
+                    "dataType": "sint32",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 400,
+                    "dataType": "sint64",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 500,
+                    "dataType": "float32",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 600,
+                    "dataType": "float64",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 700,
+                    "dataType": "boolean",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 800,
+                    "dataType": "fixed_16_16",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 850,
+                    "dataType": "boolean",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 900,
+                    "dataType": "fixed_32_32",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 50000,
+                    "dataType": "fixed_32_32",
+                    "semanticType": "power",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 59002,
+                    "dataType": "BYTES",
+                    "operations": ["read","write"]
+                }
+            ]
+        }
+    ]
+}

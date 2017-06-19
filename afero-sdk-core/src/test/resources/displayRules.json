@@ -1,0 +1,10 @@
+[
+    { "match": "*", "apply": { "*": true } },
+    { "match": "100", "apply": { "hundred": 100 } },
+    { "match": "!100", "apply": { "!hundred": true } },
+    { "match": "0x100", "apply": { "0x100": 256 } },
+    { "match": "1...3", "apply": { "one": 1, "two": 2, "three": 3 } },
+    { "match": "&0x10000", "apply": { "&0x10000": true } },
+    { "match": "(3...12)||(20...30)", "apply": { "or": true } },
+    { "match": "(&0x02)&&(!&0x01)", "apply": { "(&0x02)&&(!&0x01)": true }, "ignoreMe": "bogus" }
+]

@@ -1,0 +1,4 @@
+[
+    { "min": 12, "max": 23, "step":3 },
+    { "minValue": "123", "maxValue": "456", "stepValue": "34", "ignoreMe": "bogus" }
+]

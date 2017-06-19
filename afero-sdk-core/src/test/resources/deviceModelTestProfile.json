@@ -1,0 +1,68 @@
+{
+    "profileId": "94f11dea-4250-4ba6-8187-6b0fcdef04d4",
+    "schemaVersion": 1,
+    "profileVersion": 1,
+    "partnerId": "kiban-839f59e6-18a3-4d82-818d-42df5cc0c3cf",
+    "ignoreMe": "bogus",
+    "services": [
+        {
+            "id": 100,
+            "attributes": [
+                {
+                    "id": 100,
+                    "dataType": "sint8",
+                    "semanticType": "byte",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 200,
+                    "dataType": "sint16",
+                    "semanticType": "short",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 300,
+                    "dataType": "sint32",
+                    "semanticType": "integer",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 400,
+                    "dataType": "sint64",
+                    "semanticType": "long",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 500,
+                    "dataType": "float32",
+                    "semanticType": "float",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 600,
+                    "dataType": "float64",
+                    "semanticType": "double",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 700,
+                    "dataType": "utf8s",
+                    "semanticType": "string",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 800,
+                    "dataType": "fixed_16_16",
+                    "semanticType": "fixed16",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 900,
+                    "dataType": "fixed_32_32",
+                    "semanticType": "fixed32",
+                    "operations": ["read","write"]
+                }
+            ]
+        }
+    ]
+ }
