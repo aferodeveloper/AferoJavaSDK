@@ -54,11 +54,12 @@ public class AferoClientRetrofit2 implements AferoClient {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
-    protected String mActiveAccountId;
-    protected String mOwnerAccountId;
-    protected final String mBaseUrl;
-
+    private final String mBaseUrl;
+    private final OkHttpClient mHttpClient;
     private final AferoClientAPI mAferoService;
+
+    private String mActiveAccountId;
+    private String mOwnerAccountId;
 
     private AccessToken mAccessToken;
     private final Object mTokenRefreshLock = new Object();
@@ -68,11 +69,16 @@ public class AferoClientRetrofit2 implements AferoClient {
 
     public AferoClientRetrofit2(String baseUrl, HttpLoggingInterceptor.Level logLevel, int defaultTimeout) {
         mBaseUrl = baseUrl;
-        mAferoService = createAdapter(mBaseUrl, logLevel, defaultTimeout);
+        mHttpClient = createHttpClient(logLevel, defaultTimeout);
+        mAferoService = createRetrofit().create(AferoClientAPI.class);
     }
 
     public String getBaseUrl() {
         return mBaseUrl;
+    }
+
+    public OkHttpClient getHttpClient() {
+        return mHttpClient;
     }
 
     public void setOwnerAccountId(String accountId) {
@@ -262,24 +268,20 @@ public class AferoClientRetrofit2 implements AferoClient {
         return null;
     }
 
-    protected AferoClientAPI createAdapter(String baseUrl, HttpLoggingInterceptor.Level logLevel, int defaultTimeout) {
+    protected Retrofit createRetrofit() {
+        return new Retrofit.Builder()
+            .client(getHttpClient())
+            .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
+            .addConverterFactory(JacksonConverterFactory.create(JSONUtils.getObjectMapper()))
+            .baseUrl(getBaseUrl())
+            .build();
+    }
 
-//        if (BuildConfig.DEBUG) {
-//            okClient.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("172.16.0.159", 8888)));
-//        }
-
-        OkHttpClient httpClient = AfHttpClient.create(logLevel, defaultTimeout).newBuilder()
-                .addInterceptor(new AuthTokenInterceptor())
-                .authenticator(new RefreshTokenAuthenticator())
-                .build();
-
-        Retrofit.Builder builder = new Retrofit.Builder()
-                .client(httpClient)
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
-                .addConverterFactory(JacksonConverterFactory.create(JSONUtils.getObjectMapper()))
-                .baseUrl(baseUrl);
-
-        return builder.build().create(AferoClientAPI.class);
+    private OkHttpClient createHttpClient(HttpLoggingInterceptor.Level logLevel, int defaultTimeout) {
+        return AfHttpClient.create(logLevel, defaultTimeout).newBuilder()
+            .addInterceptor(new AuthTokenInterceptor())
+            .authenticator(new RefreshTokenAuthenticator())
+            .build();
     }
 
     private class RefreshTokenAuthenticator implements Authenticator {
