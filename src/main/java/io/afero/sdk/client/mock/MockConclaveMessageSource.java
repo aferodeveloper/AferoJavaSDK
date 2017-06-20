@@ -2,7 +2,7 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.sdk;
+package io.afero.sdk.client.mock;
 
 import io.afero.sdk.conclave.ConclaveMessage;
 import io.afero.sdk.conclave.ConclaveMessageSource;

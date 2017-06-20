@@ -1,16 +1,14 @@
 /*
- * Copyright (c) 2014-2016 Afero, Inc. All rights reserved.
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.sdk;
+package io.afero.sdk.client.mock;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import static org.junit.Assert.assertNotNull;
 
 public class ResourceLoader {
 
@@ -22,7 +20,6 @@ public class ResourceLoader {
 
     public <T> T createObjectFromJSONResource(String path, Class<T> valueType) throws IOException {
         InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-        assertNotNull(is);
         return objectMapper.readValue(is, valueType);
     }
 }

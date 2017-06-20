@@ -124,6 +124,12 @@ public class DeviceModel implements ControlModel {
     private OnNextDeviceRequest mOnNextDeviceRequestResponse;
     private OnErrorDeviceRequest mOnErrorDeviceRequestResponse;
 
+    private DeviceModel() {
+        mId = null;
+        mAferoClient = null;
+        mIsDeveloperDevice = false;
+        mUpdateObservable = null;
+    }
 
     DeviceModel(String deviceId, DeviceProfile profile, boolean isDeveloperDevice, AferoClient aferoClient) {
         mId = deviceId;

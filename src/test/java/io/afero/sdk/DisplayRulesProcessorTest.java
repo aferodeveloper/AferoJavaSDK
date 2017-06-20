@@ -7,25 +7,20 @@ package io.afero.sdk;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Map;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
+import io.afero.sdk.device.ApplyParams;
 import io.afero.sdk.device.ControlModel;
 import io.afero.sdk.device.DeviceProfile;
-import io.afero.sdk.device.ApplyParams;
 import io.afero.sdk.device.DisplayRulesProcessor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk=21)
 public class DisplayRulesProcessorTest {
 
     static class IntValue implements DisplayRulesProcessor.Value {

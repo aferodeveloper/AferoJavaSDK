@@ -6,9 +6,6 @@ package io.afero.sdk.scheduler;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -16,16 +13,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import io.afero.sdk.AferoTest;
-import io.afero.sdk.BuildConfig;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.utils.HexUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk=21)
 public class OfflineScheduleEventTest extends AferoTest {
 
     DeviceProfile deviceProfile;

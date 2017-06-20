@@ -6,9 +6,6 @@ package io.afero.sdk;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -24,8 +21,6 @@ import io.afero.sdk.scheduler.OfflineScheduler;
 import static org.junit.Assert.assertEquals;
 
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk=21)
 public class OfflineSchedulerTest extends AferoTest {
 
     DeviceProfile deviceProfile;
