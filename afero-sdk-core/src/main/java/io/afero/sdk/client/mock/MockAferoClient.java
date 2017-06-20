@@ -1,0 +1,104 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
+package io.afero.sdk.client.mock;
+
+import java.io.IOException;
+
+import io.afero.sdk.client.afero.AferoClient;
+import io.afero.sdk.client.afero.models.ActionResponse;
+import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceRequest;
+import io.afero.sdk.client.afero.models.Location;
+import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.device.DeviceModel;
+import io.afero.sdk.device.DeviceProfile;
+import rx.Observable;
+
+public class MockAferoClient implements AferoClient {
+
+    private final ResourceLoader mLoader = new ResourceLoader();
+    private DeviceAssociateResponse mDeviceAssociateResponse;
+
+    public MockAferoClient() {
+    }
+
+    @Override
+    public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode) {
+        return null;
+    }
+
+    @Override
+    public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize) {
+        return null;
+    }
+
+    @Override
+    public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
+        return null;
+    }
+
+    @Override
+    public Observable<Location> putDeviceLocation(String deviceId, Location location) {
+        return null;
+    }
+
+    @Override
+    public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+        try {
+            DeviceAssociateResponse dar = mDeviceAssociateResponse;
+            if (dar == null) {
+                dar = mLoader.createObjectFromJSONResource("deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
+            }
+            return Observable.just(dar);
+        } catch (IOException e) {
+            return Observable.error(e);
+        }
+    }
+
+    @Override
+    public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
+        return null;
+    }
+
+    @Override
+    public String getActiveAccountId() {
+        return null;
+    }
+
+    @Override
+    public int getStatusCode(Throwable t) {
+        return 0;
+    }
+
+    @Override
+    public boolean isTransferVerificationError(Throwable t) {
+        return false;
+    }
+
+    public void setDeviceAssociateResponse(DeviceAssociateResponse dar) {
+        mDeviceAssociateResponse = dar;
+    }
+
+    public void clearDeviceAssociateResponse() {
+        mDeviceAssociateResponse = null;
+    }
+}

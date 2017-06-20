@@ -6,15 +6,11 @@ package io.afero.sdk.device;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 
 import io.afero.sdk.AferoTest;
-import io.afero.sdk.BuildConfig;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.conclave.models.DeviceSync;
@@ -23,14 +19,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk=21)
 public class DeviceModelTest extends AferoTest {
 
     private static final String DEVICE_ID = "bogus-device-id";
 
     public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) throws IOException {
-        return new DeviceModel(DEVICE_ID, deviceProfile, response.developerDevice, aferoClient);
+        return new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
     }
 
     @Before
@@ -40,7 +34,7 @@ public class DeviceModelTest extends AferoTest {
     @Test
     public void testDefaults() throws IOException {
         DeviceProfile dp = loadDeviceProfile("deviceModelTestProfile.json");
-        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, response.developerDevice, null);
+        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
         assertEquals(DeviceModel.State.NORMAL, dm.getState());
         assertFalse(dm.isOTAInProgress());
@@ -52,7 +46,7 @@ public class DeviceModelTest extends AferoTest {
     public void testUpdateFromJson() throws IOException {
         DeviceSync ds = loadDeviceSync("deviceSync.json");
         DeviceProfile dp = loadDeviceProfile("deviceModelTestProfile.json");
-        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, response.developerDevice, null);
+        DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
         dm.update(ds);
 

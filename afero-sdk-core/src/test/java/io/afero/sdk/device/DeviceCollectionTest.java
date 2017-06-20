@@ -7,8 +7,8 @@ package io.afero.sdk.device;
 import org.junit.Before;
 import org.junit.Test;
 
-import io.afero.sdk.MockConclaveMessageSource;
-import io.afero.sdk.ResourceLoader;
+import io.afero.sdk.client.mock.MockConclaveMessageSource;
+import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
@@ -63,7 +63,7 @@ public class DeviceCollectionTest {
         }
 
         @Override
-        public Observable<Location> putDeviceLocation(DeviceModel deviceModel, Location location) {
+        public Observable<Location> putDeviceLocation(String deviceId, Location location) {
             return null;
         }
 

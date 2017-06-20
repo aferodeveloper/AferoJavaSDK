@@ -7,25 +7,18 @@ package io.afero.sdk.utils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.util.List;
 
 import io.afero.sdk.AferoTest;
-import io.afero.sdk.BuildConfig;
 import io.afero.sdk.conclave.ConclaveMessage;
-import io.afero.sdk.device.DeviceModel;
 import rx.observers.TestSubscriber;
 
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk=21)
 public class MetricUtilTest extends AferoTest {
     MetricUtil util;
 

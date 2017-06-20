@@ -7,14 +7,10 @@ package io.afero.sdk.device;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
 
-import io.afero.sdk.BuildConfig;
 import io.afero.sdk.client.afero.models.AttributeValue;
 
 import static org.junit.Assert.assertEquals;
@@ -23,8 +19,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk=21)
 public class DeviceProfileTest {
 
     @Test
