@@ -1,0 +1,31 @@
+{
+    "attributes": [],
+    "deviceId": "device-id",
+    "profileId": "wifiSetupDeviceProfile",
+    "deviceState":     {
+        "id": "device-id",
+        "status": {
+            "available": true,
+            "visible": true
+        }
+    },
+    "profile": {
+        "profileId": "wifiSetupDeviceProfile",
+        "schemaVersion": 1,
+        "profileVersion": 1,
+        "partnerId": "kiban-839f59e6-18a3-4d82-818d-42df5cc0c3cf",
+        "services": [
+            {
+                "id": 100,
+                "attributes": [
+                    {
+                        "id": 100,
+                        "dataType": "sint8",
+                        "semanticType": "byte",
+                        "operations": ["read","write"]
+                    }
+                ]
+            }
+        ]
+    }
+}
