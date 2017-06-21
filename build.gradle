@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.3'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.1'
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

@@ -26,7 +26,6 @@ dependencies {
 
     // https://github.com/ReactiveX/RxJava
     compile 'io.reactivex:rxjava:1.3.0'
-    compile project(path: ':afero-sdk-core')
 }
 
 sourceCompatibility = "1.7"
