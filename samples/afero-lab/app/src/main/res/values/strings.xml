@@ -1,0 +1,20 @@
+<!--
+  ~ Copyright (c) 2017 Afero, Inc. All rights reserved.
+  -->
+
+<resources>
+    <string name="app_name">AferoLab</string>
+
+    <string name="password_label">Password</string>
+    <string name="email_label">Email</string>
+
+    <string name="no_network">No Network</string>
+    <string name="device_status_offline">offline</string>
+    <string name="device_status_active">active</string>
+    <string name="device_status_idle">idle</string>
+
+    <string name="permission_denied_message">For full functionality, give AferoLab all the permissions it needs. You can always do this from Settings&gt;Apps&gt;AferoLab.</string>
+    <string name="permission_denied_title">Limited Functionality</string>
+    <string name="permission_needed_message">For full functionality, AferoLab needs access to location, and storage.</string>
+    <string name="permission_needed_title">Access Needed</string>
+</resources>

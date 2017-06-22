@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2017 Afero, Inc. All rights reserved.
+ */
+
+apply plugin: 'com.android.application'
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+    defaultConfig {
+        applicationId "io.afero.aferolab"
+        minSdkVersion 19
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        debug {
+            buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BODY'
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BASIC'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile 'io.kiban:hubby:1.0.443@aar'
+    compile 'io.afero:afero-sdk-android-debug@aar'
+    compile 'io.afero:afero-sdk-hub-debug@aar'
+
+    // https://github.com/square/retrofit
+    compile 'com.squareup.retrofit2:retrofit:2.3.0'
+    compile 'com.squareup.retrofit2:converter-jackson:2.3.0'
+    compile 'com.squareup.retrofit2:adapter-rxjava:2.3.0'
+
+    // https://github.com/square/okhttp
+    compile 'com.squareup.okhttp3:okhttp:3.8.0'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.8.0'
+
+    // https://github.com/ReactiveX/RxAndroid
+    compile 'io.reactivex:rxandroid:1.2.1'
+
+    // https://github.com/ReactiveX/RxJava
+    compile 'io.reactivex:rxjava:1.3.0'
+
+    // http://jakewharton.github.io/butterknife/
+    compile 'com.jakewharton:butterknife:8.5.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
+
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:recyclerview-v7:25.3.1'
+
+    testCompile 'junit:junit:4.12'
+}
