@@ -26,6 +26,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.OnEditorAction;
+import io.afero.sdk.android.clock.AndroidClock;
+import io.afero.sdk.android.log.AndroidLog;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.retrofit2.AferoClientRetrofit2;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
@@ -102,6 +104,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        AndroidClock.init();
+        AfLog.init(new AndroidLog("AfLab"));
+
         final String accountId = Prefs.getAccountId(this);
         final String accessToken = Prefs.getAccessToken(this);
         final String refreshToken = Prefs.getRefreshToken(this);
@@ -124,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
                 .fromDisplayDensity(getResources().getDisplayMetrics().density);
         mDeviceProfileCollection = new DeviceProfileCollection(mAferoClient, imageSize, Locale.getDefault().toString());
         mDeviceCollection = new DeviceCollection(mDeviceEventStream, mDeviceProfileCollection, mAferoClient);
+        mDeviceCollection.start();
 
         mDeviceEventStreamConnectObserver = new DeviceEventStreamConnectObserver(this);
 
