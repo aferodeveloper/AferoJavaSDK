@@ -30,6 +30,7 @@ import io.kiban.hubby.Hubby;
 import io.kiban.hubby.NotificationCallback;
 import rx.Observable;
 import rx.Observer;
+import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -48,14 +49,12 @@ public class HubbyHelperTest {
     @Test
     public void init() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
                 .verifyHubbyHelperCreated();
     }
 
     @Test
     public void start() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .startHubby()
                 .waitUntilStartedCalled()
@@ -75,7 +74,6 @@ public class HubbyHelperTest {
     @Test
     public void stop() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .startHubbyCompletely()
                 .verifyHubbyIsRunning()
@@ -88,7 +86,6 @@ public class HubbyHelperTest {
     @Test
     public void onPause() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .startHubbyCompletely()
                 .verifyHubbyIsRunning()
@@ -104,7 +101,6 @@ public class HubbyHelperTest {
     @Test
     public void onResume() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .startHubbyCompletely()
                 .pauseHubby()
@@ -126,7 +122,6 @@ public class HubbyHelperTest {
     @Test
     public void isActive() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .verifyHubbyIsActive()
 
@@ -143,7 +138,6 @@ public class HubbyHelperTest {
     @Test
     public void isRunning() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .verifyHubbyNotRunning()
 
@@ -160,7 +154,6 @@ public class HubbyHelperTest {
     @Test
     public void isStarting() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .verifyHubbyNotStarting()
 
@@ -180,9 +173,19 @@ public class HubbyHelperTest {
     }
 
     @Test
+    public void observeCompletionReason() throws Exception {
+        makeHubbyHelperTester()
+                .startHubbyCompletely()
+
+                .stopHubby()
+
+                .verifyCompleteReason(NotificationCallback.CompleteReason.STOP_CALLED)
+            ;
+    }
+
+    @Test
     public void setService() throws Exception {
         makeHubbyHelperTester()
-                .acquireInstance()
 
                 .setServiceToDev()
 
@@ -204,17 +207,15 @@ public class HubbyHelperTest {
         final MockAferoClient aferoClient = new MockAferoClient();
         final MockHubbyImpl hubbyImpl = new MockHubbyImpl();
         final StartObserver startObserver = new StartObserver();
+        final OnNextComplete onNextComplete = new OnNextComplete();
 
         HubbyHelper hubbyHelper;
 
         HubbyHelperTester() {
             activity = Robolectric.buildActivity(Activity.class).create().get();
-        }
-
-        HubbyHelperTester acquireInstance() {
             hubbyHelper = HubbyHelper.acquireInstance(activity, aferoClient);
             hubbyHelper.setHubbyImpl(hubbyImpl);
-            return this;
+            hubbyHelper.observeCompletion().subscribe(onNextComplete);
         }
 
         HubbyHelperTester startHubby() {
@@ -308,6 +309,12 @@ public class HubbyHelperTest {
             assertEquals("dev", hubbyImpl.mConfigs.get(Hubby.Config.SERVICE));
             return this;
         }
+
+        HubbyHelperTester verifyCompleteReason(NotificationCallback.CompleteReason expectedReason) {
+            assertEquals(expectedReason, onNextComplete.mReason);
+            return this;
+        }
+
     }
 
     private class MockHubbyImpl implements HubbyHelper.HubbyImpl {
@@ -334,7 +341,7 @@ public class HubbyHelperTest {
 
         @Override
         public void stop() {
-
+            mCallback.runComplete(NotificationCallback.CompleteReason.STOP_CALLED.getValue());
         }
 
         void callbackInitializationCompleted() {
@@ -447,6 +454,20 @@ public class HubbyHelperTest {
                     assertTrue(false);
                 }
             }
+        }
+    }
+
+    private static class OnNextComplete implements Action1<NotificationCallback.CompleteReason> {
+
+        NotificationCallback.CompleteReason mReason;
+
+        OnNextComplete() {
+
+        }
+
+        @Override
+        public void call(NotificationCallback.CompleteReason reason) {
+            mReason = reason;
         }
     }
 

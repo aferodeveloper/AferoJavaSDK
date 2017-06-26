@@ -127,6 +127,10 @@ public class HubbyHelper {
         }
     }
 
+    public Observable<NotificationCallback.CompleteReason> observeCompletion() {
+        return mCompleteSubject;
+    }
+
     public void onPause() {
         mIsActive = false;
 
