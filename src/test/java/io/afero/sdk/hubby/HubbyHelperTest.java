@@ -31,6 +31,7 @@ import io.kiban.hubby.NotificationCallback;
 import rx.Observable;
 import rx.Observer;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -47,65 +48,149 @@ public class HubbyHelperTest {
     @Test
     public void init() throws Exception {
         makeHubbyHelperTester()
-            .acquireInstance()
-            .verifyHubbyHelperCreated();
+                .acquireInstance()
+                .verifyHubbyHelperCreated();
     }
 
     @Test
     public void start() throws Exception {
         makeHubbyHelperTester()
-            .acquireInstance()
+                .acquireInstance()
 
-            .startHubby()
-            .waitUntilStartedCalled()
+                .startHubby()
+                .waitUntilStartedCalled()
 
-            .verifyHubbyIsStarting()
-            .verifyHubbyNotRunning()
+                .verifyHubbyIsStarting()
+                .verifyHubbyNotRunning()
 
-            .hubbyInitializationCompletedCallback()
-            .waitUntilStartCompleted()
+                .hubbyInitializationCompletedCallback()
+                .waitUntilStartCompleted()
 
-            .verifyHubbyNotStarting()
-            .verifyHubbyIsRunning()
-            .verifyHubbyStartCompleted()
+                .verifyHubbyNotStarting()
+                .verifyHubbyIsRunning()
+                .verifyHubbyStartCompleted()
         ;
     }
 
     @Test
     public void stop() throws Exception {
         makeHubbyHelperTester()
-            .acquireInstance()
-            .verifyHubbyNotRunning();
+                .acquireInstance()
+
+                .startHubbyCompletely()
+                .verifyHubbyIsRunning()
+
+                .stopHubby()
+                .verifyHubbyNotRunning()
+        ;
     }
 
     @Test
     public void onPause() throws Exception {
+        makeHubbyHelperTester()
+                .acquireInstance()
 
+                .startHubbyCompletely()
+                .verifyHubbyIsRunning()
+                .verifyHubbyIsActive()
+
+                .pauseHubby()
+
+                .verifyHubbyNotActive()
+                .verifyHubbyNotRunning()
+        ;
     }
 
     @Test
     public void onResume() throws Exception {
+        makeHubbyHelperTester()
+                .acquireInstance()
 
+                .startHubbyCompletely()
+                .pauseHubby()
+
+                .verifyHubbyNotActive()
+                .verifyHubbyNotRunning()
+
+                .resumeHubby()
+
+                .waitUntilStartedCalled()
+                .hubbyInitializationCompletedCallback()
+                .waitUntilStartCompleted()
+
+                .verifyHubbyIsRunning()
+                .verifyHubbyIsActive()
+        ;
     }
 
     @Test
     public void isActive() throws Exception {
+        makeHubbyHelperTester()
+                .acquireInstance()
 
+                .verifyHubbyIsActive()
+
+                .pauseHubby()
+
+                .verifyHubbyNotActive()
+
+                .resumeHubby()
+
+                .verifyHubbyIsActive()
+        ;
     }
 
     @Test
     public void isRunning() throws Exception {
+        makeHubbyHelperTester()
+                .acquireInstance()
 
+                .verifyHubbyNotRunning()
+
+                .startHubbyCompletely()
+
+                .verifyHubbyIsRunning()
+
+                .stopHubby()
+
+                .verifyHubbyNotRunning()
+        ;
     }
 
     @Test
     public void isStarting() throws Exception {
+        makeHubbyHelperTester()
+                .acquireInstance()
 
+                .verifyHubbyNotStarting()
+
+                .startHubby()
+
+                .verifyHubbyIsStarting()
+
+                .waitUntilStartedCalled()
+
+                .verifyHubbyIsStarting()
+
+                .hubbyInitializationCompletedCallback()
+                .waitUntilStartCompleted()
+
+                .verifyHubbyNotStarting()
+        ;
     }
 
     @Test
     public void setService() throws Exception {
+        makeHubbyHelperTester()
+                .acquireInstance()
 
+                .setServiceToDev()
+
+                .startHubby()
+                .waitUntilStartedCalled()
+
+                .verifyServiceInConfigIsSetToDev()
+            ;
     }
 
     // test support --------------------------------------------------------
@@ -116,7 +201,7 @@ public class HubbyHelperTest {
 
     private class HubbyHelperTester {
         final Activity activity;
-        final MockAferoClient aferoClient = new MockAferoClient();;
+        final MockAferoClient aferoClient = new MockAferoClient();
         final MockHubbyImpl hubbyImpl = new MockHubbyImpl();
         final StartObserver startObserver = new StartObserver();
 
@@ -137,6 +222,13 @@ public class HubbyHelperTest {
             return this;
         }
 
+        HubbyHelperTester startHubbyCompletely() {
+            return startHubby()
+                    .waitUntilStartedCalled()
+                    .hubbyInitializationCompletedCallback()
+                    .waitUntilStartCompleted();
+        }
+
         HubbyHelperTester waitUntilStartedCalled() {
             hubbyImpl.waitUntilStartedCalled();
             return this;
@@ -152,8 +244,23 @@ public class HubbyHelperTest {
             return this;
         }
 
+        HubbyHelperTester pauseHubby() {
+            hubbyHelper.onPause();
+            return this;
+        }
+
+        HubbyHelperTester resumeHubby() {
+            hubbyHelper.onResume();
+            return this;
+        }
+
         HubbyHelperTester hubbyInitializationCompletedCallback() {
             hubbyImpl.callbackInitializationCompleted();
+            return this;
+        }
+
+        HubbyHelperTester setServiceToDev() {
+            hubbyHelper.setService("dev");
             return this;
         }
 
@@ -184,6 +291,21 @@ public class HubbyHelperTest {
 
         HubbyHelperTester verifyHubbyNotRunning() {
             assertFalse(hubbyHelper.isRunning());
+            return this;
+        }
+
+        HubbyHelperTester verifyHubbyIsActive() {
+            assertTrue(hubbyHelper.isActive());
+            return this;
+        }
+
+        HubbyHelperTester verifyHubbyNotActive() {
+            assertFalse(hubbyHelper.isActive());
+            return this;
+        }
+
+        HubbyHelperTester verifyServiceInConfigIsSetToDev() {
+            assertEquals("dev", hubbyImpl.mConfigs.get(Hubby.Config.SERVICE));
             return this;
         }
     }
@@ -228,7 +350,9 @@ public class HubbyHelperTest {
                 }
             }
         }
-    };
+    }
+
+    ;
 
     class MockAferoClient implements AferoClient {
 

@@ -53,7 +53,7 @@ public class HubbyHelper {
     private long mOTAStopTime;
     private Subscription mOTAEndSubscription;
 
-    private boolean mIsActive;
+    private boolean mIsActive = true;
     private String mService;
 
     private PublishSubject<HubbyHelper> mStartSubject;
@@ -140,6 +140,10 @@ public class HubbyHelper {
 
     public void onResume() {
         mIsActive = true;
+
+        if (!(isStarting() || isRunning())) {
+            start().subscribe(new RxUtils.IgnoreResponseObserver<HubbyHelper>());
+        }
     }
 
     public boolean isActive() {
