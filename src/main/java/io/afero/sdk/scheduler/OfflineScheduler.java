@@ -43,7 +43,7 @@ public class OfflineScheduler {
     }
 
     public static boolean hasOfflineScheduleCapability(DeviceModel deviceModel) {
-        return deviceModel.getAttributeById(DeviceProfile.SCHEDULE_FLAGS_ATTRIBUTE_ID) != null;
+        return deviceModel.getAttributeById(DeviceProfile.SCHEDULE_ATTRIBUTE_ID) != null;
     }
 
     public void start(DeviceModel deviceModel) {
