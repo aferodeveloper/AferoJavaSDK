@@ -36,6 +36,7 @@ public class HubbyHelper {
     private static HubbyHelper sInstance;
     private static boolean sIsHubbyInitialized;
 
+    private static final String WAKE_LOCK_TAG = "io.afero.sdk.hubby.HubbyHelper.OTAWakeLockTag";
     private static final long OTA_END_DELAY = 10000;
 
     private HubbyImpl mHubbyImpl = new NativeHubbyImpl();
@@ -145,9 +146,9 @@ public class HubbyHelper {
     public void onResume() {
         mIsActive = true;
 
-        if (!(isStarting() || isRunning())) {
-            start().subscribe(new RxUtils.IgnoreResponseObserver<HubbyHelper>());
-        }
+//        if (!(isStarting() || isRunning())) {
+//            start().subscribe(new RxUtils.IgnoreResponseObserver<HubbyHelper>());
+//        }
     }
 
     public boolean isActive() {
@@ -202,11 +203,13 @@ public class HubbyHelper {
     private void startHubby() {
         AfLog.i("HubbyHelper: starting hubby");
 
+        String hwInfo = "os:android,manufacturer:" + Build.MANUFACTURER + ",model:" + Build.MODEL + ",version:" + Build.VERSION.RELEASE;
+        String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
+
         HashMap<Hubby.Config,String> config = new HashMap<>(1);
-        config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + mAferoClient.getActiveAccountId());
+        config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
         config.put(Hubby.Config.OTA_WORKING_PATH, mOTAPath);
 
-        String hwInfo = "os:android,manufacturer:" + Build.MANUFACTURER + ",model:" + Build.MODEL + ",version:" + Build.VERSION.RELEASE;
         config.put(Hubby.Config.HARDWARE_INFO, hwInfo);
 
         if (mService != null) {
@@ -267,7 +270,7 @@ public class HubbyHelper {
                 Context context = getContext();
                 if (context != null) {
                     PowerManager powerManager = (PowerManager)context.getSystemService(Activity.POWER_SERVICE);
-                    mOTAWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + ".OTAWakeLockTag");
+                    mOTAWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
                     mOTAWakeLock.acquire();
                 }
             }
@@ -316,7 +319,7 @@ public class HubbyHelper {
         }
     }
 
-    private boolean isOTAInProgress() {
+    boolean isOTAInProgress() {
         return !mActiveOTAs.isEmpty();
     }
 

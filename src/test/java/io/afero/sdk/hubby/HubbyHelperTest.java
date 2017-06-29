@@ -28,6 +28,7 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.kiban.hubby.Hubby;
 import io.kiban.hubby.NotificationCallback;
+import io.kiban.hubby.OtaCallback;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Action1;
@@ -40,6 +41,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class, sdk = 21)
 public class HubbyHelperTest {
+
+    private final static String DEVICE_ID = "device-id";
 
     @After
     public void hubbyHelperReleaseInstance() {
@@ -62,7 +65,7 @@ public class HubbyHelperTest {
                 .verifyHubbyIsStarting()
                 .verifyHubbyNotRunning()
 
-                .hubbyInitializationCompletedCallback()
+                .hubbyCallbackInitializationCompleted()
                 .waitUntilStartCompleted()
 
                 .verifyHubbyNotStarting()
@@ -111,7 +114,7 @@ public class HubbyHelperTest {
                 .resumeHubby()
 
                 .waitUntilStartedCalled()
-                .hubbyInitializationCompletedCallback()
+                .hubbyCallbackInitializationCompleted()
                 .waitUntilStartCompleted()
 
                 .verifyHubbyIsRunning()
@@ -165,7 +168,7 @@ public class HubbyHelperTest {
 
                 .verifyHubbyIsStarting()
 
-                .hubbyInitializationCompletedCallback()
+                .hubbyCallbackInitializationCompleted()
                 .waitUntilStartCompleted()
 
                 .verifyHubbyNotStarting()
@@ -194,6 +197,43 @@ public class HubbyHelperTest {
 
                 .verifyServiceInConfigIsSetToDev()
             ;
+    }
+
+    @Test
+    public void testOTAStartAndStop() throws Exception {
+        makeHubbyHelperTester()
+                .startHubbyCompletely()
+
+                .hubbyCallbackOTAStatus(OtaCallback.OtaState.START, DEVICE_ID)
+
+                .verifyOTAInProgress()
+
+                .hubbyCallbackOTAStatus(OtaCallback.OtaState.STOP, DEVICE_ID)
+
+                .verifyOTANotInProgress()
+        ;
+    }
+
+    @Test
+    public void testOTAWithHubbyPause() throws Exception {
+        makeHubbyHelperTester()
+                .startHubbyCompletely()
+
+                .hubbyCallbackOTAStatus(OtaCallback.OtaState.START, DEVICE_ID)
+
+                .verifyOTAInProgress()
+
+                .pauseHubby()
+
+                .verifyHubbyNotActive()
+                .verifyHubbyIsRunning()
+
+                .hubbyCallbackOTAStatus(OtaCallback.OtaState.STOP, DEVICE_ID)
+
+                .verifyOTANotInProgress()
+                .verifyHubbyNotActive()
+                .verifyHubbyNotRunning()
+        ;
     }
 
     // test support --------------------------------------------------------
@@ -226,7 +266,7 @@ public class HubbyHelperTest {
         HubbyHelperTester startHubbyCompletely() {
             return startHubby()
                     .waitUntilStartedCalled()
-                    .hubbyInitializationCompletedCallback()
+                    .hubbyCallbackInitializationCompleted()
                     .waitUntilStartCompleted();
         }
 
@@ -255,8 +295,13 @@ public class HubbyHelperTest {
             return this;
         }
 
-        HubbyHelperTester hubbyInitializationCompletedCallback() {
+        HubbyHelperTester hubbyCallbackInitializationCompleted() {
             hubbyImpl.callbackInitializationCompleted();
+            return this;
+        }
+
+        HubbyHelperTester hubbyCallbackOTAStatus(OtaCallback.OtaState otaState, String deviceId) {
+            hubbyImpl.callbackOTAStatus(otaState, deviceId);
             return this;
         }
 
@@ -315,6 +360,15 @@ public class HubbyHelperTest {
             return this;
         }
 
+        HubbyHelperTester verifyOTAInProgress() {
+            assertTrue(hubbyHelper.isOTAInProgress());
+            return this;
+        }
+
+        HubbyHelperTester verifyOTANotInProgress() {
+            assertFalse(hubbyHelper.isOTAInProgress());
+            return this;
+        }
     }
 
     private class MockHubbyImpl implements HubbyHelper.HubbyImpl {
@@ -346,6 +400,10 @@ public class HubbyHelperTest {
 
         void callbackInitializationCompleted() {
             mCallback.initializationComplete();
+        }
+
+        void callbackOTAStatus(OtaCallback.OtaState otaState, String deviceId) {
+            mCallback.otaStatus(otaState.getValue(), deviceId, 0, 0);
         }
 
         void waitUntilStartedCalled() {
