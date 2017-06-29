@@ -81,8 +81,9 @@ public class AferoClientRetrofit2 implements AferoClient {
         return mHttpClient;
     }
 
-    public void setOwnerAccountId(String accountId) {
+    public void setOwnerAndActiveAccountId(String accountId) {
         mOwnerAccountId = accountId;
+        mActiveAccountId = accountId;
     }
 
     public String getOwnerAccountId() {
