@@ -10,16 +10,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.conclave.ConclaveAccessManager;
+import io.afero.sdk.conclave.ConclaveClient;
+import io.afero.sdk.conclave.ConclaveMessage;
+import io.afero.sdk.conclave.ConclaveMessageSource;
 import io.afero.sdk.conclave.models.DeviceError;
 import io.afero.sdk.conclave.models.DeviceMute;
 import io.afero.sdk.conclave.models.DeviceState;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.conclave.models.InvalidateMessage;
 import io.afero.sdk.conclave.models.OTAInfo;
-import io.afero.sdk.conclave.ConclaveAccessManager;
-import io.afero.sdk.conclave.ConclaveClient;
-import io.afero.sdk.conclave.ConclaveMessage;
-import io.afero.sdk.conclave.ConclaveMessageSource;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.RxUtils;
@@ -49,10 +49,10 @@ public class DeviceEventStream implements ConclaveMessageSource {
     private String mUserId;
     private String mToken;
     private String mType;
-    private String mClientId;
     private boolean mSessionTrace;
 
     private ConclaveAccessDetails mConclaveAccessDetails;
+    private final String mClientId;
 
     private long mGeneration;
     private int mSequenceNum;
@@ -83,24 +83,21 @@ public class DeviceEventStream implements ConclaveMessageSource {
         }
     };
 
-    public DeviceEventStream(ConclaveAccessManager cam) {
+    public DeviceEventStream(ConclaveAccessManager cam, String clientId) {
         mConclaveAccessManager = cam;
-        cam.getObservable().subscribe(mConclaveAccessObserver);
-    }
+        mClientId = clientId;
 
-    public ConclaveAccessManager getConclaveAccessManager() {
-        return mConclaveAccessManager;
+        cam.getObservable().subscribe(mConclaveAccessObserver);
     }
 
     public Observable<ConclaveClient.Status> observeConclaveStatus() {
         return mConclaveClient.statusObservable();
     }
 
-    public rx.Observable<Object> start(final String accountId, final String userId, final String type, final String clientId) {
+    public rx.Observable<Object> start(String accountId, String userId, String type) {
         mAccountId = accountId;
         mUserId = userId;
         mType = type;
-        mClientId = clientId;
         mGeneration = 0;
         mSequenceNum = 0;
 
@@ -133,6 +130,96 @@ public class DeviceEventStream implements ConclaveMessageSource {
     public void sendMetrics(ConclaveMessage.Metric metric) {
         mConclaveClient.sayAsync("metrics", metric)
             .subscribe(new RxUtils.IgnoreResponseObserver<ConclaveMessage.Say>());
+    }
+
+    public void resetSequence() {
+        mGeneration = 0;
+        mSequenceNum = 0;
+    }
+
+    public void stop() {
+
+        if (mConclaveSubscription != null) {
+            mConclaveSubscription.unsubscribe();
+            mConclaveSubscription = null;
+        }
+
+        mConclaveClient.close();
+    }
+
+    public rx.Observable<Object> reconnect() {
+
+        if (mConclaveSubscription != null) {
+            mConclaveSubscription.unsubscribe();
+        }
+
+        mConclaveSubscription = mConclaveClient.messageObservable()
+            .subscribe(mConclaveObserver);
+
+        rx.Observable<Object> connectObservable;
+
+        if (mConclaveAccessDetails == null) {
+            connectObservable = mConclaveAccessManager.getAccess(mClientId)
+                .flatMap(new Func1<ConclaveAccessDetails, Observable<Object>>() {
+                    @Override
+                    public Observable<Object> call(ConclaveAccessDetails conclaveAccessDetails) {
+                        mToken = null;
+
+                        setConclaveAccessDetails(conclaveAccessDetails);
+
+                        if (mToken == null) {
+                            return rx.Observable.error(new Exception("DeviceEventStream: couldn't find suitable Conclave token"));
+                        }
+
+                        AfLog.i("DeviceEventStream.reconnect: mAccountId = " + mAccountId);
+
+                        return mConclaveClient.connect(conclaveAccessDetails);
+                    }
+                });
+        } else {
+            connectObservable = mConclaveClient.connect(mConclaveAccessDetails);
+        }
+
+        return connectObservable;
+    }
+
+    public boolean isConnected() {
+        return mConclaveSubscription != null && mConclaveClient.isConnected();
+    }
+
+    @Override
+    public Observable<DeviceSync[]> observeSnapshot() {
+        return mSnapshotSubject;
+    }
+
+    @Override
+    public Observable<DeviceSync> observeAttributeChange() {
+        return mAttributeChangeSubject;
+    }
+
+    @Override
+    public Observable<DeviceError> observeError() {
+        return mDeviceErrorSubject;
+    }
+
+    @Override
+    public Observable<DeviceState> observeStatusChange() {
+        return mStatusChange;
+    }
+
+    @Override
+    public Observable<DeviceMute> observeMute() {
+        return mDeviceMuteSubject;
+    }
+
+    @Override
+    public Observable<OTAInfo> observeOTA() {
+        return mOTASubject;
+    }
+
+    @Override
+    public Observable<InvalidateMessage> observeInvalidate() {
+        return mInvalidateSubject;
     }
 
     private void onNextConclave(JsonNode node) {
@@ -231,22 +318,7 @@ public class DeviceEventStream implements ConclaveMessageSource {
         }
     }
 
-    public void resetSequence() {
-        mGeneration = 0;
-        mSequenceNum = 0;
-    }
-
-    public void stop() {
-
-        if (mConclaveSubscription != null) {
-            mConclaveSubscription.unsubscribe();
-            mConclaveSubscription = null;
-        }
-
-        mConclaveClient.close();
-    }
-
-    public void setConclaveAccessDetails(ConclaveAccessDetails cad) {
+    private void setConclaveAccessDetails(ConclaveAccessDetails cad) {
         mConclaveAccessDetails = cad;
         mToken = null;
 
@@ -259,82 +331,6 @@ public class DeviceEventStream implements ConclaveMessageSource {
             }
         }
     }
-
-    public rx.Observable<Object> reconnect() {
-
-        if (mConclaveSubscription != null) {
-            mConclaveSubscription.unsubscribe();
-        }
-
-        mConclaveSubscription = mConclaveClient.messageObservable()
-            .subscribe(mConclaveObserver);
-
-        rx.Observable<Object> connectObservable;
-
-        if (mConclaveAccessDetails == null) {
-            connectObservable = mConclaveAccessManager.getAccess(mClientId)
-                .flatMap(new Func1<ConclaveAccessDetails, Observable<Object>>() {
-                    @Override
-                    public Observable<Object> call(ConclaveAccessDetails conclaveAccessDetails) {
-                        mToken = null;
-
-                        setConclaveAccessDetails(conclaveAccessDetails);
-
-                        if (mToken == null) {
-                            return rx.Observable.error(new Exception("DeviceEventStream: couldn't find suitable Conclave token"));
-                        }
-
-                        AfLog.i("DeviceEventStream.reconnect: mAccountId = " + mAccountId);
-
-                        return mConclaveClient.connect(conclaveAccessDetails);
-                    }
-                });
-        } else {
-            connectObservable = mConclaveClient.connect(mConclaveAccessDetails);
-        }
-
-        return connectObservable;
-    }
-
-    public boolean isConnected() {
-        return mConclaveSubscription != null && mConclaveClient.isConnected();
-    }
-
-    @Override
-    public Observable<DeviceSync[]> observeSnapshot() {
-        return mSnapshotSubject;
-    }
-
-    @Override
-    public Observable<DeviceSync> observeAttributeChange() {
-        return mAttributeChangeSubject;
-    }
-
-    @Override
-    public Observable<DeviceError> observeError() {
-        return mDeviceErrorSubject;
-    }
-
-    @Override
-    public Observable<DeviceState> observeStatusChange() {
-        return mStatusChange;
-    }
-
-    @Override
-    public Observable<DeviceMute> observeMute() {
-        return mDeviceMuteSubject;
-    }
-
-    @Override
-    public Observable<OTAInfo> observeOTA() {
-        return mOTASubject;
-    }
-
-    @Override
-    public Observable<InvalidateMessage> observeInvalidate() {
-        return mInvalidateSubject;
-    }
-
 
     private Observer<ConclaveAccessDetails> mConclaveAccessObserver = new Observer<ConclaveAccessDetails>() {
 

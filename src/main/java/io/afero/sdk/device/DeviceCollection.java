@@ -31,9 +31,8 @@ import rx.functions.Func2;
 import rx.subjects.PublishSubject;
 
 /**
- * This class manages a collection of Afero peripheral devices. It manages the collection dynamically
- * by creating and deleting {@link DeviceModel} objects in response to messages received via the
- * the {@link ConclaveMessageSource}.
+ * This class manages a collection of {@link DeviceModel} objects in response to messages received
+ * via the {@link ConclaveMessageSource}.
  */
 public class DeviceCollection {
 
