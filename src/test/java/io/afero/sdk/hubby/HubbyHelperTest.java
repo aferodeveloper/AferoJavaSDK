@@ -114,10 +114,7 @@ public class HubbyHelperTest {
                 .resumeHubby()
 
                 .waitUntilStartedCalled()
-                .hubbyCallbackInitializationCompleted()
-                .waitUntilStartCompleted()
 
-                .verifyHubbyIsRunning()
                 .verifyHubbyIsActive()
         ;
     }
@@ -227,12 +224,15 @@ public class HubbyHelperTest {
 
                 .verifyHubbyNotActive()
                 .verifyHubbyIsRunning()
+                .verifyWakeLockHeld()
 
                 .hubbyCallbackOTAStatus(OtaCallback.OtaState.STOP, DEVICE_ID)
+                .waitUntilHubbyStop()
 
                 .verifyOTANotInProgress()
                 .verifyHubbyNotActive()
                 .verifyHubbyNotRunning()
+                .verifyWakeLockReleased()
         ;
     }
 
@@ -271,12 +271,17 @@ public class HubbyHelperTest {
         }
 
         HubbyHelperTester waitUntilStartedCalled() {
-            hubbyImpl.waitUntilStartedCalled();
+            hubbyImpl.waitUntilStarted();
             return this;
         }
 
         HubbyHelperTester waitUntilStartCompleted() {
             startObserver.waitUntilCompleted();
+            return this;
+        }
+
+        HubbyHelperTester waitUntilHubbyStop() {
+            hubbyImpl.waitUntilStopped();
             return this;
         }
 
@@ -369,6 +374,16 @@ public class HubbyHelperTest {
             assertFalse(hubbyHelper.isOTAInProgress());
             return this;
         }
+
+        HubbyHelperTester verifyWakeLockHeld() {
+            assertTrue(hubbyHelper.isWakeLockHeld());
+            return this;
+        }
+
+        HubbyHelperTester verifyWakeLockReleased() {
+            assertFalse(hubbyHelper.isWakeLockHeld());
+            return this;
+        }
     }
 
     private class MockHubbyImpl implements HubbyHelper.HubbyImpl {
@@ -377,6 +392,7 @@ public class HubbyHelperTest {
         private HashMap<Hubby.Config, String> mConfigs;
         private NotificationCallback mCallback;
         private final Object mStartLock = new Object();
+        private final Object mStopLock = new Object();
 
         @Override
         public void initialize(Context context) {
@@ -396,6 +412,10 @@ public class HubbyHelperTest {
         @Override
         public void stop() {
             mCallback.runComplete(NotificationCallback.CompleteReason.STOP_CALLED.getValue());
+
+            synchronized (mStopLock) {
+                mStopLock.notifyAll();
+            }
         }
 
         void callbackInitializationCompleted() {
@@ -406,12 +426,22 @@ public class HubbyHelperTest {
             mCallback.otaStatus(otaState.getValue(), deviceId, 0, 0);
         }
 
-        void waitUntilStartedCalled() {
+        void waitUntilStarted() {
             synchronized (mStartLock) {
                 try {
                     mStartLock.wait(5000);
                 } catch (InterruptedException e) {
-                    assertTrue("waitUntilStartedCalled timed out", false);
+                    assertTrue("waitUntilStarted timed out", false);
+                }
+            }
+        }
+
+        void waitUntilStopped() {
+            synchronized (mStopLock) {
+                try {
+                    mStopLock.wait(5000);
+                } catch (InterruptedException e) {
+                    assertTrue("waitUntilStopped timed out", false);
                 }
             }
         }

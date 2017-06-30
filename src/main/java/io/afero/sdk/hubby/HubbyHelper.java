@@ -37,7 +37,8 @@ public class HubbyHelper {
     private static boolean sIsHubbyInitialized;
 
     private static final String WAKE_LOCK_TAG = "io.afero.sdk.hubby.HubbyHelper.OTAWakeLockTag";
-    private static final long OTA_END_DELAY = 10000;
+    private static final long OTA_END_DELAY = 30000;
+    private static final long WAKE_LOCK_WATCHDOG_INTERVAL = 5000;
 
     private HubbyImpl mHubbyImpl = new NativeHubbyImpl();
 
@@ -123,8 +124,8 @@ public class HubbyHelper {
         AfLog.i("HubbyHelper.stop");
 
         if (isRunning()) {
-            mHubbyImpl.stop();
             mIsHubbyRunning = false;
+            mHubbyImpl.stop();
         }
     }
 
@@ -261,9 +262,6 @@ public class HubbyHelper {
         AfLog.i("HubbyHelper.onOTAStart");
 
         synchronized (mActiveOTAs) {
-            OTAEntry ota = new OTAEntry();
-            mActiveOTAs.put(deviceId, ota);
-
             if (mOTAWakeLock == null) {
                 AfLog.i("HubbyHelper.onOTAStart: Grabbing wakelock");
 
@@ -273,6 +271,11 @@ public class HubbyHelper {
                     mOTAWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
                     mOTAWakeLock.acquire();
                 }
+
+                startWakeLockWatchdog();
+
+                OTAEntry ota = new OTAEntry();
+                mActiveOTAs.put(deviceId, ota);
             }
         }
     }
@@ -282,28 +285,26 @@ public class HubbyHelper {
 
         synchronized (mActiveOTAs) {
             mActiveOTAs.remove(deviceId);
-
-            if (mActiveOTAs.isEmpty()) {
-
-            }
         }
-        mOTAEndSubscription = Observable.interval(OTA_END_DELAY, TimeUnit.MILLISECONDS, Schedulers.computation())
-            .subscribe(new Action1<Long>() {
-                @Override
-                public void call(Long x) {
-                    onOTAEnd();
-                }
-            });
+
+        if (!isOTAInProgress()) {
+            mOTAStopTime = 0;
+            onOTAEnd();
+        }
     }
 
     private void onOTAOngoing(String deviceId) {
-        mOTAStopTime = System.currentTimeMillis() + OTA_END_DELAY;
+        updateWakeLockWatchdog();
     }
 
     private void onOTAEnd() {
         long now = System.currentTimeMillis();
-        if (mOTAStopTime != 0 && now >= mOTAStopTime) {
+        if (mOTAStopTime == 0 || now >= mOTAStopTime) {
             AfLog.i("HubbyHelper: releasing wakelock");
+
+            synchronized (mActiveOTAs) {
+                mActiveOTAs.clear();
+            }
 
             mOTAEndSubscription = RxUtils.safeUnSubscribe(mOTAEndSubscription);
 
@@ -319,11 +320,26 @@ public class HubbyHelper {
         }
     }
 
+    private void startWakeLockWatchdog() {
+        mOTAStopTime = System.currentTimeMillis() + OTA_END_DELAY;
+        mOTAEndSubscription = Observable.interval(WAKE_LOCK_WATCHDOG_INTERVAL, TimeUnit.MILLISECONDS, Schedulers.computation())
+            .subscribe(new Action1<Long>() {
+                @Override
+                public void call(Long x) {
+                    onOTAEnd();
+                }
+            });
+    }
+
+    private void updateWakeLockWatchdog() {
+        mOTAStopTime = System.currentTimeMillis() + OTA_END_DELAY;
+    }
+
     boolean isOTAInProgress() {
         return !mActiveOTAs.isEmpty();
     }
 
-    private boolean isWaitingToReleaseWakelock() {
+    boolean isWakeLockHeld() {
         return mOTAWakeLock != null && mOTAWakeLock.isHeld();
     }
 
