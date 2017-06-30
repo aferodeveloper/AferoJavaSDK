@@ -7,17 +7,14 @@ package io.afero.sdk.client.retrofit2.api;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.client.afero.models.CreateAccountBody;
-import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
+import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
-import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
-import io.afero.sdk.client.retrofit2.models.NameDeviceBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.device.DeviceProfile;
 import retrofit2.Call;
@@ -77,11 +74,6 @@ public interface AferoClientAPI {
             @Path("mobileDeviceId") String mobileDeviceId
     );
 
-    @POST(V1 + "accounts")
-    Observable<CreateAccountResponse> createAccount(
-            @Body CreateAccountBody body
-    );
-
     @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes")
     Observable<DeviceAssociateResponse> deviceAssociate(
             @Path("accountId") String accountId,
@@ -137,13 +129,6 @@ public interface AferoClientAPI {
             @Path("profileId") String profileId,
             @Query("locale") String locale,
             @Query("imageSize") String imageSize
-    );
-
-    @PUT(V1 + "accounts/{accountId}/devices/{deviceId}/friendlyName")
-    Observable<NameDeviceBody> putFriendlyName(
-            @Path("accountId") String accountId,
-            @Path("deviceId") String deviceId,
-            @Body NameDeviceBody body
     );
 
     @POST(V1 + "accounts/{accountId}/mobileDevices/{mobileDeviceId}/conclaveAccess")
