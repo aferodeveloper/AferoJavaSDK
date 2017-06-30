@@ -121,9 +121,9 @@ public class MainActivity extends AppCompatActivity {
 
         mConclaveAccessManager = new ConclaveAccessManager(mAferoClient);
 
-        mDeviceEventStream = new DeviceEventStream(mConclaveAccessManager);
+        mDeviceEventStream = new DeviceEventStream(mConclaveAccessManager, ClientID.get(this));
 
-        mHubbyHelper = new HubbyHelper(mConclaveAccessManager, mAferoClient, isSimulator());
+        mHubbyHelper = HubbyHelper.acquireInstance(this, mAferoClient);
 
         final AferoClient.ImageSize imageSize = AferoClient.ImageSize
                 .fromDisplayDensity(getResources().getDisplayMetrics().density);
@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startHubby() {
         if (!mHubbyHelper.isRunning()) {
-            mHubbyHelper.start(this, ClientID.get(this));
+            mHubbyHelper.start();
         }
     }
 
@@ -407,7 +407,7 @@ public class MainActivity extends AppCompatActivity {
             final String accountId = mAferoClient.getActiveAccountId();
             final String userId = mUserId;
             final String clientId = ClientID.get(this);
-            return mDeviceEventStream.start(accountId, userId, "android", clientId);
+            return mDeviceEventStream.start(accountId, userId, "android");
         } else {
             return mDeviceEventStream.reconnect();
         }
