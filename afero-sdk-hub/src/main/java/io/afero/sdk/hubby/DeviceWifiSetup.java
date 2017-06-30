@@ -133,6 +133,10 @@ public class DeviceWifiSetup {
         return mSteadyStateSubject;
     }
 
+    public Observable<WifiSSIDEntry> getWifiSSIDList() {
+        return Observable.create(getGetWifiListOnSubscribe());
+    }
+
     public Observable<SetupWifiState> sendWifiCredential(String ssid, String password) {
         return Observable.create(getSendWifiCredentialOnSubscribe(ssid, password));
     }
@@ -232,10 +236,6 @@ public class DeviceWifiSetup {
         public boolean isUnsubscribed() {
             return false;
         }
-    }
-
-    public Observable<WifiSSIDEntry> getWifiSSIDList() {
-        return Observable.create(getGetWifiListOnSubscribe());
     }
 
     protected Observable.OnSubscribe<WifiSSIDEntry> getGetWifiListOnSubscribe() {
