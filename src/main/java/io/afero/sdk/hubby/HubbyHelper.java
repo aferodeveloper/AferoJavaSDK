@@ -13,11 +13,11 @@ import android.support.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
+import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import io.kiban.hubby.Hubby;
@@ -61,9 +61,6 @@ public class HubbyHelper {
     private PublishSubject<HubbyHelper> mStartSubject;
     private final PublishSubject<NotificationCallback.CompleteReason> mCompleteSubject = PublishSubject.create();
 
-    // for associate call
-    private final AferoClient.ImageSize mImageSize;
-
     private final Action0 mStartOnSubscribe = new Action0() {
         @Override
         public void call() {
@@ -86,9 +83,6 @@ public class HubbyHelper {
 
         mOTAPath = context.getCacheDir().getAbsolutePath();
         mSetupPath = context.getFilesDir().getAbsolutePath();
-
-        mImageSize = AferoClient.ImageSize
-            .fromDisplayDensity(context.getResources().getDisplayMetrics().density);
     }
 
     public static HubbyHelper acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient) {
@@ -236,8 +230,8 @@ public class HubbyHelper {
     private void onSecureHubAssociationNeeded(String assId) {
         AfLog.i("HubbyHelper.onSecureHubAssociationNeeded");
 
-        mAferoClient.deviceAssociate(assId, false, Locale.getDefault().toString(), mImageSize)
-            .subscribe();
+        mAferoClient.deviceAssociate(assId)
+            .subscribe(new RxUtils.IgnoreResponseObserver<DeviceAssociateResponse>());
     }
 
     private void onOtaStateChange(String deviceId, OtaCallback.OtaState otaState, int offset, int total) {
