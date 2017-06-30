@@ -24,6 +24,7 @@ import io.kiban.hubby.Hubby;
 import io.kiban.hubby.NotificationCallback;
 import io.kiban.hubby.OtaCallback;
 import rx.Observable;
+import rx.Observer;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -44,6 +45,7 @@ public class HubbyHelper {
 
     private final WeakReference<Context> mContextRef;
     private final AferoClient mAferoClient;
+    private final String mClientId;
     private final String mSetupPath;
     private final String mOTAPath;
     private final NotificationCallback mNotificationCallback;
@@ -60,6 +62,7 @@ public class HubbyHelper {
 
     private PublishSubject<HubbyHelper> mStartSubject;
     private final PublishSubject<NotificationCallback.CompleteReason> mCompleteSubject = PublishSubject.create();
+    private final PublishSubject<String> mAssociateSubject = PublishSubject.create();
 
     private final Action0 mStartOnSubscribe = new Action0() {
         @Override
@@ -75,9 +78,10 @@ public class HubbyHelper {
         }
     };
 
-    private HubbyHelper(@NonNull Context context, @NonNull AferoClient aferoClient) {
+    private HubbyHelper(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String clientId) {
         mContextRef = new WeakReference<>(context);
         mAferoClient = aferoClient;
+        mClientId = clientId;
 
         mNotificationCallback = new HubbyNotificationCallback(this);
 
@@ -85,9 +89,9 @@ public class HubbyHelper {
         mSetupPath = context.getFilesDir().getAbsolutePath();
     }
 
-    public static HubbyHelper acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient) {
+    public static HubbyHelper acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String clientId) {
         if (sInstance == null) {
-            sInstance = new HubbyHelper(context, aferoClient);
+            sInstance = new HubbyHelper(context, aferoClient, clientId);
         }
 
         return sInstance;
@@ -125,6 +129,10 @@ public class HubbyHelper {
 
     public Observable<NotificationCallback.CompleteReason> observeCompletion() {
         return mCompleteSubject;
+    }
+
+    public Observable<String> observeAssociation() {
+        return mAssociateSubject;
     }
 
     public void onPause() {
@@ -198,8 +206,12 @@ public class HubbyHelper {
     private void startHubby() {
         AfLog.i("HubbyHelper: starting hubby");
 
-        String hwInfo = "os:android,manufacturer:" + Build.MANUFACTURER + ",model:" + Build.MODEL + ",version:" + Build.VERSION.RELEASE;
-        String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
+        final String hwInfo = "os:android,manufacturer:" + Build.MANUFACTURER +
+                ",model:" + Build.MODEL +
+                ",version:" + Build.VERSION.RELEASE +
+                (mClientId != null ? ",clientId:" + mClientId : "")
+                ;
+        final String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
 
         HashMap<Hubby.Config,String> config = new HashMap<>(1);
         config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
@@ -231,7 +243,20 @@ public class HubbyHelper {
         AfLog.i("HubbyHelper.onSecureHubAssociationNeeded");
 
         mAferoClient.deviceAssociate(assId)
-            .subscribe(new RxUtils.IgnoreResponseObserver<DeviceAssociateResponse>());
+            .subscribe(new Observer<DeviceAssociateResponse>() {
+                @Override
+                public void onCompleted() {}
+
+                @Override
+                public void onError(Throwable e) {
+                    AfLog.e(e);
+                }
+
+                @Override
+                public void onNext(DeviceAssociateResponse response) {
+                    mAssociateSubject.onNext(response.deviceId);
+                }
+            });
     }
 
     private void onOtaStateChange(String deviceId, OtaCallback.OtaState otaState, int offset, int total) {
