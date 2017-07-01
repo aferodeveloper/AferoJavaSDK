@@ -133,10 +133,16 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     @Override
-    public Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+    public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
         DeviceAssociateBody body = new DeviceAssociateBody(associationId);
         return isOwnershipVerified ? mAferoService.deviceAssociateVerified(mActiveAccountId, body, locale, imageSize.toImageSizeSpecifier())
-                : mAferoService.deviceAssociate(mActiveAccountId, body, locale, imageSize.toImageSizeSpecifier());
+                : mAferoService.deviceAssociateGetProfile(mActiveAccountId, body, locale, imageSize.toImageSizeSpecifier());
+    }
+
+    @Override
+    public Observable<DeviceAssociateResponse> deviceAssociate(String associationId) {
+        DeviceAssociateBody body = new DeviceAssociateBody(associationId);
+        return mAferoService.deviceAssociate(mActiveAccountId, body);
     }
 
     @Override

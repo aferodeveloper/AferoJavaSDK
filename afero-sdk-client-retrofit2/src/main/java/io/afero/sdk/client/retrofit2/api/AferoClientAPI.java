@@ -74,8 +74,14 @@ public interface AferoClientAPI {
             @Path("mobileDeviceId") String mobileDeviceId
     );
 
-    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes")
+    @POST(V1 + "accounts/{accountId}/devices")
     Observable<DeviceAssociateResponse> deviceAssociate(
+            @Path("accountId") String accountId,
+            @Body DeviceAssociateBody body
+    );
+
+    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes")
+    Observable<DeviceAssociateResponse> deviceAssociateGetProfile(
             @Path("accountId") String accountId,
             @Body DeviceAssociateBody body,
             @Query("locale") String locale,
