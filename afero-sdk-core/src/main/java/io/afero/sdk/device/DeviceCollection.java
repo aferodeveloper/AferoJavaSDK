@@ -281,7 +281,7 @@ public class DeviceCollection {
     }
 
     public Observable<DeviceModel> addDevice(String associationId, boolean isOwnershipVerified) {
-        return mAferoClient.deviceAssociate(associationId, isOwnershipVerified, mDeviceProfileCollection.getLocale(), mDeviceProfileCollection.getImageSize())
+        return mAferoClient.deviceAssociateGetProfile(associationId, isOwnershipVerified, mDeviceProfileCollection.getLocale(), mDeviceProfileCollection.getImageSize())
             .onErrorResumeNext(new Func1<Throwable, Observable<? extends DeviceAssociateResponse>>() {
                 @Override
                 public Observable<? extends DeviceAssociateResponse> call(Throwable t) {

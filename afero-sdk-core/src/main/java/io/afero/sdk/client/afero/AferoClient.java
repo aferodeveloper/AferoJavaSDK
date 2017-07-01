@@ -31,7 +31,9 @@ public interface AferoClient {
 
     Observable<Location> getDeviceLocation(DeviceModel deviceModel);
 
-    Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize);
+    Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize);
+
+    Observable<DeviceAssociateResponse> deviceAssociate(String associationId);
 
     Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel);
 

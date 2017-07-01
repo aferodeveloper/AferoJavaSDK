@@ -62,7 +62,20 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+    public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+        try {
+            DeviceAssociateResponse dar = mDeviceAssociateResponse;
+            if (dar == null) {
+                dar = mLoader.createObjectFromJSONResource("deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
+            }
+            return Observable.just(dar);
+        } catch (IOException e) {
+            return Observable.error(e);
+        }
+    }
+
+    @Override
+    public Observable<DeviceAssociateResponse> deviceAssociate(String associationId) {
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {

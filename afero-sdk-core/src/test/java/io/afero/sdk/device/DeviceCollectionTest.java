@@ -73,7 +73,12 @@ public class DeviceCollectionTest {
         }
 
         @Override
-        public Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+            return null;
+        }
+
+        @Override
+        public Observable<DeviceAssociateResponse> deviceAssociate(String associationId) {
             return null;
         }
 
