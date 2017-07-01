@@ -43,6 +43,7 @@ import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import retrofit2.Response;
 import rx.Observable;
+import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -76,6 +77,8 @@ public class MainActivity extends AppCompatActivity {
 
     private String mUserId;
 
+    private final Observer<HubbyHelper> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<HubbyHelper>();
+
     @BindView(R.id.device_list_view)
     DeviceListView mDeviceListView;
 
@@ -97,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.text_network_status)
     TextView mNetworkStatus;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,19 +113,23 @@ public class MainActivity extends AppCompatActivity {
         final String accessToken = Prefs.getAccessToken(this);
         final String refreshToken = Prefs.getRefreshToken(this);
 
+        AccessToken token = !(accessToken.isEmpty() || refreshToken.isEmpty())
+            ? new AccessToken(accessToken, refreshToken)
+            : null;
+
         mAferoClient = new AferoClientRetrofit2(BASE_URL_AFERO, BuildConfig.HTTP_LOG_LEVEL, DEFAULT_SERVICE_TIMEOUT);
-        if (accessToken.length() > 0 && refreshToken.length() > 0) {
+        if (token != null) {
             mAferoClient.setToken(new AccessToken(accessToken, refreshToken));
         }
 
-        mAferoClient.setActiveAccountId(accountId);
-        mAferoClient.setOwnerAccountId(accountId);
+        mAferoClient.setOwnerAndActiveAccountId(accountId);
 
         mConclaveAccessManager = new ConclaveAccessManager(mAferoClient);
 
         mDeviceEventStream = new DeviceEventStream(mConclaveAccessManager, ClientID.get(this));
 
         mHubbyHelper = HubbyHelper.acquireInstance(this, mAferoClient);
+        mHubbyHelper.setService("dev");
 
         final AferoClient.ImageSize imageSize = AferoClient.ImageSize
                 .fromDisplayDensity(getResources().getDisplayMetrics().density);
@@ -139,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
 
         PermissionsHelper.checkRequiredPermissions(this);
 
-        if (!accessToken.isEmpty()) {
+        if (token != null) {
             startDeviceStream();
         }
     }
@@ -231,7 +237,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void startHubby() {
         if (!mHubbyHelper.isRunning()) {
-            mHubbyHelper.start();
+            mHubbyHelper.start()
+                .subscribe(mHubbyHelperStartObserver);
         }
     }
 
@@ -280,8 +287,7 @@ public class MainActivity extends AppCompatActivity {
 
         mAccountNameText.setText(accountName);
 
-        mAferoClient.setOwnerAccountId(accountId);
-        mAferoClient.setActiveAccountId(accountId);
+        mAferoClient.setOwnerAndActiveAccountId(accountId);
 
         startDeviceStream();
     }

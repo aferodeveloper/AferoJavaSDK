@@ -41,7 +41,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile 'io.kiban:hubby:1.0.472-prod@aar'
+    compile 'io.kiban:hubby:1.0.472@aar'
     compile 'io.afero:afero-sdk-android-debug@aar'
     compile 'io.afero:afero-sdk-hub-debug@aar'
 
