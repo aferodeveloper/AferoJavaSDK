@@ -184,6 +184,17 @@ public class HubbyHelperTest {
     }
 
     @Test
+    public void observeAssociation() throws Exception {
+        makeHubbyHelperTester()
+                .startHubbyCompletely()
+
+                .hubbyCallbackAssociationNeeded("association-id")
+
+                .verifyAssociatedDeviceId("device-id")
+            ;
+    }
+
+    @Test
     public void setService() throws Exception {
         makeHubbyHelperTester()
 
@@ -248,14 +259,16 @@ public class HubbyHelperTest {
         final MockHubbyImpl hubbyImpl = new MockHubbyImpl();
         final StartObserver startObserver = new StartObserver();
         final OnNextComplete onNextComplete = new OnNextComplete();
+        final OnNextAssociation onNextAssociation = new OnNextAssociation();
 
         HubbyHelper hubbyHelper;
 
         HubbyHelperTester() {
             activity = Robolectric.buildActivity(Activity.class).create().get();
-            hubbyHelper = HubbyHelper.acquireInstance(activity, aferoClient);
+            hubbyHelper = HubbyHelper.acquireInstance(activity, aferoClient, null);
             hubbyHelper.setHubbyImpl(hubbyImpl);
             hubbyHelper.observeCompletion().subscribe(onNextComplete);
+            hubbyHelper.observeAssociation().subscribe(onNextAssociation);
         }
 
         HubbyHelperTester startHubby() {
@@ -307,6 +320,11 @@ public class HubbyHelperTest {
 
         HubbyHelperTester hubbyCallbackOTAStatus(OtaCallback.OtaState otaState, String deviceId) {
             hubbyImpl.callbackOTAStatus(otaState, deviceId);
+            return this;
+        }
+
+        HubbyHelperTester hubbyCallbackAssociationNeeded(String assId) {
+            hubbyImpl.callbackAssociationNeeded(assId);
             return this;
         }
 
@@ -384,6 +402,11 @@ public class HubbyHelperTest {
             assertFalse(hubbyHelper.isWakeLockHeld());
             return this;
         }
+
+        HubbyHelperTester verifyAssociatedDeviceId(String deviceId) {
+            assertEquals(deviceId, onNextAssociation.mDeviceId);
+            return this;
+        }
     }
 
     private class MockHubbyImpl implements HubbyHelper.HubbyImpl {
@@ -424,6 +447,10 @@ public class HubbyHelperTest {
 
         void callbackOTAStatus(OtaCallback.OtaState otaState, String deviceId) {
             mCallback.otaStatus(otaState.getValue(), deviceId, 0, 0);
+        }
+
+        void callbackAssociationNeeded(String assId) {
+            mCallback.secureHubAssociationNeeded(assId);
         }
 
         void waitUntilStarted() {
@@ -487,8 +514,15 @@ public class HubbyHelperTest {
         }
 
         @Override
-        public Observable<DeviceAssociateResponse> deviceAssociate(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
             return null;
+        }
+
+        @Override
+        public Observable<DeviceAssociateResponse> deviceAssociate(String associationId) {
+            DeviceAssociateResponse response = new DeviceAssociateResponse();
+            response.deviceId = "device-id";
+            return Observable.just(response);
         }
 
         @Override
@@ -559,4 +593,13 @@ public class HubbyHelperTest {
         }
     }
 
+    private static class OnNextAssociation implements Action1<String> {
+
+        String mDeviceId;
+
+        @Override
+        public void call(String deviceId) {
+            mDeviceId = deviceId;
+        }
+    }
 }
