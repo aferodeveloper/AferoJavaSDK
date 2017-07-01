@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
         mDeviceEventStream = new DeviceEventStream(mConclaveAccessManager, ClientID.get(this));
 
-        mHubbyHelper = HubbyHelper.acquireInstance(this, mAferoClient);
+        mHubbyHelper = HubbyHelper.acquireInstance(this, mAferoClient, ClientID.get(this));
         mHubbyHelper.setService("dev");
 
         final AferoClient.ImageSize imageSize = AferoClient.ImageSize
