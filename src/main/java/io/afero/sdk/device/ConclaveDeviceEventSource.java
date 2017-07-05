@@ -13,7 +13,7 @@ import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.conclave.ConclaveAccessManager;
 import io.afero.sdk.conclave.ConclaveClient;
 import io.afero.sdk.conclave.ConclaveMessage;
-import io.afero.sdk.conclave.ConclaveMessageSource;
+import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceError;
 import io.afero.sdk.conclave.models.DeviceMute;
 import io.afero.sdk.conclave.models.DeviceState;
@@ -29,7 +29,7 @@ import rx.Subscription;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-public class DeviceEventStream implements ConclaveMessageSource {
+public class ConclaveDeviceEventSource implements DeviceEventSource {
 
     private ConclaveClient mConclaveClient = new ConclaveClient();
     private ConclaveAccessManager mConclaveAccessManager;
@@ -68,7 +68,7 @@ public class DeviceEventStream implements ConclaveMessageSource {
         @Override
         public void onError(Throwable e) {
             // should never get here
-            AfLog.e("DeviceEventStream Conclave Observer error!");
+            AfLog.e("ConclaveDeviceEventSource Conclave Observer error!");
             AfLog.e(e);
         }
 
@@ -83,7 +83,7 @@ public class DeviceEventStream implements ConclaveMessageSource {
         }
     };
 
-    public DeviceEventStream(ConclaveAccessManager cam, String clientId) {
+    public ConclaveDeviceEventSource(ConclaveAccessManager cam, String clientId) {
         mConclaveAccessManager = cam;
         mClientId = clientId;
 
@@ -168,10 +168,10 @@ public class DeviceEventStream implements ConclaveMessageSource {
                         setConclaveAccessDetails(conclaveAccessDetails);
 
                         if (mToken == null) {
-                            return rx.Observable.error(new Exception("DeviceEventStream: couldn't find suitable Conclave token"));
+                            return rx.Observable.error(new Exception("ConclaveDeviceEventSource: couldn't find suitable Conclave token"));
                         }
 
-                        AfLog.i("DeviceEventStream.reconnect: mAccountId = " + mAccountId);
+                        AfLog.i("ConclaveDeviceEventSource.reconnect: mAccountId = " + mAccountId);
 
                         return mConclaveClient.connect(conclaveAccessDetails);
                     }
@@ -246,12 +246,12 @@ public class DeviceEventStream implements ConclaveMessageSource {
             }
 
             if (mGeneration != generation || mSequenceNum != seq) {
-                AfLog.i("DeviceEventStream: generation/sequence # mismatch " + mGeneration + " != " + generation + " || " + mSequenceNum + " != " + seq);
+                AfLog.i("ConclaveDeviceEventSource: generation/sequence # mismatch " + mGeneration + " != " + generation + " || " + mSequenceNum + " != " + seq);
                 mGeneration = generation;
                 mSequenceNum = seq;
 //                mConclaveClient.say("snapshot?", null);
             } else {
-                AfLog.i("DeviceEventStream: generation/sequence # match " + mGeneration + "/" + mSequenceNum);
+                AfLog.i("ConclaveDeviceEventSource: generation/sequence # match " + mGeneration + "/" + mSequenceNum);
             }
         }
         else if (key.equals("error")) {

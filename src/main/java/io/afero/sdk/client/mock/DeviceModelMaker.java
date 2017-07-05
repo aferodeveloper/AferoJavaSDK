@@ -18,12 +18,12 @@ public class DeviceModelMaker {
 
     private final io.afero.sdk.client.mock.ResourceLoader mLoader = new ResourceLoader();
     private final DeviceCollection mDeviceCollection;
-    private final MockConclaveMessageSource mMessageSource;
+    private final MockDeviceEventSource mMessageSource;
     private final MockAferoClient mAferoClient;
     private final DeviceProfileCollection mProfileCollection;
 
     public DeviceModelMaker() {
-        mMessageSource = new MockConclaveMessageSource();
+        mMessageSource = new MockDeviceEventSource();
         mAferoClient = new MockAferoClient();
         mProfileCollection = new DeviceProfileCollection(mAferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
         mDeviceCollection = new DeviceCollection(mMessageSource, mProfileCollection, mAferoClient);

@@ -5,7 +5,7 @@
 package io.afero.sdk.client.mock;
 
 import io.afero.sdk.conclave.ConclaveMessage;
-import io.afero.sdk.conclave.ConclaveMessageSource;
+import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceError;
 import io.afero.sdk.conclave.models.DeviceMute;
 import io.afero.sdk.conclave.models.DeviceState;
@@ -15,7 +15,7 @@ import io.afero.sdk.conclave.models.OTAInfo;
 import rx.Observable;
 import rx.subjects.PublishSubject;
 
-public class MockConclaveMessageSource implements ConclaveMessageSource {
+public class MockDeviceEventSource implements DeviceEventSource {
 
     public final PublishSubject<DeviceSync[]> mSnapshotSubject = PublishSubject.create();
     public final PublishSubject<DeviceSync> mAttributeChangeSubject = PublishSubject.create();

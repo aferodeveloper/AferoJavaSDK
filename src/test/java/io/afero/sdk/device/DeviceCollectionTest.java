@@ -7,7 +7,7 @@ package io.afero.sdk.device;
 import org.junit.Before;
 import org.junit.Test;
 
-import io.afero.sdk.client.mock.MockConclaveMessageSource;
+import io.afero.sdk.client.mock.MockDeviceEventSource;
 import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
@@ -17,7 +17,7 @@ import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
-import io.afero.sdk.conclave.ConclaveMessageSource;
+import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.log.JavaLog;
@@ -108,7 +108,7 @@ public class DeviceCollectionTest {
         AfLog.init(new JavaLog());
     }
 
-    private DeviceCollection makeDeviceCollection(ConclaveMessageSource source) {
+    private DeviceCollection makeDeviceCollection(DeviceEventSource source) {
 
         MockAferoClient aferoClient = new MockAferoClient();
         DeviceProfileCollection profileCollection = new DeviceProfileCollection(aferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
@@ -118,7 +118,7 @@ public class DeviceCollectionTest {
 
     @Test
     public void start() throws Exception {
-        MockConclaveMessageSource messageSource = new MockConclaveMessageSource();
+        MockDeviceEventSource messageSource = new MockDeviceEventSource();
         DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
 
         assertEquals(false, messageSource.mSnapshotSubject.hasObservers());
@@ -130,7 +130,7 @@ public class DeviceCollectionTest {
 
     @Test
     public void stop() throws Exception {
-        MockConclaveMessageSource messageSource = new MockConclaveMessageSource();
+        MockDeviceEventSource messageSource = new MockDeviceEventSource();
         DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
         deviceCollection.start();
 
@@ -163,7 +163,7 @@ public class DeviceCollectionTest {
 
     @Test
     public void observeCreates() throws Exception {
-        MockConclaveMessageSource messageSource = new MockConclaveMessageSource();
+        MockDeviceEventSource messageSource = new MockDeviceEventSource();
         DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
         deviceCollection.start();
 
