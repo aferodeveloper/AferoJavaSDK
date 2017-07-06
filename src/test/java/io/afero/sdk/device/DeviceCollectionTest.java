@@ -30,6 +30,124 @@ public class DeviceCollectionTest {
 
     private final ResourceLoader mLoader = new ResourceLoader();
 
+    @Before
+    public void beforeTests() {
+        AfLog.init(new JavaLog());
+    }
+
+    private DeviceCollection makeDeviceCollection(DeviceEventSource source) {
+
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceProfileCollection profileCollection = new DeviceProfileCollection(aferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
+
+        return new DeviceCollection(source, profileCollection, aferoClient);
+    }
+
+    @Test
+    public void start() throws Exception {
+        MockDeviceEventSource messageSource = new MockDeviceEventSource();
+        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
+
+        assertEquals(false, messageSource.mSnapshotSubject.hasObservers());
+
+        deviceCollection.start();
+
+        assertEquals(true, messageSource.mSnapshotSubject.hasObservers());
+    }
+
+    @Test
+    public void stop() throws Exception {
+        MockDeviceEventSource messageSource = new MockDeviceEventSource();
+        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
+        deviceCollection.start();
+
+        assertEquals(true, messageSource.mSnapshotSubject.hasObservers());
+
+        deviceCollection.stop();
+
+        assertEquals(false, messageSource.mSnapshotSubject.hasObservers());
+    }
+
+    @Test
+    public void addOrUpdate() throws Exception {
+
+    }
+
+    @Test
+    public void deleteDevice() throws Exception {
+
+    }
+
+    @Test
+    public void reset() throws Exception {
+
+    }
+
+    @Test
+    public void getDevices() throws Exception {
+
+    }
+
+    @Test
+    public void observeCreates() throws Exception {
+//        MockDeviceEventSource messageSource = new MockDeviceEventSource();
+//        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
+//        deviceCollection.start();
+//
+//        DeviceSync[] snapshot = mLoader.createObjectFromJSONResource("deviceCollection/deviceSync.json", DeviceSync[].class);
+//        messageSource.putSnapshot(snapshot);
+//
+//        assertEquals(1, deviceCollection.getCount());
+//
+//        DeviceModel deviceModel = deviceCollection.getModel(snapshot[0].id);
+//        assertNotNull(deviceModel);
+//
+//        DeviceProfile deviceProfile = deviceModel.getProfile();
+//        assertNotNull(deviceProfile);
+//
+//        assertEquals(snapshot[0].profileId, deviceProfile.getId());
+    }
+
+    @Test
+    public void observeProfileChanges() throws Exception {
+
+    }
+
+    @Test
+    public void observeSnapshots() throws Exception {
+
+    }
+
+    @Test
+    public void observeDeletes() throws Exception {
+
+    }
+
+    @Test
+    public void hasUnAvailableDevices() throws Exception {
+
+    }
+
+    @Test
+    public void hasAnyUserDevices() throws Exception {
+
+    }
+
+    @Test
+    public void contains() throws Exception {
+
+    }
+
+    @Test
+    public void getCount() throws Exception {
+
+    }
+
+    @Test
+    public void getModel() throws Exception {
+
+    }
+
     private static class MockAferoClient implements AferoClient {
 
         private final ResourceLoader mLoader = new ResourceLoader();
@@ -101,129 +219,6 @@ public class DeviceCollectionTest {
         public boolean isTransferVerificationError(Throwable t) {
             return false;
         }
-    }
-
-    @Before
-    public void beforeTests() {
-        AfLog.init(new JavaLog());
-    }
-
-    private DeviceCollection makeDeviceCollection(DeviceEventSource source) {
-
-        MockAferoClient aferoClient = new MockAferoClient();
-        DeviceProfileCollection profileCollection = new DeviceProfileCollection(aferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
-
-        return new DeviceCollection(source, profileCollection, aferoClient);
-    }
-
-    @Test
-    public void start() throws Exception {
-        MockDeviceEventSource messageSource = new MockDeviceEventSource();
-        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
-
-        assertEquals(false, messageSource.mSnapshotSubject.hasObservers());
-
-        deviceCollection.start();
-
-        assertEquals(true, messageSource.mSnapshotSubject.hasObservers());
-    }
-
-    @Test
-    public void stop() throws Exception {
-        MockDeviceEventSource messageSource = new MockDeviceEventSource();
-        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
-        deviceCollection.start();
-
-        assertEquals(true, messageSource.mSnapshotSubject.hasObservers());
-
-        deviceCollection.stop();
-
-        assertEquals(false, messageSource.mSnapshotSubject.hasObservers());
-    }
-
-    @Test
-    public void addOrUpdate() throws Exception {
-
-    }
-
-    @Test
-    public void deleteDevice() throws Exception {
-
-    }
-
-    @Test
-    public void reset() throws Exception {
-
-    }
-
-    @Test
-    public void getDevices() throws Exception {
-
-    }
-
-    @Test
-    public void observeCreates() throws Exception {
-        MockDeviceEventSource messageSource = new MockDeviceEventSource();
-        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
-        deviceCollection.start();
-
-        DeviceSync[] snapshot = mLoader.createObjectFromJSONResource("deviceCollection/deviceSync.json", DeviceSync[].class);
-        messageSource.putSnapshot(snapshot);
-
-        assertEquals(1, deviceCollection.getCount());
-
-        DeviceModel deviceModel = deviceCollection.getModel(snapshot[0].id);
-        assertNotNull(deviceModel);
-
-        DeviceProfile deviceProfile = deviceModel.getProfile();
-        assertNotNull(deviceProfile);
-
-        assertEquals(snapshot[0].profileId, deviceProfile.getId());
-    }
-
-    @Test
-    public void observeProfileChanges() throws Exception {
-
-    }
-
-    @Test
-    public void observeSnapshots() throws Exception {
-
-    }
-
-    @Test
-    public void observeDeletes() throws Exception {
-
-    }
-
-    @Test
-    public void hasUnAvailableDevices() throws Exception {
-
-    }
-
-    @Test
-    public void hasAnyUserDevices() throws Exception {
-
-    }
-
-    @Test
-    public void contains() throws Exception {
-
-    }
-
-    @Test
-    public void getCount() throws Exception {
-
-    }
-
-    @Test
-    public void getModelAt() throws Exception {
-
-    }
-
-    @Test
-    public void getModel() throws Exception {
-
     }
 
 }
