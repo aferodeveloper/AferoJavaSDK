@@ -11,21 +11,17 @@ import rx.Observable;
 import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 
-public class DeviceProfileCollection {
+class DeviceProfileCollection {
 
     private final AferoClient mAferoClient;
     private HashMap<String, DeviceProfile> mProfiles = new HashMap<>();
     private PublishSubject<DeviceProfile> mProfileSubject = PublishSubject.create();
-    private AferoClient.ImageSize mImageSize;
-    private String mLocale;
 
-    public DeviceProfileCollection(AferoClient aferoClient, AferoClient.ImageSize imageSize, String locale) {
+    DeviceProfileCollection(AferoClient aferoClient) {
         mAferoClient = aferoClient;
-        mImageSize = imageSize;
-        mLocale = locale;
     }
 
-    DeviceProfile addProfile(DeviceProfile profile) {
+    private DeviceProfile addProfile(DeviceProfile profile) {
         mProfiles.put(profile.getId(), profile);
         mProfileSubject.onNext(profile);
         return profile;
@@ -36,7 +32,7 @@ public class DeviceProfileCollection {
     }
 
     Observable<DeviceProfile[]> fetchAccountProfiles() {
-        return mAferoClient.getAccountDeviceProfiles(mLocale, mImageSize)
+        return mAferoClient.getAccountDeviceProfiles()
             .doOnNext(new Action1<DeviceProfile[]>() {
                 @Override
                 public void call(DeviceProfile[] deviceProfiles) {
@@ -48,7 +44,7 @@ public class DeviceProfileCollection {
     }
 
     Observable<DeviceProfile> fetchDeviceProfile(String profileId) {
-        return mAferoClient.getDeviceProfile(profileId, mLocale, mImageSize)
+        return mAferoClient.getDeviceProfile(profileId)
             .doOnNext(new Action1<DeviceProfile>() {
                 @Override
                 public void call(DeviceProfile dp) {
@@ -59,13 +55,5 @@ public class DeviceProfileCollection {
 
     Observable<DeviceProfile> getObservable() {
         return mProfileSubject;
-    }
-
-    String getLocale() {
-        return mLocale;
-    }
-
-    AferoClient.ImageSize getImageSize() {
-        return mImageSize;
     }
 }

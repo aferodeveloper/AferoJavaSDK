@@ -6,12 +6,10 @@ package io.afero.sdk.client.mock;
 
 import java.io.IOException;
 
-import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
-import io.afero.sdk.device.DeviceProfileCollection;
 import rx.functions.Action1;
 
 public class DeviceModelMaker {
@@ -20,13 +18,11 @@ public class DeviceModelMaker {
     private final DeviceCollection mDeviceCollection;
     private final MockDeviceEventSource mMessageSource;
     private final MockAferoClient mAferoClient;
-    private final DeviceProfileCollection mProfileCollection;
 
     public DeviceModelMaker() {
         mMessageSource = new MockDeviceEventSource();
         mAferoClient = new MockAferoClient();
-        mProfileCollection = new DeviceProfileCollection(mAferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
-        mDeviceCollection = new DeviceCollection(mMessageSource, mProfileCollection, mAferoClient);
+        mDeviceCollection = new DeviceCollection(mMessageSource, mAferoClient);
     }
 
     public DeviceModel create(String associationId) {

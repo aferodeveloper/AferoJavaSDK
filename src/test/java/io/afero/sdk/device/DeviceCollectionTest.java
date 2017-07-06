@@ -18,7 +18,6 @@ import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.conclave.DeviceEventSource;
-import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.log.JavaLog;
 import rx.Observable;
@@ -36,11 +35,8 @@ public class DeviceCollectionTest {
     }
 
     private DeviceCollection makeDeviceCollection(DeviceEventSource source) {
-
         MockAferoClient aferoClient = new MockAferoClient();
-        DeviceProfileCollection profileCollection = new DeviceProfileCollection(aferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
-
-        return new DeviceCollection(source, profileCollection, aferoClient);
+        return new DeviceCollection(source, aferoClient);
     }
 
     @Test
@@ -166,12 +162,12 @@ public class DeviceCollectionTest {
         }
 
         @Override
-        public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize) {
+        public Observable<DeviceProfile> getDeviceProfile(String profileId) {
             return null;
         }
 
         @Override
-        public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize) {
+        public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
             return null;
         }
 
@@ -191,7 +187,7 @@ public class DeviceCollectionTest {
         }
 
         @Override
-        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
             return null;
         }
 

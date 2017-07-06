@@ -63,14 +63,12 @@ public class DeviceCollection {
      * in response to messages received from the specified deviceEventSource.
      *
      * @param deviceEventSource Source for all device messages
-     * @param deviceProfileCollection The {@link DeviceProfileCollection} used to store/retrieve the
-     * {@link DeviceProfile}s association with the devices in the collection.
      * @param aferoClient The {@link AferoClient} used by the {@code DeviceCollection} to associate
      *                    and disassociate devices with the active account.
      */
-    public DeviceCollection(DeviceEventSource deviceEventSource, DeviceProfileCollection deviceProfileCollection, AferoClient aferoClient) {
+    public DeviceCollection(DeviceEventSource deviceEventSource, AferoClient aferoClient) {
         mDeviceEventSource = deviceEventSource;
-        mDeviceProfileCollection = deviceProfileCollection;
+        mDeviceProfileCollection = new DeviceProfileCollection(aferoClient);
         mAferoClient = aferoClient;
     }
 
@@ -328,7 +326,7 @@ public class DeviceCollection {
      * {@param isOwnershipVerified} set to true.
      */
     public Observable<DeviceModel> addDevice(String associationId, boolean isOwnershipVerified) {
-        return mAferoClient.deviceAssociateGetProfile(associationId, isOwnershipVerified, mDeviceProfileCollection.getLocale(), mDeviceProfileCollection.getImageSize())
+        return mAferoClient.deviceAssociateGetProfile(associationId, isOwnershipVerified)
             .onErrorResumeNext(new Func1<Throwable, Observable<? extends DeviceAssociateResponse>>() {
                 @Override
                 public Observable<? extends DeviceAssociateResponse> call(Throwable t) {
