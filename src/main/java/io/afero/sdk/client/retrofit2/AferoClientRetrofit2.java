@@ -6,6 +6,7 @@ package io.afero.sdk.client.retrofit2;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
@@ -54,7 +55,7 @@ public class AferoClientRetrofit2 implements AferoClient {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
-    private final String mBaseUrl;
+    private Config mConfig = new Config();
     private final OkHttpClient mHttpClient;
     private final AferoClientAPI mAferoService;
 
@@ -66,15 +67,46 @@ public class AferoClientRetrofit2 implements AferoClient {
     private BehaviorSubject<AccessToken> mTokenSubject;
     private PublishSubject<String> mActiveAccountSubject = PublishSubject.create();
 
+    public static class Config {
+        private String baseUrl;
+        private HttpLoggingInterceptor.Level logLevel = HttpLoggingInterceptor.Level.NONE;
+        private int defaultTimeout = 60;
+        private ImageScale imageScale = ImageScale.SCALE_DEFAULT;
 
-    public AferoClientRetrofit2(String baseUrl, HttpLoggingInterceptor.Level logLevel, int defaultTimeout) {
-        mBaseUrl = baseUrl;
-        mHttpClient = createHttpClient(logLevel, defaultTimeout);
+        public Config setBaseUrl(String url) {
+            baseUrl = url;
+            return this;
+        }
+
+        public Config setLogLevel(HttpLoggingInterceptor.Level ll) {
+            logLevel = ll;
+            return this;
+        }
+
+        public Config setDefaultTimeout(int dt) {
+            defaultTimeout = dt;
+            return this;
+        }
+
+        public Config setImageScale(ImageScale is) {
+            imageScale = is;
+            return this;
+        }
+    }
+
+
+    public AferoClientRetrofit2(Config config) {
+        mConfig = config;
+        mHttpClient = createHttpClient(config.logLevel, config.defaultTimeout);
         mAferoService = createRetrofit().create(AferoClientAPI.class);
     }
 
     public String getBaseUrl() {
-        return mBaseUrl;
+        return mConfig.baseUrl;
+    }
+
+    public String getLocale() {
+        return Locale.getDefault().toString();
     }
 
     public OkHttpClient getHttpClient() {
@@ -133,10 +165,10 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     @Override
-    public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+    public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
         DeviceAssociateBody body = new DeviceAssociateBody(associationId);
-        return isOwnershipVerified ? mAferoService.deviceAssociateVerified(mActiveAccountId, body, locale, imageSize.toImageSizeSpecifier())
-                : mAferoService.deviceAssociateGetProfile(mActiveAccountId, body, locale, imageSize.toImageSizeSpecifier());
+        return isOwnershipVerified ? mAferoService.deviceAssociateVerified(mActiveAccountId, body, getLocale(), mConfig.imageScale.toImageSizeSpecifier())
+                : mAferoService.deviceAssociateGetProfile(mActiveAccountId, body, getLocale(), mConfig.imageScale.toImageSizeSpecifier());
     }
 
     @Override
@@ -164,13 +196,13 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     @Override
-    public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize) {
-        return mAferoService.deviceProfiles(mActiveAccountId, locale, imageSize.toImageSizeSpecifier());
+    public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
+        return mAferoService.deviceProfiles(mActiveAccountId, getLocale(), mConfig.imageScale.toImageSizeSpecifier());
     }
 
     @Override
-    public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize) {
-        return mAferoService.deviceProfiles(mActiveAccountId, profileId, locale, imageSize.toImageSizeSpecifier());
+    public Observable<DeviceProfile> getDeviceProfile(String profileId) {
+        return mAferoService.deviceProfiles(mActiveAccountId, profileId, getLocale(), mConfig.imageScale.toImageSizeSpecifier());
     }
 
     @Override
