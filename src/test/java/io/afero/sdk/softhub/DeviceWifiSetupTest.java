@@ -14,13 +14,11 @@ import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 
-import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.MockDeviceEventSource;
 import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
-import io.afero.sdk.device.DeviceProfileCollection;
 import io.afero.sdk.softhub.mock.DeviceWifiSetupMock;
 import io.kiban.hubby.SetupWifiCallback;
 import io.kiban.hubby.WifiSSIDEntry;
@@ -82,11 +80,7 @@ public class DeviceWifiSetupTest {
     }
 
     private static DeviceCollection makeDeviceCollection(DeviceEventSource source) {
-
-        MockAferoClient aferoClient = new MockAferoClient();
-        DeviceProfileCollection profileCollection = new DeviceProfileCollection(aferoClient, AferoClient.ImageSize.SIZE_3X, "mock-locale");
-
-        return new DeviceCollection(source, profileCollection, aferoClient);
+        return new DeviceCollection(source, new MockAferoClient());
     }
 
     public static DeviceModel createDeviceModel() {

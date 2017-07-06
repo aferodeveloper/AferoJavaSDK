@@ -489,12 +489,12 @@ public class AferoSofthubTest {
         }
 
         @Override
-        public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize) {
+        public Observable<DeviceProfile> getDeviceProfile(String profileId) {
             return null;
         }
 
         @Override
-        public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize) {
+        public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
             return null;
         }
 
@@ -514,7 +514,7 @@ public class AferoSofthubTest {
         }
 
         @Override
-        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
             return null;
         }
 
