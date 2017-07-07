@@ -5,6 +5,7 @@
 package io.afero.sdk.client.mock;
 
 import java.io.IOException;
+import java.util.TimeZone;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
@@ -37,12 +38,12 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize) {
+    public Observable<DeviceProfile> getDeviceProfile(String profileId) {
         return null;
     }
 
     @Override
-    public Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize) {
+    public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
         return null;
     }
 
@@ -52,17 +53,12 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<Location> putDeviceLocation(String deviceId, Location location) {
-        return null;
-    }
-
-    @Override
     public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
         return null;
     }
 
     @Override
-    public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize) {
+    public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {
@@ -90,6 +86,11 @@ public class MockAferoClient implements AferoClient {
     @Override
     public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
         return null;
+    }
+
+    @Override
+    public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
+        return Observable.just(null);
     }
 
     @Override

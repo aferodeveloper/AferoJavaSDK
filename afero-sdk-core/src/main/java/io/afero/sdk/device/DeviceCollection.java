@@ -4,15 +4,18 @@
 
 package io.afero.sdk.device;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Vector;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceStatus;
 import io.afero.sdk.conclave.ConclaveMessage;
-import io.afero.sdk.conclave.ConclaveMessageSource;
+import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceError;
 import io.afero.sdk.conclave.models.DeviceMute;
 import io.afero.sdk.conclave.models.DeviceState;
@@ -31,20 +34,20 @@ import rx.functions.Func2;
 import rx.subjects.PublishSubject;
 
 /**
- * This class manages a collection of {@link DeviceModel} objects in response to messages received
- * via the {@link ConclaveMessageSource}.
+ * The DeviceCollection class manages the collection of {@link DeviceModel}s associated with the
+ * active {@link AferoClient} account. This includes adding and removing {@link DeviceModel}s as
+ * well as propogating state change events that originate from the {@link DeviceEventSource}.
  */
 public class DeviceCollection {
 
-    private final ConclaveMessageSource mConclaveMessageSource;
+    private final DeviceEventSource mDeviceEventSource;
     private final DeviceProfileCollection mDeviceProfileCollection;
     private final AferoClient mAferoClient;
-    private final Vector<DeviceModel> mModels = new Vector<>();
     private final TreeMap<String,DeviceModel> mModelMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     private PublishSubject<DeviceModel> mModelCreateSubject = PublishSubject.create();
     private PublishSubject<DeviceModel> mModelUpdateSubject = PublishSubject.create();
-    private PublishSubject<Vector<DeviceModel>> mModelSnapshotSubject = PublishSubject.create();
+    private PublishSubject<DeviceCollection> mModelSnapshotSubject = PublishSubject.create();
     private PublishSubject<DeviceModel> mModelDeleteSubject = PublishSubject.create();
     private PublishSubject<DeviceModel> mModelProfileChangeSubject = PublishSubject.create();
 
@@ -57,26 +60,35 @@ public class DeviceCollection {
     private Subscription mStatusChangeSubscription;
     private Subscription mMuteSubscription;
 
-    public DeviceCollection(ConclaveMessageSource messageSource, DeviceProfileCollection deviceProfileCollection, AferoClient aferoClient) {
-        mConclaveMessageSource = messageSource;
-        mDeviceProfileCollection = deviceProfileCollection;
+    /**
+     * Constructs a {@code DeviceCollection}. The contents of the collection are managed dynamically
+     * in response to messages received from the specified deviceEventSource.
+     *
+     * @param deviceEventSource Source for all device messages
+     * @param aferoClient The {@link AferoClient} used by the {@code DeviceCollection} to associate
+     *                    and disassociate devices with the active account.
+     */
+    public DeviceCollection(DeviceEventSource deviceEventSource, AferoClient aferoClient) {
+        mDeviceEventSource = deviceEventSource;
+        mDeviceProfileCollection = new DeviceProfileCollection(aferoClient);
         mAferoClient = aferoClient;
     }
 
-    public void start() {
+    /**
+     * Starts {@code DeviceCollection} operations. When {@code start} completes the
+     * {@code DeviceCollection} will be subscribed to relevant {@link DeviceEventSource}
+     * observables.
+     * @return this instance.
+     * @throws IllegalStateException if called more than once before a call to
+     * {@link DeviceCollection#stop()}.
+     */
+    public DeviceCollection start() {
 
-        mOTASubscription = mConclaveMessageSource.observeOTA().subscribe(new Action1<OTAInfo>() {
-            @Override
-            public void call(OTAInfo otaInfo) {
-                DeviceModel deviceModel = mModelMap.get(otaInfo.id);
-                if (deviceModel != null) {
-                    AfLog.d("mConclaveMessageSource.observeOTA state="+otaInfo.state);
-                    deviceModel.onOTA(otaInfo);
-                }
-            }
-        });
+        if (isStarted()) {
+            throw new IllegalStateException("DeviceCollection has already been started");
+        }
 
-        mSnapshotSubscription = mConclaveMessageSource.observeSnapshot()
+        mSnapshotSubscription = mDeviceEventSource.observeSnapshot()
             .flatMap(new Func1<DeviceSync[], Observable<DeviceSync[]>>() {
                 // Make sure we have a profile for the new device in our local registry
                 // If not, fetch it before passing it on...
@@ -111,13 +123,23 @@ public class DeviceCollection {
                         addOrUpdate(ds);
                     }
 
-                    synchronized (mModels) {
-                        for (int i = mModels.size(); --i >= 0; ) {
-                            DeviceModel dm = mModels.elementAt(i);
+                    ArrayList<DeviceModel> removedDevices;
+                    synchronized (mModelMap) {
+                        removedDevices = new ArrayList<>(mModelMap.size());
+                        Iterator<DeviceModel> iter = mModelMap.values().iterator();
+
+                        while (iter.hasNext()) {
+                            DeviceModel dm = iter.next();
                             if (!deviceSet.contains(dm.getId())) {
-                                onDeleteDevice(dm);
+                                iter.remove();
+                                removedDevices.add(dm);
                             }
                         }
+                    }
+
+                    // publish the deletes outside the synchronized block to avoid badness
+                    for (DeviceModel dm : removedDevices) {
+                        mModelDeleteSubject.onNext(dm);
                     }
                 }
             })
@@ -127,14 +149,14 @@ public class DeviceCollection {
                     public void call(DeviceSync[] deviceSync) {
 
                         for (DeviceSync ds : deviceSync) {
-                            DeviceModel deviceModel = getModel(ds.id);
+                            DeviceModel deviceModel = getDevice(ds.id);
                             DeviceProfile profile = mDeviceProfileCollection.getProfileFromID(ds.profileId);
                             if (profile != null) {
                                 deviceModel.setProfile(profile);
                             }
                         }
 
-                        mModelSnapshotSubject.onNext(mModels);
+                        mModelSnapshotSubject.onNext(DeviceCollection.this);
                     }
                 },
                 new Action1<Throwable>() {   // onError
@@ -145,13 +167,13 @@ public class DeviceCollection {
                     }
                 });
 
-        mAttributeChangeSubscription = mConclaveMessageSource.observeAttributeChange().onBackpressureBuffer()
+        mAttributeChangeSubscription = mDeviceEventSource.observeAttributeChange().onBackpressureBuffer()
             .subscribe(
                     new Action1<DeviceSync>() {    // onNext
                         @Override
                         public void call(DeviceSync deviceSync) {
                             AfLog.i("DeviceCollection.observeUpdate.onNext: deviceSync=" + deviceSync.toString());
-                            DeviceModel deviceModel = getModel(deviceSync.id);
+                            DeviceModel deviceModel = getDevice(deviceSync.id);
                             if (deviceModel != null) {
                                 deviceModel.update(deviceSync);
                                 mModelUpdateSubject.onNext(deviceModel);
@@ -166,13 +188,13 @@ public class DeviceCollection {
                         }
                     });
 
-        mStatusChangeSubscription = mConclaveMessageSource.observeStatusChange().onBackpressureBuffer()
+        mStatusChangeSubscription = mDeviceEventSource.observeStatusChange().onBackpressureBuffer()
             .subscribe(
                     new Action1<DeviceState>() {    // onNext
                         @Override
                         public void call(DeviceState deviceState) {
 //                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
-                            DeviceModel deviceModel = getModel(deviceState.id);
+                            DeviceModel deviceModel = getDevice(deviceState.id);
                             if (deviceModel != null) {
                                 deviceModel.update(deviceState.status);
                                 mModelUpdateSubject.onNext(deviceModel);
@@ -187,13 +209,13 @@ public class DeviceCollection {
                         }
                     });
 
-        mMuteSubscription = mConclaveMessageSource.observeMute().onBackpressureBuffer()
+        mMuteSubscription = mDeviceEventSource.observeMute().onBackpressureBuffer()
             .subscribe(
                     new Action1<DeviceMute>() {    // onNext
                         @Override
                         public void call(DeviceMute deviceMute) {
 //                            AfLog.i("DeviceCollection.observeMute.onNext: deviceMute=" + deviceMute.toString());
-                            DeviceModel deviceModel = getModel(deviceMute.id);
+                            DeviceModel deviceModel = getDevice(deviceMute.id);
                             if (deviceModel != null) {
                                 deviceModel.onMute(deviceMute);
                             }
@@ -207,13 +229,13 @@ public class DeviceCollection {
                         }
                     });
 
-        mDeviceErrorSubscription = mConclaveMessageSource.observeError().onBackpressureBuffer()
+        mDeviceErrorSubscription = mDeviceEventSource.observeError().onBackpressureBuffer()
             .subscribe(
                     new Action1<DeviceError>() {    // onNext
                         @Override
                         public void call(DeviceError deviceError) {
 //                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
-                            DeviceModel deviceModel = getModel(deviceError.id);
+                            DeviceModel deviceModel = getDevice(deviceError.id);
                             if (deviceModel != null) {
                                 deviceModel.onError(deviceError);
                             }
@@ -227,13 +249,13 @@ public class DeviceCollection {
                         }
                     });
 
-        mInvalidateSubscription = mConclaveMessageSource.observeInvalidate()
+        mInvalidateSubscription = mDeviceEventSource.observeInvalidate()
             .subscribe(new Action1<InvalidateMessage>() {
                 @Override
                 public void call(InvalidateMessage im) {
                     try {
                         String deviceId = im.json.get("deviceId").asText();
-                        DeviceModel deviceModel = mModelMap.get(deviceId);
+                        DeviceModel deviceModel = getDevice(deviceId);
                         if (deviceModel == null) {
                             AfLog.e("Got invalidate on unknown deviceId: " + deviceId);
                             return;
@@ -254,6 +276,16 @@ public class DeviceCollection {
                 }
             });
 
+        mOTASubscription = mDeviceEventSource.observeOTA().subscribe(new Action1<OTAInfo>() {
+            @Override
+            public void call(OTAInfo otaInfo) {
+                DeviceModel deviceModel = getDevice(otaInfo.id);
+                if (deviceModel != null) {
+                    AfLog.d("mDeviceEventSource.observeOTA state="+otaInfo.state);
+                    deviceModel.onOTA(otaInfo);
+                }
+            }
+        });
 
         mMetricSubscription = MetricUtil.getInstance().getEventObservable().subscribe(new Observer<ConclaveMessage.Metric>() {
             @Override
@@ -264,24 +296,54 @@ public class DeviceCollection {
 
             @Override
             public void onNext(ConclaveMessage.Metric metric) {
-                mConclaveMessageSource.sendMetrics(metric);
+                mDeviceEventSource.sendMetrics(metric);
             }
         });
+
+        return this;
     }
 
+    /**
+     * Stops all {@code DeviceCollection} operations. When {@code stop} completes the
+     * {@code DeviceCollection} will be unsubscribed from relevant {@link DeviceEventSource}
+     * observables.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
     public void stop() {
-        mOTASubscription = RxUtils.safeUnSubscribe(mOTASubscription);
+        throwIfNotStarted();
+
         mSnapshotSubscription = RxUtils.safeUnSubscribe(mSnapshotSubscription);
         mAttributeChangeSubscription = RxUtils.safeUnSubscribe(mAttributeChangeSubscription);
         mStatusChangeSubscription = RxUtils.safeUnSubscribe(mStatusChangeSubscription);
         mMuteSubscription = RxUtils.safeUnSubscribe(mMuteSubscription);
         mDeviceErrorSubscription = RxUtils.safeUnSubscribe(mDeviceErrorSubscription);
         mInvalidateSubscription = RxUtils.safeUnSubscribe(mInvalidateSubscription);
+        mOTASubscription = RxUtils.safeUnSubscribe(mOTASubscription);
         mMetricSubscription = RxUtils.safeUnSubscribe(mMetricSubscription);
     }
 
+    /**
+     * Adds the device specified by the association id to the {@link AferoClient} active account.
+     * Should initially be called with {@code isOwnershipVerified} set to {@code false}. If
+     * {@code TransferVerificationRequired} error is returned, the user should be prompted whether
+     * to transfer onwership of the device from its current account. If user answers affirmatively,
+     * {@code addDevice} should be called again with {@code isOwnershipVerified} set to {@code true}
+     * to complete the ownership transfer.
+     *
+     * @param associationId The association id representing the physical device, usually obtained
+     *                      either via QR code scan or manual entry.
+     * @param isOwnershipVerified Set to true to transfer eligible devices from their current owner
+     *                            account.
+     * @return {@link Observable} that returns the newly added {@link DeviceModel} or an error. If
+     * TransferVerificationRequired error is returned, user should be prompted whether to take
+     * ownership of device. If user answers affirmatively, addDevice should be called again with
+     * {@param isOwnershipVerified} set to true.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
     public Observable<DeviceModel> addDevice(String associationId, boolean isOwnershipVerified) {
-        return mAferoClient.deviceAssociateGetProfile(associationId, isOwnershipVerified, mDeviceProfileCollection.getLocale(), mDeviceProfileCollection.getImageSize())
+        throwIfNotStarted();
+
+        return mAferoClient.deviceAssociateGetProfile(associationId, isOwnershipVerified)
             .onErrorResumeNext(new Func1<Throwable, Observable<? extends DeviceAssociateResponse>>() {
                 @Override
                 public Observable<? extends DeviceAssociateResponse> call(Throwable t) {
@@ -295,82 +357,138 @@ public class DeviceCollection {
             .map(new MapDeviceAssociateResponseToDeviceModel());
     }
 
+    /**
+     * Removes the device specified by the association id from the {@link AferoClient} active account.
+     *
+     * @param deviceModel The {@link DeviceModel} to be removed from the {@link AferoClient} active
+     *                    account.
+     * @return {@link Observable} that returns the removed {@link DeviceModel} or an error.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
     public Observable<DeviceModel> removeDevice(DeviceModel deviceModel) {
+        throwIfNotStarted();
+
         return mAferoClient.deviceDisassociate(deviceModel)
             .doOnNext(new DeviceDisassociateAction(this));
     }
 
-    public void reset() {
-        mModelMap.clear();
-
-        for (DeviceModel device : mModels) {
-            mModelDeleteSubject.onNext(device);
-        }
-
-        mModels.clear();
-    }
-
+    /**
+     * @return {@link Observable} containing a snapshot of all devices in the {@code DeviceCollection}
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
     public Observable<DeviceModel> getDevices() {
-        return Observable.from(mModels);
+        throwIfNotStarted();
+
+        // Make a copy of the map since the original could change while the Observable is iterating.
+        Map<String,DeviceModel> mapCopy = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        synchronized (mModelMap) {
+            mapCopy.putAll(mModelMap);
+            return Observable.from(mapCopy.values());
+        }
     }
 
+    /**
+     * @param deviceId Identifier of a {@link DeviceModel}.
+     * @return the {@link DeviceModel} with the specified {@code deviceId}, or {@null} if no such
+     * {@link DeviceModel} exists.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
+    public DeviceModel getDevice(String deviceId) {
+        throwIfNotStarted();
+
+        synchronized (mModelMap) {
+            return mModelMap.get(deviceId);
+        }
+    }
+
+    /**
+     * @return Observable that emits {@link DeviceModel}s as they are created and added to the
+     * collection either as the result of events from {@link DeviceEventSource} or a call to
+     * {@link DeviceCollection#addDevice(String, boolean)}.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
     public Observable<DeviceModel> observeCreates() {
+        throwIfNotStarted();
+
         return mModelCreateSubject;
     }
 
-    public Observable<DeviceModel> observeProfileChanges() {
-        return mModelProfileChangeSubject;
-    }
-
-    public Observable<Vector<DeviceModel>> observeSnapshots() {
-        return mModelSnapshotSubject;
-    }
-
+    /**
+     * @return Observable that emits {@link DeviceModel}s as they are removed from the collection
+     * either as the result of events from {@link DeviceEventSource} or a call to
+     * {@link DeviceCollection#removeDevice(DeviceModel)}.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
     public Observable<DeviceModel> observeDeletes() {
+        throwIfNotStarted();
+
         return mModelDeleteSubject.onBackpressureBuffer();
     }
 
-    public boolean hasUnAvailableDevices() {
+    /**
+     * @return Observable that emits {@link DeviceModel}s that have received a new
+     * {@link DeviceProfile}
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
+    public Observable<DeviceModel> observeProfileChanges() {
+        throwIfNotStarted();
 
-        for (DeviceModel dm : mModels) {
-            if (dm.getPresentation() != null && !dm.isAvailable()) {
-                return true;
-            }
-        }
-
-        return false;
+        return mModelProfileChangeSubject;
     }
 
-    public boolean hasAnyUserDevices() {
+    /**
+     * @return Observable that emits the DeviceCollection whenever a new "snapshot" of devices has
+     * been processed.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
+    public Observable<DeviceCollection> observeSnapshots() {
+        throwIfNotStarted();
 
-        for (DeviceModel dm : mModels) {
-            if (dm.getPresentation() != null) {
-                return true;
-            }
-        }
-
-        return false;
+        return mModelSnapshotSubject;
     }
 
-    public boolean contains(DeviceModel model) {
-        return mModels.contains(model);
-    }
-
+    /**
+     * @return The current count of {@link DeviceModel}s in the collection.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
     public int getCount() {
-        return mModels.size();
+        throwIfNotStarted();
+
+        synchronized (mModelMap) {
+            return mModelMap.size();
+        }
     }
 
-    public DeviceModel getModelAt(int i) {
-        return mModels.elementAt(i);
+    /**
+     * Removes all {@link DeviceModel}s from the local cache. Typically done when signing out
+     * or switching active accounts.
+     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
+     */
+    public void reset() {
+        throwIfNotStarted();
+
+        Observable<DeviceModel> devices = getDevices();
+
+        synchronized (mModelMap) {
+            mModelMap.clear();
+        }
+
+        devices.subscribe(new Action1<DeviceModel>() {
+            @Override
+            public void call(DeviceModel deviceModel) {
+                mModelDeleteSubject.onNext(deviceModel);
+            }
+        });
     }
 
-    public DeviceModel getModel(String id) {
-        return mModelMap.get(id);
+
+    private boolean isStarted() {
+        return mSnapshotSubscription != null;
     }
 
     private DeviceModel addOrUpdate(String deviceId, DeviceStatus ds, DeviceProfile deviceProfile) {
-        synchronized (mModels) {
-            DeviceModel deviceModel = getModel(deviceId);
+        synchronized (mModelMap) {
+            DeviceModel deviceModel = getDevice(deviceId);
             if (deviceModel != null) {
                 deviceModel.update(ds);
             } else {
@@ -381,8 +499,8 @@ public class DeviceCollection {
     }
 
     private DeviceModel addOrUpdate(DeviceSync ds) {
-        synchronized (mModels) {
-            DeviceModel deviceModel = getModel(ds.id);
+        synchronized (mModelMap) {
+            DeviceModel deviceModel = getDevice(ds.id);
             if (deviceModel != null) {
                 deviceModel.update(ds);
             } else {
@@ -439,8 +557,7 @@ public class DeviceCollection {
     }
 
     private DeviceModel add(DeviceModel deviceModel) {
-        synchronized (mModels) {
-            mModels.add(deviceModel);
+        synchronized (mModelMap) {
             mModelMap.put(deviceModel.getId(), deviceModel);
         }
 
@@ -450,14 +567,17 @@ public class DeviceCollection {
     }
 
     private void onDeleteDevice(DeviceModel deviceModel) {
-        synchronized (mModels) {
-            String id = deviceModel.getId();
-
-            mModelMap.remove(id);
-            mModels.remove(deviceModel);
+        synchronized (mModelMap) {
+            mModelMap.remove(deviceModel.getId());
         }
 
         mModelDeleteSubject.onNext(deviceModel);
+    }
+
+    private void throwIfNotStarted() {
+        if (!isStarted()) {
+            throw new IllegalStateException("DeviceCollection.start must be called first");
+        }
     }
 
     private static class DeviceDisassociateAction extends RxUtils.WeakAction1<DeviceModel, DeviceCollection> {
@@ -475,7 +595,14 @@ public class DeviceCollection {
     private class MapDeviceAssociateResponseToDeviceModel implements Func1<DeviceAssociateResponse, DeviceModel> {
         @Override
         public DeviceModel call(DeviceAssociateResponse response) {
-            return addOrUpdate(response.deviceId, response.deviceState, response.profile);
+            DeviceModel deviceModel = addOrUpdate(response.deviceId, response.deviceState, response.profile);
+
+            if (deviceModel != null) {
+                mAferoClient.putDeviceTimezone(deviceModel, TimeZone.getDefault())
+                    .subscribe(new RxUtils.IgnoreResponseObserver<Void>());
+            }
+
+            return deviceModel;
         }
     }
 }

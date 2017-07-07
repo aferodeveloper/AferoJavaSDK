@@ -4,6 +4,8 @@
 
 package io.afero.sdk.client.afero;
 
+import java.util.TimeZone;
+
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
@@ -21,21 +23,21 @@ public interface AferoClient {
 
     Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode);
 
-    Observable<DeviceProfile> getDeviceProfile(String profileId, String locale, ImageSize imageSize);
+    Observable<DeviceProfile> getDeviceProfile(String profileId);
 
-    Observable<DeviceProfile[]> getAccountDeviceProfiles(String locale, ImageSize imageSize);
+    Observable<DeviceProfile[]> getAccountDeviceProfiles();
 
     Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId);
 
-    Observable<Location> putDeviceLocation(String deviceId, Location location);
-
     Observable<Location> getDeviceLocation(DeviceModel deviceModel);
 
-    Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified, String locale, ImageSize imageSize);
+    Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified);
 
     Observable<DeviceAssociateResponse> deviceAssociate(String associationId);
 
     Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel);
+
+    Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz);
 
     String getActiveAccountId();
 
@@ -45,41 +47,41 @@ public interface AferoClient {
 
     class TransferVerificationRequired extends Throwable {}
 
-    enum ImageSize {
+    enum ImageScale {
 
-        SIZE_1X,
-        SIZE_2X,
-        SIZE_3X,
-        SIZE_DEFAULT;
+        SCALE_1X,
+        SCALE_2X,
+        SCALE_3X,
+        SCALE_DEFAULT;
 
         public String toImageSizeSpecifier() {
-            switch (ordinal()) {
-                case 0:
+            switch (this) {
+                case SCALE_1X:
                     return "1x";
 
-                case 1:
+                case SCALE_2X:
                     return "2x";
 
-                case 2:
+                case SCALE_3X:
                 default:
                     return "3x";
             }
         }
 
-        public static ImageSize fromDisplayDensity(float displayDensity) {
+        public static ImageScale fromDisplayDensity(float displayDensity) {
             switch (Math.round(displayDensity)) {
                 case 0:
                 case 1:
-                    return SIZE_1X;
+                    return SCALE_1X;
 
                 case 2:
-                    return SIZE_2X;
+                    return SCALE_2X;
 
                 case 3:
-                    return SIZE_3X;
+                    return SCALE_3X;
             }
 
-            return SIZE_DEFAULT;
+            return SCALE_DEFAULT;
         }
     }
 }

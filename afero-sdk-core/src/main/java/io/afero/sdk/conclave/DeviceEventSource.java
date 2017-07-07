@@ -12,7 +12,7 @@ import io.afero.sdk.conclave.models.InvalidateMessage;
 import io.afero.sdk.conclave.models.OTAInfo;
 import rx.Observable;
 
-public interface ConclaveMessageSource {
+public interface DeviceEventSource {
 
     Observable<DeviceSync[]> observeSnapshot();
 

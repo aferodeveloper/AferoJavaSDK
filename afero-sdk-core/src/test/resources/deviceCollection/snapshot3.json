@@ -1,0 +1,49 @@
+[
+    {
+        "id": "device-001",
+        "profileId": "profile-001",
+        "createdTimeStamp": 456789,
+        "attributes": [
+            { "id": 100, "value": "123" }
+        ],
+        "tags": [],
+        "status": {
+            "available": true,
+            "visible": true
+        },
+        "virtual": false,
+        "friendlyName": "device-name-001",
+        "requestId": 123
+    },
+    {
+        "id": "device-002",
+        "profileId": "profile-002",
+        "createdTimeStamp": 456789,
+        "attributes": [
+            { "id": 100, "value": "123" }
+        ],
+        "status": {
+            "available": true,
+            "visible": true
+        },
+        "virtual": false,
+        "friendlyName": "device-name-002",
+        "requestId": 123
+    },
+    {
+        "id": "device-003",
+        "profileId": "profile-001",
+        "createdTimeStamp": 456789,
+        "attributes": [
+            { "id": 100, "value": "123" }
+        ],
+        "tags": [],
+        "status": {
+            "available": true,
+            "visible": true
+        },
+        "virtual": false,
+        "friendlyName": "device-name-003",
+        "requestId": 123
+    }
+]

@@ -18,5 +18,13 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+// For unit tests to find resources. Must be a better way?
+task copyResourcesDirectoryToClasses(type: Copy){
+    from "${projectDir}/src/test/resources"
+    into "${buildDir}/classes/test/resources"
+}
+
+testClasses.dependsOn copyResourcesDirectoryToClasses
+
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
