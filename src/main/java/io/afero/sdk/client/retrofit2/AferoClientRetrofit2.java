@@ -7,6 +7,7 @@ package io.afero.sdk.client.retrofit2;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
@@ -23,6 +24,7 @@ import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.client.retrofit2.api.AferoClientAPI;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
+import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
@@ -184,6 +186,11 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     @Override
+    public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
+        return mAferoService.putDeviceTimezone(mActiveAccountId, deviceModel.getId(), new DeviceTimezone(tz.getID()));
+    }
+
+    @Override
     public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int retryCount, int statusCode) {
         Observable<ActionResponse> observable = mAferoService.postAction(mActiveAccountId, deviceModel.getId(), body);
         return retryCount > 0 ? observable.retryWhen(new RetryOnError(retryCount, statusCode)) : observable;
@@ -203,12 +210,6 @@ public class AferoClientRetrofit2 implements AferoClient {
     @Override
     public Observable<DeviceProfile> getDeviceProfile(String profileId) {
         return mAferoService.deviceProfiles(mActiveAccountId, profileId, getLocale(), mConfig.imageScale.toImageSizeSpecifier());
-    }
-
-    @Override
-    public Observable<Location> putDeviceLocation(String deviceId, Location location) {
-        return mAferoService.putDeviceLocation(mActiveAccountId, deviceId, location)
-            .map(new RxUtils.Mapper<Void, Location>(location));
     }
 
     @Override
@@ -246,6 +247,11 @@ public class AferoClientRetrofit2 implements AferoClient {
         } catch (Throwable ignore) {} // belt & suspenders
 
         return false;
+    }
+
+    public Observable<Location> putDeviceLocation(String deviceId, Location location) {
+        return mAferoService.putDeviceLocation(mActiveAccountId, deviceId, location)
+                .map(new RxUtils.Mapper<Void, Location>(location));
     }
 
     public Observable<Response<Void>> postDeviceInfo(String userId, DeviceInfoBody body) {

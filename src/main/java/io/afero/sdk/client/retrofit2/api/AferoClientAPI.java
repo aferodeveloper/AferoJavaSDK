@@ -15,6 +15,7 @@ import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
+import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.device.DeviceProfile;
 import retrofit2.Call;
@@ -113,6 +114,13 @@ public interface AferoClientAPI {
     Observable<Location> getDeviceLocation(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId
+    );
+
+    @PUT(V1 + "accounts/{accountId}/devices/{deviceId}/timezone")
+    Observable<Void> putDeviceTimezone(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId,
+            @Body DeviceTimezone body
     );
 
     @POST(V1 + "accounts/{accountId}/devices/{deviceId}/actions")
