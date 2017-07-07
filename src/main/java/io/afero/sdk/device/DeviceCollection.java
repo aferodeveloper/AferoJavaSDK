@@ -7,6 +7,7 @@ package io.afero.sdk.device;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -594,7 +595,14 @@ public class DeviceCollection {
     private class MapDeviceAssociateResponseToDeviceModel implements Func1<DeviceAssociateResponse, DeviceModel> {
         @Override
         public DeviceModel call(DeviceAssociateResponse response) {
-            return addOrUpdate(response.deviceId, response.deviceState, response.profile);
+            DeviceModel deviceModel = addOrUpdate(response.deviceId, response.deviceState, response.profile);
+
+            if (deviceModel != null) {
+                mAferoClient.putDeviceTimezone(deviceModel, TimeZone.getDefault())
+                    .subscribe(new RxUtils.IgnoreResponseObserver<Void>());
+            }
+
+            return deviceModel;
         }
     }
 }

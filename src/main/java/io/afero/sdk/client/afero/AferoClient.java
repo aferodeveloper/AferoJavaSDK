@@ -4,6 +4,8 @@
 
 package io.afero.sdk.client.afero;
 
+import java.util.TimeZone;
+
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
@@ -27,8 +29,6 @@ public interface AferoClient {
 
     Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId);
 
-    Observable<Location> putDeviceLocation(String deviceId, Location location);
-
     Observable<Location> getDeviceLocation(DeviceModel deviceModel);
 
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified);
@@ -36,6 +36,8 @@ public interface AferoClient {
     Observable<DeviceAssociateResponse> deviceAssociate(String associationId);
 
     Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel);
+
+    Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz);
 
     String getActiveAccountId();
 

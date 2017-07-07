@@ -7,6 +7,7 @@ package io.afero.sdk.device;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import io.afero.sdk.client.afero.AferoClient;
@@ -644,11 +645,6 @@ public class DeviceCollectionTest {
         }
 
         @Override
-        public Observable<Location> putDeviceLocation(String deviceId, Location location) {
-            return null;
-        }
-
-        @Override
         public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
             return null;
         }
@@ -672,6 +668,11 @@ public class DeviceCollectionTest {
         @Override
         public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
             return Observable.just(deviceModel);
+        }
+
+        @Override
+        public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
+            return Observable.just(null);
         }
 
         @Override
