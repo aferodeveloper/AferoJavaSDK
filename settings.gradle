@@ -2,4 +2,4 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-include ':afero-sdk-core', ':afero-sdk-hub', ':afero-sdk-android', ':afero-sdk-client-retrofit2'
+include ':afero-sdk-core', ':afero-sdk-softhub', ':afero-sdk-android', ':afero-sdk-client-retrofit2'
