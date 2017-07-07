@@ -15,6 +15,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
@@ -474,8 +475,6 @@ public class AferoSofthubTest {
         }
     }
 
-    ;
-
     class MockAferoClient implements AferoClient {
 
         @Override
@@ -504,11 +503,6 @@ public class AferoSofthubTest {
         }
 
         @Override
-        public Observable<Location> putDeviceLocation(String deviceId, Location location) {
-            return null;
-        }
-
-        @Override
         public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
             return null;
         }
@@ -528,6 +522,11 @@ public class AferoSofthubTest {
         @Override
         public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
             return null;
+        }
+
+        @Override
+        public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
+            return Observable.just(null);
         }
 
         @Override
