@@ -20,7 +20,6 @@ import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
-import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -35,11 +34,10 @@ import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.ConclaveAccessManager;
 import io.afero.sdk.conclave.ConclaveClient;
+import io.afero.sdk.device.ConclaveDeviceEventSource;
 import io.afero.sdk.device.DeviceCollection;
-import io.afero.sdk.device.DeviceEventStream;
-import io.afero.sdk.device.DeviceProfileCollection;
-import io.afero.sdk.hubby.HubbyHelper;
 import io.afero.sdk.log.AfLog;
+import io.afero.sdk.softhub.AferoSofthub;
 import io.afero.sdk.utils.RxUtils;
 import retrofit2.Response;
 import rx.Observable;
@@ -68,16 +66,15 @@ public class MainActivity extends AppCompatActivity {
     private DeviceEventStreamConnectObserver mDeviceEventStreamConnectObserver;
 
     private AferoClientRetrofit2 mAferoClient;
-    private DeviceProfileCollection mDeviceProfileCollection;
     private DeviceCollection mDeviceCollection;
-    private DeviceEventStream mDeviceEventStream;
+    private ConclaveDeviceEventSource mDeviceEventSource;
     private ConclaveAccessManager mConclaveAccessManager;
-    private HubbyHelper mHubbyHelper;
+    private AferoSofthub mAferoSofthub;
     private ConnectivityReceiver mConnectivityReceiver;
 
     private String mUserId;
 
-    private final Observer<HubbyHelper> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<HubbyHelper>();
+    private final Observer<AferoSofthub> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<AferoSofthub>();
 
     @BindView(R.id.device_list_view)
     DeviceListView mDeviceListView;
@@ -117,7 +114,14 @@ public class MainActivity extends AppCompatActivity {
             ? new AccessToken(accessToken, refreshToken)
             : null;
 
-        mAferoClient = new AferoClientRetrofit2(BASE_URL_AFERO, BuildConfig.HTTP_LOG_LEVEL, DEFAULT_SERVICE_TIMEOUT);
+        AferoClientRetrofit2.Config aferoClientConfig = new AferoClientRetrofit2.Config()
+                .setBaseUrl(BASE_URL_AFERO)
+                .setLogLevel(BuildConfig.HTTP_LOG_LEVEL)
+                .setDefaultTimeout(DEFAULT_SERVICE_TIMEOUT)
+                .setImageScale(AferoClient.ImageScale
+                        .fromDisplayDensity(getResources().getDisplayMetrics().density));
+
+        mAferoClient = new AferoClientRetrofit2(aferoClientConfig);
         if (token != null) {
             mAferoClient.setToken(new AccessToken(accessToken, refreshToken));
         }
@@ -126,15 +130,12 @@ public class MainActivity extends AppCompatActivity {
 
         mConclaveAccessManager = new ConclaveAccessManager(mAferoClient);
 
-        mDeviceEventStream = new DeviceEventStream(mConclaveAccessManager, ClientID.get(this));
+        mDeviceEventSource = new ConclaveDeviceEventSource(mConclaveAccessManager, ClientID.get(this));
 
-        mHubbyHelper = HubbyHelper.acquireInstance(this, mAferoClient, ClientID.get(this));
-        mHubbyHelper.setService("dev");
+        mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, ClientID.get(this));
+        mAferoSofthub.setService("dev");
 
-        final AferoClient.ImageSize imageSize = AferoClient.ImageSize
-                .fromDisplayDensity(getResources().getDisplayMetrics().density);
-        mDeviceProfileCollection = new DeviceProfileCollection(mAferoClient, imageSize, Locale.getDefault().toString());
-        mDeviceCollection = new DeviceCollection(mDeviceEventStream, mDeviceProfileCollection, mAferoClient);
+        mDeviceCollection = new DeviceCollection(mDeviceEventSource, mAferoClient);
         mDeviceCollection.start();
 
         mDeviceEventStreamConnectObserver = new DeviceEventStreamConnectObserver(this);
@@ -166,9 +167,9 @@ public class MainActivity extends AppCompatActivity {
             AfLog.e(e);
         }
 
-        mDeviceEventStream.stop();
+        mDeviceEventSource.stop();
 
-        mHubbyHelper.onPause();
+        mAferoSofthub.onPause();
     }
 
     @Override
@@ -180,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new TokenObserver(this));
 
-        mConclaveStatusSubscription = mDeviceEventStream.observeConclaveStatus()
+        mConclaveStatusSubscription = mDeviceEventSource.observeConclaveStatus()
                 .onBackpressureBuffer()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<ConclaveClient.Status>() {
@@ -195,10 +196,10 @@ public class MainActivity extends AppCompatActivity {
         }
         registerReceiver(mConnectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
-        mHubbyHelper.onResume();
+        mAferoSofthub.onResume();
 
         if (isActiveNetworkConnectedOrConnecting() && isSignedIn()) {
-            if ((!mDeviceEventStream.isConnected()) && mDeviceEventStreamSubscription == null) {
+            if ((!mDeviceEventSource.isConnected()) && mDeviceEventStreamSubscription == null) {
                 startDeviceStream();
             }
         }
@@ -236,8 +237,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startHubby() {
-        if (!mHubbyHelper.isRunning()) {
-            mHubbyHelper.start()
+        if (!mAferoSofthub.isRunning()) {
+            mAferoSofthub.start()
                 .subscribe(mHubbyHelperStartObserver);
         }
     }
@@ -302,9 +303,9 @@ public class MainActivity extends AppCompatActivity {
 
         Prefs.clearAccountPrefs(this);
 
-        mHubbyHelper.stop();
+        mAferoSofthub.stop();
 
-        mDeviceEventStream.stop();
+        mDeviceEventSource.stop();
 
         mAferoClient.setToken(null);
         mAferoClient.clearAccount();
@@ -382,7 +383,7 @@ public class MainActivity extends AppCompatActivity {
             hideNoNetworkView();
 
             if (isSignedIn()) {
-                if (mDeviceEventStream != null && (!mDeviceEventStream.isConnected()) && mDeviceEventStreamSubscription == null) {
+                if (mDeviceEventSource != null && (!mDeviceEventSource.isConnected()) && mDeviceEventStreamSubscription == null) {
                     startDeviceStream();
                 }
             }
@@ -409,13 +410,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Observable<Object> callStartDeviceEventStream() {
-        if (!mDeviceEventStream.hasStarted()) {
+        if (!mDeviceEventSource.hasStarted()) {
             final String accountId = mAferoClient.getActiveAccountId();
             final String userId = mUserId;
             final String clientId = ClientID.get(this);
-            return mDeviceEventStream.start(accountId, userId, "android");
+            return mDeviceEventSource.start(accountId, userId, "android");
         } else {
-            return mDeviceEventStream.reconnect();
+            return mDeviceEventSource.reconnect();
         }
     }
 

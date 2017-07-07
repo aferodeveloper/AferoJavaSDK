@@ -77,14 +77,6 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
     public DeviceViewAdapter(DeviceCollection deviceCollection) {
         addDevices(deviceCollection.getDevices());
 
-        mSnapshotSubscription = addDevices(deviceCollection.observeSnapshots()
-            .flatMap(new Func1<Vector<DeviceModel>, Observable<DeviceModel>>() {
-                @Override
-                public Observable<DeviceModel> call(Vector<DeviceModel> deviceModels) {
-                    return Observable.from(deviceModels);
-                }
-            }));
-
         mCreateSubscription = addDevices(deviceCollection.observeCreates());
 
         mProfileChangeSubscription = addDevices(deviceCollection.observeProfileChanges());
