@@ -13,6 +13,7 @@ import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.conclave.models.InvalidateMessage;
 import io.afero.sdk.conclave.models.OTAInfo;
 import rx.Observable;
+import rx.functions.Action0;
 import rx.subjects.PublishSubject;
 
 public class MockDeviceEventSource implements DeviceEventSource {
@@ -24,6 +25,14 @@ public class MockDeviceEventSource implements DeviceEventSource {
     public final PublishSubject<DeviceMute> mDeviceMuteSubject = PublishSubject.create();
     public final PublishSubject<OTAInfo> mOTAInfoSubject = PublishSubject.create();
     public final PublishSubject<InvalidateMessage> mInvalidateMessageSubject = PublishSubject.create();
+
+    public int mSnapshotSubscriptionCount;
+    public int mInvalidateMessageSubscriptionCount;
+    public int mAttributeChangeSubscriptionCount;
+    public int mDeviceErrorSubscriptionCount;
+    public int mDeviceStateSubscriptionCount;
+    public int mDeviceMuteSubscriptionCount;
+    public int mOTAInfoSubscriptionCount;
 
     public void putSnapshot(DeviceSync[] deviceSyncs) {
         mSnapshotSubject.onNext(deviceSyncs);
@@ -55,37 +64,122 @@ public class MockDeviceEventSource implements DeviceEventSource {
 
     @Override
     public Observable<DeviceSync[]> observeSnapshot() {
-        return mSnapshotSubject;
+        return mSnapshotSubject
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mSnapshotSubscriptionCount++;
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mSnapshotSubscriptionCount--;
+                    }
+                })
+                ;
     }
 
     @Override
     public Observable<DeviceSync> observeAttributeChange() {
-        return mAttributeChangeSubject;
+        return mAttributeChangeSubject
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mAttributeChangeSubscriptionCount++;
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mAttributeChangeSubscriptionCount--;
+                    }
+                });
     }
 
     @Override
     public Observable<DeviceError> observeError() {
-        return mDeviceErrorSubject;
+        return mDeviceErrorSubject
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mDeviceErrorSubscriptionCount++;
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mDeviceErrorSubscriptionCount--;
+                    }
+                });
     }
 
     @Override
     public Observable<DeviceState> observeStatusChange() {
-        return mDeviceStateSubject;
+        return mDeviceStateSubject
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mDeviceStateSubscriptionCount++;
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mDeviceStateSubscriptionCount--;
+                    }
+                });
     }
 
     @Override
     public Observable<DeviceMute> observeMute() {
-        return mDeviceMuteSubject;
+        return mDeviceMuteSubject
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mDeviceMuteSubscriptionCount++;
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mDeviceMuteSubscriptionCount--;
+                    }
+                });
     }
 
     @Override
     public Observable<OTAInfo> observeOTA() {
-        return mOTAInfoSubject;
+        return mOTAInfoSubject
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mOTAInfoSubscriptionCount++;
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mOTAInfoSubscriptionCount--;
+                    }
+                });
     }
 
     @Override
     public Observable<InvalidateMessage> observeInvalidate() {
-        return mInvalidateMessageSubject;
+        return mInvalidateMessageSubject
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mInvalidateMessageSubscriptionCount++;
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        mInvalidateMessageSubscriptionCount--;
+                    }
+                });
     }
 
     @Override

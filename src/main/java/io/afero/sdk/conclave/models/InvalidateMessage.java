@@ -9,6 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InvalidateMessage {
+
+    public InvalidateMessage() {}
+
     public InvalidateMessage(String t, JsonNode j) {
         kind = t;
         json = j;
