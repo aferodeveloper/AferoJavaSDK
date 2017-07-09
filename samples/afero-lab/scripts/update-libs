@@ -1,4 +1,4 @@
 cp ../../afero-sdk-core/build/libs/afero-sdk-core.jar app/libs/
 cp ../../afero-sdk-client-retrofit2/build/libs/afero-sdk-client-retrofit2.jar app/libs/
 cp ../../afero-sdk-android/build/outputs/aar/afero-sdk-android-debug.aar app/libs/
-cp ../../afero-sdk-hub/build/outputs/aar/afero-sdk-softhub-debug.aar app/libs/
+cp ../../afero-sdk-softhub/build/outputs/aar/afero-sdk-softhub-debug.aar app/libs/

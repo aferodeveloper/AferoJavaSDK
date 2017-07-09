@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private Subscription mSignInSubscription;
     private Subscription mDeviceEventStreamSubscription;
 
-    private DeviceEventStreamConnectObserver mDeviceEventStreamConnectObserver;
+    private DeviceEventSourceConnectObserver mDeviceEventSourceConnectObserver;
 
     private AferoClientRetrofit2 mAferoClient;
     private DeviceCollection mDeviceCollection;
@@ -129,7 +129,6 @@ public class MainActivity extends AppCompatActivity {
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
         mConclaveAccessManager = new ConclaveAccessManager(mAferoClient);
-
         mDeviceEventSource = new ConclaveDeviceEventSource(mConclaveAccessManager, ClientID.get(this));
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, ClientID.get(this));
@@ -138,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
         mDeviceCollection = new DeviceCollection(mDeviceEventSource, mAferoClient);
         mDeviceCollection.start();
 
-        mDeviceEventStreamConnectObserver = new DeviceEventStreamConnectObserver(this);
+        mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(this);
 
         setupViews();
 
@@ -323,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
         mDeviceEventStreamSubscription = registerClient()
                 .concatMap(new StartDeviceEventStreamFunc(this))
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(mDeviceEventStreamConnectObserver);
+                .subscribe(mDeviceEventSourceConnectObserver);
     }
 
     private void onConclaveStatusChange(ConclaveClient.Status status) {
@@ -413,7 +412,6 @@ public class MainActivity extends AppCompatActivity {
         if (!mDeviceEventSource.hasStarted()) {
             final String accountId = mAferoClient.getActiveAccountId();
             final String userId = mUserId;
-            final String clientId = ClientID.get(this);
             return mDeviceEventSource.start(accountId, userId, "android");
         } else {
             return mDeviceEventSource.reconnect();
@@ -506,9 +504,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static class DeviceEventStreamConnectObserver extends RxUtils.WeakObserver<Object, MainActivity> {
+    private static class DeviceEventSourceConnectObserver extends RxUtils.WeakObserver<Object, MainActivity> {
 
-        public DeviceEventStreamConnectObserver(MainActivity strongRef) {
+        public DeviceEventSourceConnectObserver(MainActivity strongRef) {
             super(strongRef);
         }
 
