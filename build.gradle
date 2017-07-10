@@ -12,8 +12,6 @@ buildscript {
     }
 }
 
-apply plugin: "com.jfrog.artifactory"
-
 allprojects {
     repositories {
         jcenter()
