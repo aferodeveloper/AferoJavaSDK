@@ -28,5 +28,28 @@ dependencies {
     compile 'io.reactivex:rxjava:1.3.0'
 }
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+publishing {
+    publications {
+        jar(MavenPublication) {
+            version = project.sdkVersion
+            artifactId project.getName()
+            groupId project.sdkGroupId
+
+            // Tell maven to prepare the generated "*.jar" file for publishing
+            artifact("$buildDir/libs/${project.getName()}.jar")
+
+            pom.withXml {
+                def dependencies = asNode().appendNode('dependencies')
+                configurations.getByName("compile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
+                    def dependency = dependencies.appendNode('dependency')
+                    dependency.appendNode('groupId', it.moduleGroup)
+                    dependency.appendNode('artifactId', it.moduleName)
+                    dependency.appendNode('version', it.moduleVersion)
+                }
+            }
+        }
+    }
+}

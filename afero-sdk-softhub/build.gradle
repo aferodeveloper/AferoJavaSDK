@@ -50,3 +50,26 @@ dependencies {
     testCompile 'org.robolectric:robolectric:3.3.1'
     testCompile 'junit:junit:4.12'
 }
+
+publishing {
+    publications {
+        aar(MavenPublication) {
+            version = project.sdkVersion
+            artifactId project.getName()
+            groupId project.sdkGroupId
+
+            // Tell maven to prepare the generated "*.aar" file for publishing
+            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+
+            pom.withXml {
+                def dependencies = asNode().appendNode('dependencies')
+                configurations.getByName("_releaseCompile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
+                    def dependency = dependencies.appendNode('dependency')
+                    dependency.appendNode('groupId', it.moduleGroup)
+                    dependency.appendNode('artifactId', it.moduleName)
+                    dependency.appendNode('version', it.moduleVersion)
+                }
+            }
+        }
+    }
+}
