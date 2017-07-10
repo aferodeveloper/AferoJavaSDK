@@ -57,12 +57,16 @@ Closure<String> gitConfigEmail = { ->
 
 Closure<String> getSDKVersion = { ->
     final String versionTagMatch = 'v*'
-    final String user = gitConfigEmail().split("@").getAt(0)
+    String version
 
-    String v = isCIBuild() ? gitDescribeFull(versionTagMatch)
-            : gitDescribeAbbrev(versionTagMatch) + '-dev-' + user
+    if (isCIBuild()) {
+        version = gitDescribeFull(versionTagMatch)
+    } else {
+        String user = gitConfigEmail().split("@").getAt(0)
+        version = gitDescribeAbbrev(versionTagMatch) + '-dev-' + user
+    }
 
-    return v.drop(1) // drop the 'v'
+    return version.drop(1) // drop the 'v'
 }
 
 group = "io.afero.sdk"
