@@ -44,7 +44,7 @@ publishing {
                 def dependencies = asNode().appendNode('dependencies')
                 configurations.getByName("_releaseCompile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
                     // don't include local dependencies
-                    if (!it.moduleVersion.equals('unspecified')) {
+                    if (it.moduleVersion != 'unspecified') {
                         def dependency = dependencies.appendNode('dependency')
                         dependency.appendNode('groupId', it.moduleGroup)
                         dependency.appendNode('artifactId', it.moduleName)
