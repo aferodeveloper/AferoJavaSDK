@@ -4,8 +4,6 @@
 
 package io.afero.sdk.softhub;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,8 +30,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class, sdk = 21)
 public class DeviceWifiSetupTest {
-
-    protected final ObjectMapper mObjectMapper = new ObjectMapper();
 
     private static class SendWifiCredsObserver implements Observer<SetupWifiCallback.SetupWifiState> {
 
@@ -85,7 +81,7 @@ public class DeviceWifiSetupTest {
 
     public static DeviceModel createDeviceModel() {
         MockDeviceEventSource messageSource = new MockDeviceEventSource();
-        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
+        DeviceCollection deviceCollection = makeDeviceCollection(messageSource).start();
         final DeviceModel[] deviceModelResult = new DeviceModel[1];
         deviceCollection.addDevice("wifiSetupDevice", false)
                 .toBlocking()
@@ -93,6 +89,11 @@ public class DeviceWifiSetupTest {
                     @Override
                     public void call(DeviceModel deviceModel) {
                         deviceModelResult[0] = deviceModel;
+                    }
+                }, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        throwable.printStackTrace();
                     }
                 });
 
@@ -106,7 +107,7 @@ public class DeviceWifiSetupTest {
     @Test
     public void testSendWifiCredential() throws Exception {
         DeviceModel deviceModel = createDeviceModel();
-        DeviceWifiSetupMock wifiSetup = new DeviceWifiSetupMock(deviceModel, null, true);
+        DeviceWifiSetupMock wifiSetup = new DeviceWifiSetupMock(deviceModel, new MockAferoClient(), true);
         SendWifiCredsObserver observer = new SendWifiCredsObserver();
 
         wifiSetup.sendWifiCredential("ssid", "password")
@@ -121,7 +122,7 @@ public class DeviceWifiSetupTest {
     @Test
     public void testGetWifiSSIDList() throws Exception {
         DeviceModel deviceModel = createDeviceModel();
-        DeviceWifiSetupMock wifiSetup = new DeviceWifiSetupMock(deviceModel, null, true);
+        DeviceWifiSetupMock wifiSetup = new DeviceWifiSetupMock(deviceModel, new MockAferoClient(), true);
         GetWifiSSIDListObserver observer = new GetWifiSSIDListObserver();
 
         wifiSetup.getWifiSSIDList()

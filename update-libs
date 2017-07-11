@@ -1,4 +1,0 @@
-git subtree pull --prefix=afero-sdk-core/ afero-sdk-core afero-sdk-core
-git subtree pull --prefix=afero-sdk-client-retrofit2/ afero-sdk-client-retrofit2 afero-sdk-client-retrofit2
-git subtree pull --prefix=afero-sdk-hub/ afero-sdk-hub afero-sdk-hub
-git subtree pull --prefix=afero-sdk-android/ afero-sdk-android afero-sdk-android

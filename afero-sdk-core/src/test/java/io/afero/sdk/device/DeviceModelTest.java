@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DeviceModelTest extends AferoTest {
 
-    private static final String DEVICE_ID = "bogus-device-id";
+    private static final String DEVICE_ID = "device-model-id";
 
     public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) throws IOException {
         return new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
@@ -33,7 +33,7 @@ public class DeviceModelTest extends AferoTest {
 
     @Test
     public void testDefaults() throws IOException {
-        DeviceProfile dp = loadDeviceProfile("deviceModelTestProfile.json");
+        DeviceProfile dp = loadDeviceProfile("resources/deviceModelTestProfile.json");
         DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
         assertEquals(DeviceModel.State.NORMAL, dm.getState());
@@ -44,8 +44,8 @@ public class DeviceModelTest extends AferoTest {
 
     @Test
     public void testUpdateFromJson() throws IOException {
-        DeviceSync ds = loadDeviceSync("deviceSync.json");
-        DeviceProfile dp = loadDeviceProfile("deviceModelTestProfile.json");
+        DeviceSync ds = loadDeviceSync("resources/deviceSync.json");
+        DeviceProfile dp = loadDeviceProfile("resources/deviceModelTestProfile.json");
         DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
         dm.update(ds);

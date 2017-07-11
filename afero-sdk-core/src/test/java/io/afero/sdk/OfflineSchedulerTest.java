@@ -12,6 +12,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
+import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceModelTest;
 import io.afero.sdk.device.DeviceProfile;
@@ -27,7 +28,7 @@ public class OfflineSchedulerTest extends AferoTest {
 
     @Before
     public void setup() throws IOException {
-        deviceProfile = loadDeviceProfile("offlineScheduleEvent/deviceProfile.json");
+        deviceProfile = loadDeviceProfile("resources/offlineScheduleEvent/deviceProfile.json");
     }
 
     @Test
@@ -36,7 +37,7 @@ public class OfflineSchedulerTest extends AferoTest {
         OfflineScheduler os = new OfflineScheduler();
         os.start(dm);
 
-        AttributeValue av = new AttributeValue("0102092D640001780002", AttributeValue.DataType.BYTES);
+        AttributeValue av = new AttributeValue("0102092D640001640002", AttributeValue.DataType.BYTES);
 
         OfflineScheduleEvent event = new OfflineScheduleEvent(59002, av, dm.getProfile());
 
@@ -53,7 +54,8 @@ public class OfflineSchedulerTest extends AferoTest {
 
     @Test
     public void writeToDevice() throws Exception {
-        DeviceModel dm = DeviceModelTest.createDeviceModel(deviceProfile, null);
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceModel dm = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient);
         OfflineScheduler os = new OfflineScheduler();
         os.start(dm);
 

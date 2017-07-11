@@ -44,10 +44,13 @@ publishing {
             pom.withXml {
                 def dependencies = asNode().appendNode('dependencies')
                 configurations.getByName("compile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
-                    def dependency = dependencies.appendNode('dependency')
-                    dependency.appendNode('groupId', it.moduleGroup)
-                    dependency.appendNode('artifactId', it.moduleName)
-                    dependency.appendNode('version', it.moduleVersion)
+                    // don't include local dependencies
+                    if (!it.moduleVersion.equals('unspecified')) {
+                        def dependency = dependencies.appendNode('dependency')
+                        dependency.appendNode('groupId', it.moduleGroup)
+                        dependency.appendNode('artifactId', it.moduleName)
+                        dependency.appendNode('version', it.moduleVersion)
+                    }
                 }
             }
         }

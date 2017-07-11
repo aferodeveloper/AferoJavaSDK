@@ -58,7 +58,7 @@ public class DisplayRulesProcessorTest {
     public void testSimpleInteger() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        InputStream is = getClass().getClassLoader().getResourceAsStream("displayRules.json");
+        InputStream is = getClass().getClassLoader().getResourceAsStream("resources/displayRules.json");
         assertNotNull(is);
 
         IntValue value = new IntValue();
@@ -181,7 +181,7 @@ public class DisplayRulesProcessorTest {
     public void testMapValues() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        InputStream is = getClass().getClassLoader().getResourceAsStream("displayRulesWithMaps.json");
+        InputStream is = getClass().getClassLoader().getResourceAsStream("resources/displayRulesWithMaps.json");
         assertNotNull(is);
 
         IntValue value = new IntValue();

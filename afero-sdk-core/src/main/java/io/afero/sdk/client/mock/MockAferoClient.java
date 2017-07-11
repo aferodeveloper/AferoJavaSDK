@@ -22,19 +22,30 @@ import rx.Observable;
 public class MockAferoClient implements AferoClient {
 
     private final ResourceLoader mLoader = new ResourceLoader();
+    private final String pathPrefix;
     private DeviceAssociateResponse mDeviceAssociateResponse;
 
     public MockAferoClient() {
+        pathPrefix = "";
+    }
+
+    public MockAferoClient(String pathPrefix) {
+        this.pathPrefix = pathPrefix;
     }
 
     @Override
     public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode) {
-        return null;
+        ActionResponse response = new ActionResponse();
+        return Observable.just(response);
     }
 
     @Override
     public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
-        return null;
+        RequestResponse[] response = new RequestResponse[body.length];
+        for (int i = 0; i < response.length; ++i) {
+            response[i] = new RequestResponse();
+        }
+        return Observable.just(response);
     }
 
     @Override
@@ -62,7 +73,7 @@ public class MockAferoClient implements AferoClient {
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {
-                dar = mLoader.createObjectFromJSONResource("deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
+                dar = mLoader.createObjectFromJSONResource(pathPrefix + "deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
             }
             return Observable.just(dar);
         } catch (IOException e) {
@@ -75,10 +86,11 @@ public class MockAferoClient implements AferoClient {
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {
-                dar = mLoader.createObjectFromJSONResource("deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
+                dar = mLoader.createObjectFromJSONResource(pathPrefix + "deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
             }
             return Observable.just(dar);
         } catch (IOException e) {
+            e.printStackTrace();
             return Observable.error(e);
         }
     }

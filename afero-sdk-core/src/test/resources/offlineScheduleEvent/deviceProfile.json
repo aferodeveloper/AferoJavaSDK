@@ -14,12 +14,6 @@
                     "operations": ["read","write"]
                 },
                 {
-                    "id": 120,
-                    "dataType": "sint8",
-                    "semanticType": "mode",
-                    "operations": ["read","write"]
-                },
-                {
                     "id": 200,
                     "dataType": "sint16",
                     "semanticType": "power",
@@ -58,12 +52,6 @@
                 {
                     "id": 800,
                     "dataType": "fixed_16_16",
-                    "semanticType": "power",
-                    "operations": ["read","write"]
-                },
-                {
-                    "id": 850,
-                    "dataType": "boolean",
                     "semanticType": "power",
                     "operations": ["read","write"]
                 },
