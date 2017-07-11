@@ -56,6 +56,8 @@ public class AferoClientRetrofit2 implements AferoClient {
     public static final String GRANT_TYPE_PASSWORD = "password";
     public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
 
+    private static final String AFERO_BASE_URL = "https://api.afero.io";
+
     private static final String HEADER_AUTHORIZATION = "Authorization";
 
     private Config mConfig = new Config();
@@ -73,7 +75,7 @@ public class AferoClientRetrofit2 implements AferoClient {
 
     public static final class Config {
 
-        private String baseUrl;
+        private String baseUrl = AFERO_BASE_URL;
         private String clientId;
         private String clientSecret;
         private HttpLoggingInterceptor.Level logLevel = HttpLoggingInterceptor.Level.NONE;
