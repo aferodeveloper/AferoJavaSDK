@@ -72,7 +72,14 @@ Closure<String> getSDKVersion = { ->
         version = gitDescribeAbbrev(versionTagMatch) + '-dev-' + user
     }
 
-    return version.drop(1) // drop the 'v'
+    // drop the 'v'
+    version = version.drop(1)
+
+    if (project.hasProperty('sdkVersionSuffix')) {
+        version += "-" + project.sdkVersionSuffix;
+    }
+
+    return version
 }
 
 group = "io.afero.sdk"
