@@ -10,11 +10,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
@@ -48,13 +48,7 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-
 public class MainActivity extends AppCompatActivity {
-
-    public static final String BASE_URL_AFERO = "https://api.dev.afero.io";
-//    public static final String BASE_URL_AFERO = "https://api.afero.io";
 
     private static final int DEFAULT_SERVICE_TIMEOUT = 60;
 
@@ -114,12 +108,14 @@ public class MainActivity extends AppCompatActivity {
             ? new AccessToken(accessToken, refreshToken)
             : null;
 
-        AferoClientRetrofit2.Config aferoClientConfig = new AferoClientRetrofit2.Config()
-                .setBaseUrl(BASE_URL_AFERO)
-                .setLogLevel(BuildConfig.HTTP_LOG_LEVEL)
-                .setDefaultTimeout(DEFAULT_SERVICE_TIMEOUT)
-                .setImageScale(AferoClient.ImageScale
-                        .fromDisplayDensity(getResources().getDisplayMetrics().density));
+        AferoClientRetrofit2.Config aferoClientConfig = new AferoClientRetrofit2.ConfigBuilder()
+                .baseUrl(BuildConfig.AFERO_SERVICE_URL)
+                .clientId(BuildConfig.AFERO_CLIENT_ID)
+                .clientSecret(BuildConfig.AFERO_CLIENT_SECRET)
+                .logLevel(BuildConfig.HTTP_LOG_LEVEL)
+                .defaultTimeout(DEFAULT_SERVICE_TIMEOUT)
+                .imageScale(AferoClient.ImageScale.fromDisplayDensity(getResources().getDisplayMetrics().density))
+                .build();
 
         mAferoClient = new AferoClientRetrofit2(aferoClientConfig);
         if (token != null) {
@@ -132,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
         mDeviceEventSource = new ConclaveDeviceEventSource(mConclaveAccessManager, ClientID.get(this));
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, ClientID.get(this));
-        mAferoSofthub.setService("dev");
 
         mDeviceCollection = new DeviceCollection(mDeviceEventSource, mAferoClient);
         mDeviceCollection.start();
@@ -213,13 +208,13 @@ public class MainActivity extends AppCompatActivity {
         mDeviceListView.start(mDeviceCollection);
 
         if (isSignedIn()) {
-            mSignInGroup.setVisibility(GONE);
-            mStatusGroup.setVisibility(VISIBLE);
+            mSignInGroup.setVisibility(View.GONE);
+            mStatusGroup.setVisibility(View.VISIBLE);
 
             mAccountNameText.setText(Prefs.getAccountName(this));
         } else {
-            mSignInGroup.setVisibility(VISIBLE);
-            mStatusGroup.setVisibility(GONE);
+            mSignInGroup.setVisibility(View.VISIBLE);
+            mStatusGroup.setVisibility(View.GONE);
             mEmailEditText.showKeyboard();
         }
     }
@@ -255,8 +250,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startSignIn(String email, String password) {
-        mSignInGroup.setVisibility(GONE);
-        mStatusGroup.setVisibility(VISIBLE);
+        mSignInGroup.setVisibility(View.GONE);
+        mStatusGroup.setVisibility(View.VISIBLE);
 
         showConclaveStatus(ConclaveClient.Status.CONNECTING);
 
@@ -329,10 +324,6 @@ public class MainActivity extends AppCompatActivity {
         showConclaveStatus(status);
     }
 
-    private boolean isSimulator() {
-        return Build.MANUFACTURER.equals("unknown");
-    }
-
     private Observable<Response<Void>> registerClient() {
         rx.Observable<String> observable = null;
 
@@ -376,8 +367,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onConnectivityChange() {
-        AfLog.i("onConnectivityChange");
-
         if (isActiveNetworkConnectedOrConnecting()) {
             hideNoNetworkView();
 

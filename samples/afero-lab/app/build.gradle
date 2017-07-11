@@ -23,15 +23,18 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
+        buildConfigField 'String', 'AFERO_SERVICE_URL', project.hasProperty('aferoServiceUrl') ? "${project.aferoServiceUrl}" : "https://api.afero.io"
+        buildConfigField 'String', 'AFERO_CLIENT_ID', project.aferoClientId
+        buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.aferoClientSecret
     }
     buildTypes {
         debug {
             buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BODY'
         }
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BASIC'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled false
         }
     }
     packagingOptions {

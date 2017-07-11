@@ -32,6 +32,7 @@ import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.RxUtils;
 import okhttp3.Authenticator;
+import okhttp3.Credentials;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -60,6 +61,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     private Config mConfig = new Config();
     private final OkHttpClient mHttpClient;
     private final AferoClientAPI mAferoService;
+    private final String mOAuthAuthorizationBase64;
 
     private String mActiveAccountId;
     private String mOwnerAccountId;
@@ -69,38 +71,97 @@ public class AferoClientRetrofit2 implements AferoClient {
     private BehaviorSubject<AccessToken> mTokenSubject;
     private PublishSubject<String> mActiveAccountSubject = PublishSubject.create();
 
-    public static class Config {
+    public static final class Config {
+
         private String baseUrl;
+        private String clientId;
+        private String clientSecret;
         private HttpLoggingInterceptor.Level logLevel = HttpLoggingInterceptor.Level.NONE;
         private int defaultTimeout = 60;
         private ImageScale imageScale = ImageScale.SCALE_DEFAULT;
 
-        public Config setBaseUrl(String url) {
-            baseUrl = url;
-            return this;
-        }
+        private Config() {}
 
-        public Config setLogLevel(HttpLoggingInterceptor.Level ll) {
-            logLevel = ll;
-            return this;
-        }
+        private Config validate() {
+            RuntimeException e = null;
 
-        public Config setDefaultTimeout(int dt) {
-            defaultTimeout = dt;
-            return this;
-        }
+            if (baseUrl == null || baseUrl.isEmpty()) {
+                e = new IllegalArgumentException("baseUrl must be specified");
+            }
 
-        public Config setImageScale(ImageScale is) {
-            imageScale = is;
+            if (clientId == null || clientId.isEmpty()) {
+                e = new IllegalArgumentException("clientId must be specified");
+            }
+
+            if (clientSecret == null || clientSecret.isEmpty()) {
+                e = new IllegalArgumentException("clientSecret must be specified");
+            }
+
+            if (logLevel == null) {
+                e = new IllegalArgumentException("logLevel cannot be null");
+            }
+
+            if (defaultTimeout < 1) {
+                e = new IllegalArgumentException("defaultTimeout is too short");
+            }
+
+            if (imageScale == null) {
+                e = new IllegalArgumentException("imageScale cannot be null");
+            }
+
+            if (e != null) {
+                throw e;
+            }
+
             return this;
         }
     }
 
+    public static final class ConfigBuilder {
+        private final Config config = new Config();
+
+        public ConfigBuilder() {}
+
+        public ConfigBuilder baseUrl(String url) {
+            config.baseUrl = url;
+            return this;
+        }
+
+        public ConfigBuilder clientId(String id) {
+            config.clientId = id;
+            return this;
+        }
+
+        public ConfigBuilder clientSecret(String secret) {
+            config.clientSecret = secret;
+            return this;
+        }
+
+        public ConfigBuilder logLevel(HttpLoggingInterceptor.Level ll) {
+            config.logLevel = ll;
+            return this;
+        }
+
+        public ConfigBuilder defaultTimeout(int dt) {
+            config.defaultTimeout = dt;
+            return this;
+        }
+
+        public ConfigBuilder imageScale(ImageScale is) {
+            config.imageScale = is;
+            return this;
+        }
+
+        public Config build() {
+            return config.validate();
+        }
+    }
 
     public AferoClientRetrofit2(Config config) {
         mConfig = config;
         mHttpClient = createHttpClient(config.logLevel, config.defaultTimeout);
         mAferoService = createRetrofit().create(AferoClientAPI.class);
+        mOAuthAuthorizationBase64 = Credentials.basic(config.clientId, config.clientSecret);
     }
 
     public String getBaseUrl() {
@@ -143,18 +204,18 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     public Observable<AccessToken> getAccessToken(String user, String password, String grantType) {
-        return mAferoService.getAccessToken(user, password, grantType);
+        return mAferoService.getAccessToken(grantType, user, password, mOAuthAuthorizationBase64);
     }
 
     public AccessToken refreshAccessToken(String refreshToken, String grantType) throws IOException {
         Response<AccessToken> response = mAferoService
-                .refreshAccessToken(refreshToken, grantType)
+                .refreshAccessToken(grantType, refreshToken, mOAuthAuthorizationBase64)
                 .execute();
         return response.isSuccessful() ? response.body() : null;
     }
 
     public Observable<Void> resetPassword(String email) {
-        return mAferoService.resetPassword(email, "");
+        return mAferoService.resetPassword(email, "", mOAuthAuthorizationBase64);
     }
 
     public Observable<UserDetails> usersMe() {

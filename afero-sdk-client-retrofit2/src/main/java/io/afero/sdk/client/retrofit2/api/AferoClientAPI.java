@@ -25,6 +25,7 @@ import retrofit2.http.DELETE;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -34,30 +35,29 @@ import rx.Observable;
 
 public interface AferoClientAPI {
     static final String V1 = "/v1/";
-    public static final String BASIC_AUTH_HEADER = "Authorization: Basic bW9iaWxlQ2xpZW50czptb2JpbGUxMjM=";// + Base64.encodeToString("mobileClients:mobile123".getBytes(), Base64.NO_WRAP);
 
     @FormUrlEncoded
-    @Headers(BASIC_AUTH_HEADER)
     @POST("/oauth/token")
     Observable<AccessToken> getAccessToken(
+            @Field("grant_type") String grantType,
             @Field("username") String user,
             @Field("password") String password,
-            @Field("grant_type") String grantType
+            @Header("Authorization") String authorization
     );
 
     @FormUrlEncoded
-    @Headers(BASIC_AUTH_HEADER)
     @POST("/oauth/token")
     Call<AccessToken> refreshAccessToken(
+            @Field("grant_type") String grantType,
             @Field("refresh_token") String refreshToken,
-            @Field("grant_type") String grantType
+            @Header("Authorization") String authorization
     );
 
-    @Headers(BASIC_AUTH_HEADER)
     @POST(V1 + "credentials/{email}/passwordReset")
     Observable<Void> resetPassword(
             @Path("email") String email,
-            @Body String string
+            @Body String string,
+            @Header("Authorization") String authorization
     );
 
     @GET(V1 + "users/me")
