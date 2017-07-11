@@ -109,9 +109,9 @@ public class MainActivity extends AppCompatActivity {
             : null;
 
         AferoClientRetrofit2.Config aferoClientConfig = new AferoClientRetrofit2.ConfigBuilder()
-                .baseUrl(BuildConfig.AFERO_SERVICE_URL)
                 .clientId(BuildConfig.AFERO_CLIENT_ID)
                 .clientSecret(BuildConfig.AFERO_CLIENT_SECRET)
+                .baseUrl(BuildConfig.AFERO_SERVICE_URL)
                 .logLevel(BuildConfig.HTTP_LOG_LEVEL)
                 .defaultTimeout(DEFAULT_SERVICE_TIMEOUT)
                 .imageScale(AferoClient.ImageScale.fromDisplayDensity(getResources().getDisplayMetrics().density))
