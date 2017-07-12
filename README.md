@@ -19,21 +19,14 @@ The SDK binaries are hosted privately on [JFrog](https://www.jfrog.com/artifacto
         maven {
             url "https://afero.jfrog.io/afero/afero-java-sdk"
             credentials {
-                username aferoArtifactoryUserName
-                password aferoArtifactoryPassword
+                username myAferoArtifactoryUserName
+                password myAferoArtifactoryPassword
             }
         }
     }
 ```
 
-To specify the credentials, create a `gradle.properties` file either in `~/.gradle` (recommended) or in the root of your project, and insert the following:
-
-```Gradle
-    aferoArtifactoryUserName=my_username
-    aferoArtifactoryPassword=my_password
-```
-
-If you have not been provided with an artifactory username and password, please contact Afero.
+Replace `myAferoArtifactoryUserName` and `myAferoArtifactoryPassword` with the artifactory credentials provided by Afero.
 
 ### Specifying the Modules
 
