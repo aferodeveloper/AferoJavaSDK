@@ -55,23 +55,35 @@ Closure<String> gitConfigEmail = { ->
 }
 
 Closure<String> getSDKVersion = { ->
-    final String tagBranch = project.hasProperty('aferoSDKBranchName') ? "-${project.aferoSDKBranchName}" : ''
-    final String versionTagMatch = "v*${tagBranch}"
-    String version
+    if (project.findProperty('aferoSDKBranchName')) {
+        final String tagBranch =  "-${project.aferoSDKBranchName}"
+        final String versionTagMatch = "v*${tagBranch}"
+        String version
 
-    if (isCIBuild()) {
-        version = gitDescribeFull(versionTagMatch).replace(tagBranch, "")
-    } else {
-        String user = gitConfigEmail().split("@").getAt(0)
-        version = gitDescribeAbbrev(versionTagMatch).replace(tagBranch, "") + '-dev-' + user
+        try {
+            if (isCIBuild()) {
+                version = gitDescribeFull(versionTagMatch).replace(tagBranch, "")
+            } else {
+                String user = gitConfigEmail().split("@").getAt(0)
+                version = gitDescribeAbbrev(versionTagMatch).replace(tagBranch, "") + '-dev-' + user
+            }
+
+            // drop the 'v' and the branch name
+            return version.drop(1)
+        }
+        catch(e) {
+            logger.log(LogLevel.ERROR, "Error: getSDKVersion failed, probably couldn't find version tag")
+            throw e
+        }
     }
 
-    // drop the 'v' and the branch name
-    return version.drop(1)
+    return ''
 }
 
+String sdkVersion = getSDKVersion()
+
 group = 'io.afero.sdk'
-version = getSDKVersion()
+version = sdkVersion
 status = project.findProperty('aferoSDKBranchName') ?: 'develop'
 
 artifactory {
@@ -86,8 +98,19 @@ artifactory {
             publications('aar', 'jar')
             publishArtifacts = true
             publishPom = true
+            publishBuildInfo = true
         }
     }
 
     clientConfig.info.setBuildNumber(System.getenv('BUILD_NUMBER') ?: 'dev')
+}
+
+artifactoryPublish {
+    onlyIf {
+        if (sdkVersion.isEmpty()) {
+            logger.log(LogLevel.WARN, "Warning: sdkVersion is empty - skipping artifactoryPublish")
+            return false
+        }
+        return true
+    }
 }
