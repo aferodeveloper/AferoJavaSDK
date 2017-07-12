@@ -8,8 +8,8 @@ repositories {
     maven {
         url "https://afero.jfrog.io/afero/afero-java-sdk"
         credentials {
-            username = project.hasProperty('aferoArtifactoryUserName') ? "${project.aferoArtifactoryUserName}" : ""
-            password = project.hasProperty('aferoArtifactoryPassword') ? "${project.aferoArtifactoryPassword}" : ""
+            username = project.aferoArtifactoryUserName
+            password = project.aferoArtifactoryPassword
         }
     }
 }
@@ -24,7 +24,7 @@ android {
         targetSdkVersion 25
 
         versionCode 1
-        versionName project.sdkVersion
+        versionName rootProject.version
     }
     buildTypes {
         release {
@@ -51,9 +51,9 @@ dependencies {
 publishing {
     publications {
         aar(MavenPublication) {
-            version = project.sdkVersion
+            version = rootProject.version
             artifactId project.getName()
-            groupId project.sdkGroupId
+            groupId rootProject.group
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
 

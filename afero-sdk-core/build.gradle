@@ -32,9 +32,9 @@ testClasses.dependsOn copyResourcesDirectoryToClasses
 publishing {
     publications {
         jar(MavenPublication) {
-            version = project.sdkVersion
+            version = rootProject.version
             artifactId project.getName()
-            groupId project.sdkGroupId
+            groupId rootProject.group
 
             // Tell maven to prepare the generated "*.jar" file for publishing
             artifact("$buildDir/libs/${project.getName()}.jar")
