@@ -15,13 +15,6 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
-        maven {
-            url "https://afero.jfrog.io/afero/afero-java-sdk"
-            credentials {
-                username = project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
-                password = project.hasProperty('artifactory_password') ? "${project.artifactory_password}" : ""
-            }
-        }
     }
 
     apply plugin: 'com.jfrog.artifactory'
@@ -96,7 +89,7 @@ artifactory {
     contextUrl = 'https://afero.jfrog.io/afero'
     publish {
         repository {
-            repoKey = 'afero-java-sdk'
+            repoKey = project.hasProperty('artifactory_repo_key') ?: 'afero-java-sdk'
             username = project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
             password = project.hasProperty('artifactory_password') ? "${project.artifactory_password}" : ""
         }
