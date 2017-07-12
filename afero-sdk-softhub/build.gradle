@@ -4,6 +4,16 @@
 
 apply plugin: 'com.android.library'
 
+repositories {
+    maven {
+        url "https://afero.jfrog.io/afero/afero-java-sdk"
+        credentials {
+            username = project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
+            password = project.hasProperty('artifactory_password') ? "${project.artifactory_password}" : ""
+        }
+    }
+}
+
 android {
     publishNonDefault true
     compileSdkVersion 25
