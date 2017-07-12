@@ -4,15 +4,15 @@
 
 apply plugin: 'com.android.application'
 
-final String sdkRepoKey = project.hasProperty('aferoSDKRepoKey') ? project.aferoSDKRepoKey : 'afero-java-sdk'
+final String sdkRepoKey = project.hasProperty('aferoSDKConsumeRepoKey') ? project.aferoSDKConsumeRepoKey : 'afero-java-sdk'
 final String sdkVersionSuffix = project.hasProperty('aferoSDKVersionSuffix') ? project.aferoSDKVersionSuffix : ''
 
 repositories {
     maven {
         url "https://afero.jfrog.io/afero/${sdkRepoKey}"
         credentials {
-            username artifactory_username
-            password artifactory_password
+            username project.aferoArtifactoryUserName
+            password project.aferoArtifactoryPassword
         }
     }
 }
