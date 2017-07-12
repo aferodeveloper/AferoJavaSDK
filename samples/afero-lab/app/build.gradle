@@ -4,8 +4,8 @@
 
 apply plugin: 'com.android.application'
 
-final String sdkRepoKey = project.hasProperty('aferoSDKConsumeRepoKey') ? project.aferoSDKConsumeRepoKey : 'afero-java-sdk'
-final String sdkVersionSuffix = project.hasProperty('aferoSDKVersionSuffix') ? project.aferoSDKVersionSuffix : ''
+final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
+final String sdkVersionSuffix = project.findProperty('aferoSDKVersionSuffix') ?: ''
 
 repositories {
     maven {
@@ -19,27 +19,32 @@ repositories {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "26.0.0"
+    buildToolsVersion '26.0.0'
     defaultConfig {
-        applicationId "io.afero.aferolab"
+        applicationId 'io.afero.aferolab'
         minSdkVersion 19
         targetSdkVersion 25
         versionCode 1
-        versionName "1.0"
-        buildConfigField 'String', 'AFERO_SERVICE_URL', project.hasProperty('aferoServiceUrl') ? "${project.aferoServiceUrl}" : "https://api.afero.io"
+        versionName '1.0'
+
         buildConfigField 'String', 'AFERO_CLIENT_ID', project.aferoClientId
         buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.aferoClientSecret
+        buildConfigField 'String', 'AFERO_SERVICE_URL', project.findProperty('aferoServiceUrl') ?: 'https://api.afero.io'
+        buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: 'prod'
     }
+
     buildTypes {
         debug {
             buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BODY'
         }
+
         release {
             buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BASIC'
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             minifyEnabled false
         }
     }
+
     packagingOptions {
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/LICENSE.txt'

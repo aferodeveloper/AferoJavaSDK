@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
         mDeviceEventSource = new ConclaveDeviceEventSource(mConclaveAccessManager, ClientID.get(this));
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, ClientID.get(this));
+        mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
         mDeviceCollection = new DeviceCollection(mDeviceEventSource, mAferoClient);
         mDeviceCollection.start();
