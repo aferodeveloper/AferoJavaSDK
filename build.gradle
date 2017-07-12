@@ -89,9 +89,9 @@ artifactory {
     contextUrl = 'https://afero.jfrog.io/afero'
     publish {
         repository {
-            repoKey = project.hasProperty('artifactory_repo_key') ?: 'afero-java-sdk'
-            username = project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
-            password = project.hasProperty('artifactory_password') ? "${project.artifactory_password}" : ""
+            repoKey = project.hasProperty('aferoSDKDeployRepoKey') ? "${project.aferoSDKDeployRepoKey}" : 'afero-java-sdk'
+            username = project.hasProperty('aferoArtifactoryUserName') ? "${project.aferoArtifactoryUserName}" : ""
+            password = project.hasProperty('aferoArtifactoryPassword') ? "${project.aferoArtifactoryPassword}" : ""
         }
         defaults {
             publications('aar', 'jar')

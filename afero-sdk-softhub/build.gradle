@@ -8,8 +8,8 @@ repositories {
     maven {
         url "https://afero.jfrog.io/afero/afero-java-sdk"
         credentials {
-            username = project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
-            password = project.hasProperty('artifactory_password') ? "${project.artifactory_password}" : ""
+            username = project.hasProperty('aferoArtifactoryUserName') ? "${project.aferoArtifactoryUserName}" : ""
+            password = project.hasProperty('aferoArtifactoryPassword') ? "${project.aferoArtifactoryPassword}" : ""
         }
     }
 }
