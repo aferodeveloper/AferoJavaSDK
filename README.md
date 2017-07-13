@@ -51,7 +51,7 @@ The `afero-sdk-android` module is required for Android development.
 The `afero-sdk-softhub` module and `hubby` binary are required for Afero soft hub functionality.
 ```Gradle
     compile 'io.afero.sdk:afero-sdk-softhub:0.6.0'
-    compile 'io.afero.sdk:hubby:1.0.482@aar'
+    compile 'io.afero.sdk:hubby:1.0.476@aar'
 ```
 
 ## LICENSE
