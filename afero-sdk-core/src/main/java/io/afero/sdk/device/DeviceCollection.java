@@ -14,6 +14,7 @@ import java.util.TreeSet;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceStatus;
+import io.afero.sdk.conclave.ConclaveAccessManager;
 import io.afero.sdk.conclave.ConclaveMessage;
 import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceError;
@@ -70,6 +71,21 @@ public class DeviceCollection {
      */
     public DeviceCollection(DeviceEventSource deviceEventSource, AferoClient aferoClient) {
         mDeviceEventSource = deviceEventSource;
+        mDeviceProfileCollection = new DeviceProfileCollection(aferoClient);
+        mAferoClient = aferoClient;
+    }
+
+    /**
+     * Constructs a {@code DeviceCollection}. The contents of the collection are managed dynamically
+     * in response to messages received from the specified deviceEventSource.
+     *
+     * @param aferoClient The {@link AferoClient} used by the {@code DeviceCollection} to associate
+     *                    and disassociate devices with the active account.
+     * @param clientId Unique identifier (uuid) for the calling client app
+     */
+    public DeviceCollection(AferoClient aferoClient, String clientId) {
+        ConclaveAccessManager conclaveAccessManager = new ConclaveAccessManager(aferoClient);
+        mDeviceEventSource = new ConclaveDeviceEventSource(conclaveAccessManager, clientId);
         mDeviceProfileCollection = new DeviceProfileCollection(aferoClient);
         mAferoClient = aferoClient;
     }
@@ -457,6 +473,13 @@ public class DeviceCollection {
         synchronized (mModelMap) {
             return mModelMap.size();
         }
+    }
+
+    /**
+     * @return The {@link DeviceEventSource} to which the DeviceCollection is subscribed.
+     */
+    public DeviceEventSource getDeviceEventSource() {
+        return mDeviceEventSource;
     }
 
     /**

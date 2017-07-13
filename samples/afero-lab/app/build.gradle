@@ -15,6 +15,13 @@ repositories {
             password project.aferoArtifactoryPassword
         }
     }
+    maven {
+        url "https://afero.jfrog.io/afero/hubby-android"
+        credentials {
+            username project.aferoArtifactoryUserName
+            password project.aferoArtifactoryPassword
+        }
+    }
 }
 
 android {
@@ -60,7 +67,7 @@ dependencies {
     compile "io.afero.sdk:afero-sdk-client-retrofit2:0.6.0${sdkVersionSuffix}"
     compile "io.afero.sdk:afero-sdk-android:0.6.0${sdkVersionSuffix}"
     compile "io.afero.sdk:afero-sdk-softhub:0.6.0${sdkVersionSuffix}"
-    compile 'io.afero.sdk:hubby:1.0.482@aar'
+    compile 'io.afero.sdk:hubby:1.0.476-prod@aar'
 
     // https://github.com/square/retrofit
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
