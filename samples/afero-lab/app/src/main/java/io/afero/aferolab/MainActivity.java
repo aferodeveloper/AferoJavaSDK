@@ -32,7 +32,6 @@ import io.afero.sdk.client.retrofit2.AferoClientRetrofit2;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
-import io.afero.sdk.conclave.ConclaveAccessManager;
 import io.afero.sdk.conclave.ConclaveClient;
 import io.afero.sdk.device.ConclaveDeviceEventSource;
 import io.afero.sdk.device.DeviceCollection;
@@ -62,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
     private AferoClientRetrofit2 mAferoClient;
     private DeviceCollection mDeviceCollection;
     private ConclaveDeviceEventSource mDeviceEventSource;
-    private ConclaveAccessManager mConclaveAccessManager;
     private AferoSofthub mAferoSofthub;
     private ConnectivityReceiver mConnectivityReceiver;
 
@@ -124,15 +122,13 @@ public class MainActivity extends AppCompatActivity {
 
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
-        mConclaveAccessManager = new ConclaveAccessManager(mAferoClient);
-        mDeviceEventSource = new ConclaveDeviceEventSource(mConclaveAccessManager, ClientID.get(this));
+        mDeviceCollection = new DeviceCollection(mAferoClient, ClientID.get(this));
+        mDeviceCollection.start();
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, ClientID.get(this));
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
-        mDeviceCollection = new DeviceCollection(mDeviceEventSource, mAferoClient);
-        mDeviceCollection.start();
-
+        mDeviceEventSource = (ConclaveDeviceEventSource)mDeviceCollection.getDeviceEventSource();
         mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(this);
 
         setupViews();
