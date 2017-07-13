@@ -1,0 +1,4 @@
+[
+    { "match": "0...2", "apply": { "state": { "value": "one" } } },
+    { "match": "1", "apply": { "state": { "value": "two" } } }
+]

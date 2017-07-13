@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:latest.release"
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+
+    apply plugin: 'com.jfrog.artifactory'
+    apply plugin: 'maven-publish'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.1'
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+Closure<Boolean> isCIBuild = { ->
+    return System.getenv('BUILD_NUMBER')
+}
+
+Closure<String> getCommandLineOutput = { ...args ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine args
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+Closure<String> gitDescribeFull = { match ->
+    return getCommandLineOutput('git', 'describe', '--match', match ?: '*')
+}
+
+Closure<String> gitDescribeAbbrev = { match ->
+    return getCommandLineOutput('git', 'describe', '--match', match ?: '*', '--abbrev=0')
+}
+
+Closure<String> gitConfigEmail = { ->
+    return getCommandLineOutput('git', 'config', 'user.email')
+}
+
+Closure<String> getSDKVersion = { ->
+    if (project.findProperty('aferoSDKBranchName')) {
+        final String tagBranch =  "-${project.aferoSDKBranchName}"
+        final String versionTagMatch = "v*${tagBranch}"
+        String version
+
+        try {
+            if (isCIBuild()) {
+                version = gitDescribeFull(versionTagMatch).replace(tagBranch, "")
+            } else {
+                String user = gitConfigEmail().split("@").getAt(0)
+                version = gitDescribeAbbrev(versionTagMatch).replace(tagBranch, "") + '-dev-' + user
+            }
+
+            // drop the 'v' and the branch name
+            return version.drop(1)
+        }
+        catch(e) {
+            logger.log(LogLevel.ERROR, "Error: getSDKVersion failed, probably couldn't find version tag")
+            throw e
+        }
+    }
+
+    return ''
+}
+
+String sdkVersion = getSDKVersion()
+
+group = 'io.afero.sdk'
+version = sdkVersion
+status = project.findProperty('aferoSDKBranchName') ?: 'develop'
+
+artifactory {
+    contextUrl = 'https://afero.jfrog.io/afero'
+    publish {
+        repository {
+            repoKey = project.findProperty('aferoSDKDeployRepoKey') ?: 'afero-java-sdk'
+            username = project.aferoArtifactoryUserName
+            password = project.aferoArtifactoryPassword
+        }
+        defaults {
+            publications('aar', 'jar')
+            publishArtifacts = true
+            publishPom = true
+            publishBuildInfo = true
+        }
+    }
+
+    clientConfig.info.setBuildNumber(System.getenv('BUILD_NUMBER') ?: 'dev')
+}
+
+artifactoryPublish {
+    onlyIf {
+        if (sdkVersion.isEmpty()) {
+            logger.log(LogLevel.WARN, "Warning: sdkVersion is empty - skipping artifactoryPublish")
+            return false
+        }
+        return true
+    }
+}
