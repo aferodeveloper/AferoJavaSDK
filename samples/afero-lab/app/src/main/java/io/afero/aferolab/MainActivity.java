@@ -116,11 +116,11 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         mAferoClient = new AferoClientRetrofit2(aferoClientConfig);
+        mAferoClient.setOwnerAndActiveAccountId(accountId);
+
         if (token != null) {
             mAferoClient.setToken(new AccessToken(accessToken, refreshToken));
         }
-
-        mAferoClient.setOwnerAndActiveAccountId(accountId);
 
         mDeviceCollection = new DeviceCollection(mAferoClient, ClientID.get(this));
         mDeviceCollection.start();

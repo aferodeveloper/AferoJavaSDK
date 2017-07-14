@@ -10,13 +10,7 @@ final String sdkVersionSuffix = project.findProperty('aferoSDKVersionSuffix') ?:
 repositories {
     maven {
         url "https://afero.jfrog.io/afero/${sdkRepoKey}"
-        credentials {
-            username project.aferoArtifactoryUserName
-            password project.aferoArtifactoryPassword
-        }
-    }
-    maven {
-        url "https://afero.jfrog.io/afero/hubby-android"
+        artifactUrls "https://afero.jfrog.io/afero/hubby-android"
         credentials {
             username project.aferoArtifactoryUserName
             password project.aferoArtifactoryPassword
@@ -67,7 +61,7 @@ dependencies {
     compile "io.afero.sdk:afero-sdk-client-retrofit2:0.6.0${sdkVersionSuffix}"
     compile "io.afero.sdk:afero-sdk-android:0.6.0${sdkVersionSuffix}"
     compile "io.afero.sdk:afero-sdk-softhub:0.6.0${sdkVersionSuffix}"
-    compile 'io.afero.sdk:hubby:1.0.476-prod@aar'
+    compile 'io.afero.sdk:hubby:1.0.494-prod@aar'
 
     // https://github.com/square/retrofit
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
