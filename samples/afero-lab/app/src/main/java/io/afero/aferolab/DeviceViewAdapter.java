@@ -20,7 +20,6 @@ import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func1;
 
 public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.ViewHolder> {
 
@@ -44,35 +43,36 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
                 int i = mDevices.indexOf(deviceModel);
                 if (i != -1) {
                     mDevices.remove(i);
+
+                    if (!isDevicePresentable(deviceModel)) {
+                        notifyItemRemoved(i);
+                        return;
+                    }
+
                     int newIndex = Collections.binarySearch(mDevices, deviceModel, mSortComparator);
                     if (newIndex < 0) {
                         newIndex = -newIndex - 1;
                     }
+
                     mDevices.add(newIndex, deviceModel);
+
                     if (newIndex != i) {
                         notifyItemMoved(i, newIndex);
                     } else {
                         notifyItemChanged(i);
                     }
-                } else {
+                } else if (isDevicePresentable(deviceModel)) {
                     i = Collections.binarySearch(mDevices, deviceModel, mSortComparator);
                     if (i < 0) {
                         i = -i - 1;
                     }
+
                     mDevices.add(i, deviceModel);
                     notifyItemInserted(i);
                 }
             }
         }
     };
-
-    private static class DeviceIsPresentableFilter implements Func1<DeviceModel, Boolean> {
-        @Override
-        public Boolean call(DeviceModel deviceModel) {
-            return deviceModel.getPresentation() != null;
-        }
-    };
-    private final DeviceIsPresentableFilter mDeviceFilter = new DeviceIsPresentableFilter();
 
     public DeviceViewAdapter(DeviceCollection deviceCollection) {
         addDevices(deviceCollection.getDevices());
@@ -97,7 +97,6 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
 
     private Subscription addDevices(Observable<DeviceModel> devices) {
         return devices
-            .filter(mDeviceFilter)
             .onBackpressureBuffer()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(mAddDeviceAction);
@@ -118,6 +117,10 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
                     }
                 }
             });
+    }
+
+    private boolean isDevicePresentable(DeviceModel deviceModel) {
+        return deviceModel.getPresentation() != null;
     }
 
     @Override
