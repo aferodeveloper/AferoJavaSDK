@@ -29,6 +29,7 @@ import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
@@ -61,13 +62,16 @@ public class DeviceCollection {
     private Subscription mStatusChangeSubscription;
     private Subscription mMuteSubscription;
 
+    private boolean mIsStarted;
+
     /**
      * Constructs a {@code DeviceCollection}. The contents of the collection are managed dynamically
      * in response to messages received from the specified deviceEventSource.
      *
-     * @param deviceEventSource Source for all device messages
+     * @param deviceEventSource {@link DeviceEventSource} to which the {@code DeviceCollection} subscribes
+     *                          for all device messages
      * @param aferoClient The {@link AferoClient} used by the {@code DeviceCollection} to associate
-     *                    and disassociate devices with the active account.
+     *                    and disassociate devices with the active account
      */
     public DeviceCollection(DeviceEventSource deviceEventSource, AferoClient aferoClient) {
         mDeviceEventSource = deviceEventSource;
@@ -77,10 +81,11 @@ public class DeviceCollection {
 
     /**
      * Constructs a {@code DeviceCollection}. The contents of the collection are managed dynamically
-     * in response to messages received from the specified deviceEventSource.
+     * in response to messages received from the specified deviceEventSource. This is a convenience
+     * constructor that creates a default {@link ConclaveDeviceEventSource}.
      *
      * @param aferoClient The {@link AferoClient} used by the {@code DeviceCollection} to associate
-     *                    and disassociate devices with the active account.
+     *                    and disassociate devices with the active account
      * @param clientId Unique identifier (uuid) for the calling client app
      */
     public DeviceCollection(AferoClient aferoClient, String clientId) {
@@ -91,232 +96,63 @@ public class DeviceCollection {
     }
 
     /**
-     * Starts {@code DeviceCollection} operations. When {@code start} completes the
-     * {@code DeviceCollection} will be subscribed to relevant {@link DeviceEventSource}
-     * observables.
-     * @return this instance.
-     * @throws IllegalStateException if called more than once before a call to
-     * {@link DeviceCollection#stop()}.
+     * Starts {@code DeviceCollection} operations. When the Observable returned from {@code start}
+     * completes the {@code DeviceCollection} will contain all the {@link DeviceModel}s associated
+     * with the active account.
+     *
+     * @return {@link Observable} that returns this DeviceCollection instance.
      */
-    public DeviceCollection start() {
-
-        if (isStarted()) {
-            throw new IllegalStateException("DeviceCollection has already been started");
-        }
-
-        mSnapshotSubscription = mDeviceEventSource.observeSnapshot()
-            .flatMap(new Func1<DeviceSync[], Observable<DeviceSync[]>>() {
-                // Make sure we have a profile for the new device in our local registry
-                // If not, fetch it before passing it on...
-                @Override
-                public Observable<DeviceSync[]> call(final DeviceSync[] deviceSyncs) {
-                    AfLog.i("DeviceCollection.flatMap('snapshot'): deviceSync[].length=" + deviceSyncs.length);
-
-                    // TODO: we're always fetching all profiles. optimize this. (use api filtering?)
-                    return mDeviceProfileCollection
-                        .fetchAccountProfiles()
-                        .zipWith(Observable.just(deviceSyncs), new Func2<DeviceProfile[], DeviceSync[], DeviceSync[]>() {
-                            @Override
-                            public DeviceSync[] call(DeviceProfile[] deviceProfiles, DeviceSync[] ds) {
-                                return ds;
-                            }
-                        });
-                }
-            })
-            .doOnNext(new Action1<DeviceSync[]>() {
-                @Override
-                public void call(DeviceSync[] deviceSyncs) {
-
-                    AfLog.i("DeviceCollection.onNext('snapshot'): deviceSync[].length=" + deviceSyncs.length);
-
-                    TreeSet<String> deviceSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-                    for (DeviceSync ds : deviceSyncs) {
-                        deviceSet.add(ds.id);
-                    }
-
-                    for (DeviceSync ds : deviceSyncs) {
-                        AfLog.i("DeviceCollection.onNext('snapshot'): deviceSync=" + ds.toString());
-                        addOrUpdate(ds);
-                    }
-
-                    ArrayList<DeviceModel> removedDevices;
-                    synchronized (mModelMap) {
-                        removedDevices = new ArrayList<>(mModelMap.size());
-                        Iterator<DeviceModel> iter = mModelMap.values().iterator();
-
-                        while (iter.hasNext()) {
-                            DeviceModel dm = iter.next();
-                            if (!deviceSet.contains(dm.getId())) {
-                                iter.remove();
-                                removedDevices.add(dm);
-                            }
-                        }
-                    }
-
-                    // publish the deletes outside the synchronized block to avoid badness
-                    for (DeviceModel dm : removedDevices) {
-                        mModelDeleteSubject.onNext(dm);
-                    }
-                }
-            })
-            .subscribe(
-                new Action1<DeviceSync[]>() {    // onNext
+    public Observable<DeviceCollection> start() {
+        // Startup sequence:
+        // 1. Fetch account profiles
+        // 2. Fetch devices and add them to the collection
+        // 3. Subscribe to DeviceEventSource
+        return mDeviceProfileCollection
+                .fetchAccountProfiles()
+                .flatMap(new Func1<DeviceProfile[], Observable<DeviceCollection>>() {
                     @Override
-                    public void call(DeviceSync[] deviceSync) {
+                    public Observable<DeviceCollection> call(DeviceProfile[] deviceProfiles) {
+                        return mAferoClient.getDevicesWithState()
+                            .flatMap(new Func1<DeviceSync[], Observable<DeviceCollection>>() {
+                                @Override
+                                public Observable<DeviceCollection> call(DeviceSync[] deviceSyncs) {
 
-                        for (DeviceSync ds : deviceSync) {
-                            DeviceModel deviceModel = getDevice(ds.id);
-                            DeviceProfile profile = mDeviceProfileCollection.getProfileFromID(ds.profileId);
-                            if (profile != null) {
-                                deviceModel.setProfile(profile);
-                            }
-                        }
+                                    for (DeviceSync ds : deviceSyncs) {
+                                        AfLog.i("DeviceCollection.start: deviceSync=" + ds.toString());
+                                        addOrUpdate(ds);
+                                    }
 
-                        mModelSnapshotSubject.onNext(DeviceCollection.this);
+                                    return Observable.just(subscribeToDeviceEventSource());
+                                }
+                            });
                     }
-                },
-                new Action1<Throwable>() {   // onError
+                })
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        if (isStarted()) {
+                            throw new IllegalStateException("DeviceCollection has already been started");
+                        }
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        //unsubscribeFromDeviceEventSource();
+                    }
+                })
+                .doOnError(new Action1<Throwable>() {
                     @Override
                     public void call(Throwable t) {
-                        AfLog.i("DeviceCollection.observeSnapshot.onError: e=" + t.toString());
-                        AfLog.e(t);
+                        unsubscribeFromDeviceEventSource();
+                    }
+                })
+                .doOnCompleted(new Action0() {
+                    @Override
+                    public void call() {
+                        mIsStarted = true;
                     }
                 });
-
-        mAttributeChangeSubscription = mDeviceEventSource.observeAttributeChange().onBackpressureBuffer()
-            .subscribe(
-                    new Action1<DeviceSync>() {    // onNext
-                        @Override
-                        public void call(DeviceSync deviceSync) {
-                            AfLog.i("DeviceCollection.observeUpdate.onNext: deviceSync=" + deviceSync.toString());
-                            DeviceModel deviceModel = getDevice(deviceSync.id);
-                            if (deviceModel != null) {
-                                deviceModel.update(deviceSync);
-                                mModelUpdateSubject.onNext(deviceModel);
-                            }
-                        }
-                    },
-                    new Action1<Throwable>() {   // onError
-                        @Override
-                        public void call(Throwable t) {
-                            AfLog.i("DeviceCollection.observeUpdate.onError: e=" + t.toString());
-                            AfLog.e(t);
-                        }
-                    });
-
-        mStatusChangeSubscription = mDeviceEventSource.observeStatusChange().onBackpressureBuffer()
-            .subscribe(
-                    new Action1<DeviceState>() {    // onNext
-                        @Override
-                        public void call(DeviceState deviceState) {
-//                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
-                            DeviceModel deviceModel = getDevice(deviceState.id);
-                            if (deviceModel != null) {
-                                deviceModel.update(deviceState.status);
-                                mModelUpdateSubject.onNext(deviceModel);
-                            }
-                        }
-                    },
-                    new Action1<Throwable>() {   // onError
-                        @Override
-                        public void call(Throwable t) {
-                            AfLog.i("DeviceCollection.observeState.onError: e=" + t.toString());
-                            AfLog.e(t);
-                        }
-                    });
-
-        mMuteSubscription = mDeviceEventSource.observeMute().onBackpressureBuffer()
-            .subscribe(
-                    new Action1<DeviceMute>() {    // onNext
-                        @Override
-                        public void call(DeviceMute deviceMute) {
-//                            AfLog.i("DeviceCollection.observeMute.onNext: deviceMute=" + deviceMute.toString());
-                            DeviceModel deviceModel = getDevice(deviceMute.id);
-                            if (deviceModel != null) {
-                                deviceModel.onMute(deviceMute);
-                            }
-                        }
-                    },
-                    new Action1<Throwable>() {   // onError
-                        @Override
-                        public void call(Throwable t) {
-                            AfLog.i("DeviceCollection.observeMute.onError: e=" + t.toString());
-                            AfLog.e(t);
-                        }
-                    });
-
-        mDeviceErrorSubscription = mDeviceEventSource.observeError().onBackpressureBuffer()
-            .subscribe(
-                    new Action1<DeviceError>() {    // onNext
-                        @Override
-                        public void call(DeviceError deviceError) {
-//                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
-                            DeviceModel deviceModel = getDevice(deviceError.id);
-                            if (deviceModel != null) {
-                                deviceModel.onError(deviceError);
-                            }
-                        }
-                    },
-                    new Action1<Throwable>() {   // onError
-                        @Override
-                        public void call(Throwable t) {
-                            AfLog.i("DeviceCollection.observeState.onError: e=" + t.toString());
-                            AfLog.e(t);
-                        }
-                    });
-
-        mInvalidateSubscription = mDeviceEventSource.observeInvalidate()
-            .subscribe(new Action1<InvalidateMessage>() {
-                @Override
-                public void call(InvalidateMessage im) {
-                    try {
-                        String deviceId = im.json.get("deviceId").asText();
-                        DeviceModel deviceModel = getDevice(deviceId);
-                        if (deviceModel == null) {
-                            AfLog.e("Got invalidate on unknown deviceId: " + deviceId);
-                            return;
-                        }
-
-                        switch (im.kind.toLowerCase()) {
-                            case "profiles":
-                                String profileId = im.json.get("profileId").asText();
-                                updateDeviceProfile(deviceModel, profileId);
-                                break;
-                            case "location":
-                                deviceModel.updateLocation();
-                                break;
-                        }
-                    } catch (Exception e) {
-                        AfLog.e("Unable to parse invalidate json: " + e);
-                    }
-                }
-            });
-
-        mOTASubscription = mDeviceEventSource.observeOTA().subscribe(new Action1<OTAInfo>() {
-            @Override
-            public void call(OTAInfo otaInfo) {
-                DeviceModel deviceModel = getDevice(otaInfo.id);
-                if (deviceModel != null) {
-                    AfLog.d("mDeviceEventSource.observeOTA state="+otaInfo.state);
-                    deviceModel.onOTA(otaInfo);
-                }
-            }
-        });
-
-        mMetricSubscription = MetricUtil.getInstance().getEventObservable().subscribe(new Observer<ConclaveMessage.Metric>() {
-            @Override
-            public void onCompleted() {}
-
-            @Override
-            public void onError(Throwable e) {}
-
-            @Override
-            public void onNext(ConclaveMessage.Metric metric) {
-                mDeviceEventSource.sendMetrics(metric);
-            }
-        });
-
-        return this;
     }
 
     /**
@@ -328,14 +164,8 @@ public class DeviceCollection {
     public void stop() {
         throwIfNotStarted();
 
-        mSnapshotSubscription = RxUtils.safeUnSubscribe(mSnapshotSubscription);
-        mAttributeChangeSubscription = RxUtils.safeUnSubscribe(mAttributeChangeSubscription);
-        mStatusChangeSubscription = RxUtils.safeUnSubscribe(mStatusChangeSubscription);
-        mMuteSubscription = RxUtils.safeUnSubscribe(mMuteSubscription);
-        mDeviceErrorSubscription = RxUtils.safeUnSubscribe(mDeviceErrorSubscription);
-        mInvalidateSubscription = RxUtils.safeUnSubscribe(mInvalidateSubscription);
-        mOTASubscription = RxUtils.safeUnSubscribe(mOTASubscription);
-        mMetricSubscription = RxUtils.safeUnSubscribe(mMetricSubscription);
+        unsubscribeFromDeviceEventSource();
+        mIsStarted = false;
     }
 
     /**
@@ -504,14 +334,241 @@ public class DeviceCollection {
         });
     }
 
+    private DeviceCollection subscribeToDeviceEventSource() {
+
+        mSnapshotSubscription = mDeviceEventSource.observeSnapshot()
+                .flatMap(new Func1<DeviceSync[], Observable<DeviceSync[]>>() {
+                    // Make sure we have a profile for the new device in our local registry
+                    // If not, fetch it before passing it on...
+                    @Override
+                    public Observable<DeviceSync[]> call(final DeviceSync[] deviceSyncs) {
+                        AfLog.i("DeviceCollection.flatMap('snapshot'): deviceSync[].length=" + deviceSyncs.length);
+
+                        // TODO: we're always fetching all profiles. optimize this. (use api filtering?)
+                        return mDeviceProfileCollection
+                                .fetchAccountProfiles()
+                                .zipWith(Observable.just(deviceSyncs), new Func2<DeviceProfile[], DeviceSync[], DeviceSync[]>() {
+                                    @Override
+                                    public DeviceSync[] call(DeviceProfile[] deviceProfiles, DeviceSync[] ds) {
+                                        return ds;
+                                    }
+                                });
+                    }
+                })
+                .doOnNext(new Action1<DeviceSync[]>() {
+                    @Override
+                    public void call(DeviceSync[] deviceSyncs) {
+
+                        AfLog.i("DeviceCollection.onNext('snapshot'): deviceSync[].length=" + deviceSyncs.length);
+
+                        TreeSet<String> deviceSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+                        for (DeviceSync ds : deviceSyncs) {
+                            deviceSet.add(ds.id);
+                        }
+
+                        for (DeviceSync ds : deviceSyncs) {
+                            AfLog.i("DeviceCollection.onNext('snapshot'): deviceSync=" + ds.toString());
+                            addOrUpdate(ds);
+                        }
+
+                        ArrayList<DeviceModel> removedDevices;
+                        synchronized (mModelMap) {
+                            removedDevices = new ArrayList<>(mModelMap.size());
+                            Iterator<DeviceModel> iter = mModelMap.values().iterator();
+
+                            while (iter.hasNext()) {
+                                DeviceModel dm = iter.next();
+                                if (!deviceSet.contains(dm.getId())) {
+                                    iter.remove();
+                                    removedDevices.add(dm);
+                                }
+                            }
+                        }
+
+                        // publish the deletes outside the synchronized block to avoid badness
+                        for (DeviceModel dm : removedDevices) {
+                            mModelDeleteSubject.onNext(dm);
+                        }
+                    }
+                })
+                .subscribe(
+                        new Action1<DeviceSync[]>() {    // onNext
+                            @Override
+                            public void call(DeviceSync[] deviceSync) {
+
+                                for (DeviceSync ds : deviceSync) {
+                                    DeviceModel deviceModel = getDevice(ds.id);
+                                    DeviceProfile profile = mDeviceProfileCollection.getProfileFromID(ds.profileId);
+                                    if (profile != null) {
+                                        deviceModel.setProfile(profile);
+                                    }
+                                }
+
+                                mModelSnapshotSubject.onNext(DeviceCollection.this);
+                            }
+                        },
+                        new Action1<Throwable>() {   // onError
+                            @Override
+                            public void call(Throwable t) {
+                                AfLog.i("DeviceCollection.observeSnapshot.onError: e=" + t.toString());
+                                AfLog.e(t);
+                            }
+                        });
+
+        mAttributeChangeSubscription = mDeviceEventSource.observeAttributeChange().onBackpressureBuffer()
+                .subscribe(
+                        new Action1<DeviceSync>() {    // onNext
+                            @Override
+                            public void call(DeviceSync deviceSync) {
+                                AfLog.i("DeviceCollection.observeUpdate.onNext: deviceSync=" + deviceSync.toString());
+                                DeviceModel deviceModel = getDevice(deviceSync.id);
+                                if (deviceModel != null) {
+                                    deviceModel.update(deviceSync);
+                                    mModelUpdateSubject.onNext(deviceModel);
+                                }
+                            }
+                        },
+                        new Action1<Throwable>() {   // onError
+                            @Override
+                            public void call(Throwable t) {
+                                AfLog.i("DeviceCollection.observeUpdate.onError: e=" + t.toString());
+                                AfLog.e(t);
+                            }
+                        });
+
+        mStatusChangeSubscription = mDeviceEventSource.observeStatusChange().onBackpressureBuffer()
+                .subscribe(
+                        new Action1<DeviceState>() {    // onNext
+                            @Override
+                            public void call(DeviceState deviceState) {
+//                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
+                                DeviceModel deviceModel = getDevice(deviceState.id);
+                                if (deviceModel != null) {
+                                    deviceModel.update(deviceState.status);
+                                    mModelUpdateSubject.onNext(deviceModel);
+                                }
+                            }
+                        },
+                        new Action1<Throwable>() {   // onError
+                            @Override
+                            public void call(Throwable t) {
+                                AfLog.i("DeviceCollection.observeState.onError: e=" + t.toString());
+                                AfLog.e(t);
+                            }
+                        });
+
+        mMuteSubscription = mDeviceEventSource.observeMute().onBackpressureBuffer()
+                .subscribe(
+                        new Action1<DeviceMute>() {    // onNext
+                            @Override
+                            public void call(DeviceMute deviceMute) {
+//                            AfLog.i("DeviceCollection.observeMute.onNext: deviceMute=" + deviceMute.toString());
+                                DeviceModel deviceModel = getDevice(deviceMute.id);
+                                if (deviceModel != null) {
+                                    deviceModel.onMute(deviceMute);
+                                }
+                            }
+                        },
+                        new Action1<Throwable>() {   // onError
+                            @Override
+                            public void call(Throwable t) {
+                                AfLog.i("DeviceCollection.observeMute.onError: e=" + t.toString());
+                                AfLog.e(t);
+                            }
+                        });
+
+        mDeviceErrorSubscription = mDeviceEventSource.observeError().onBackpressureBuffer()
+                .subscribe(
+                        new Action1<DeviceError>() {    // onNext
+                            @Override
+                            public void call(DeviceError deviceError) {
+//                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
+                                DeviceModel deviceModel = getDevice(deviceError.id);
+                                if (deviceModel != null) {
+                                    deviceModel.onError(deviceError);
+                                }
+                            }
+                        },
+                        new Action1<Throwable>() {   // onError
+                            @Override
+                            public void call(Throwable t) {
+                                AfLog.i("DeviceCollection.observeState.onError: e=" + t.toString());
+                                AfLog.e(t);
+                            }
+                        });
+
+        mInvalidateSubscription = mDeviceEventSource.observeInvalidate()
+                .subscribe(new Action1<InvalidateMessage>() {
+                    @Override
+                    public void call(InvalidateMessage im) {
+                        try {
+                            String deviceId = im.json.get("deviceId").asText();
+                            DeviceModel deviceModel = getDevice(deviceId);
+                            if (deviceModel == null) {
+                                AfLog.e("Got invalidate on unknown deviceId: " + deviceId);
+                                return;
+                            }
+
+                            switch (im.kind.toLowerCase()) {
+                                case "profiles":
+                                    String profileId = im.json.get("profileId").asText();
+                                    updateDeviceProfile(deviceModel, profileId);
+                                    break;
+                                case "location":
+                                    deviceModel.updateLocation();
+                                    break;
+                            }
+                        } catch (Exception e) {
+                            AfLog.e("Unable to parse invalidate json: " + e);
+                        }
+                    }
+                });
+
+        mOTASubscription = mDeviceEventSource.observeOTA().subscribe(new Action1<OTAInfo>() {
+            @Override
+            public void call(OTAInfo otaInfo) {
+                DeviceModel deviceModel = getDevice(otaInfo.id);
+                if (deviceModel != null) {
+                    AfLog.d("mDeviceEventSource.observeOTA state="+otaInfo.state);
+                    deviceModel.onOTA(otaInfo);
+                }
+            }
+        });
+
+        mMetricSubscription = MetricUtil.getInstance().getEventObservable().subscribe(new Observer<ConclaveMessage.Metric>() {
+            @Override
+            public void onCompleted() {}
+
+            @Override
+            public void onError(Throwable e) {}
+
+            @Override
+            public void onNext(ConclaveMessage.Metric metric) {
+                mDeviceEventSource.sendMetrics(metric);
+            }
+        });
+
+        return this;
+    }
+
+    private void unsubscribeFromDeviceEventSource() {
+        mSnapshotSubscription = RxUtils.safeUnSubscribe(mSnapshotSubscription);
+        mAttributeChangeSubscription = RxUtils.safeUnSubscribe(mAttributeChangeSubscription);
+        mStatusChangeSubscription = RxUtils.safeUnSubscribe(mStatusChangeSubscription);
+        mMuteSubscription = RxUtils.safeUnSubscribe(mMuteSubscription);
+        mDeviceErrorSubscription = RxUtils.safeUnSubscribe(mDeviceErrorSubscription);
+        mInvalidateSubscription = RxUtils.safeUnSubscribe(mInvalidateSubscription);
+        mOTASubscription = RxUtils.safeUnSubscribe(mOTASubscription);
+        mMetricSubscription = RxUtils.safeUnSubscribe(mMetricSubscription);
+    }
 
     private boolean isStarted() {
-        return mSnapshotSubscription != null;
+        return mIsStarted;
     }
 
     private DeviceModel addOrUpdate(String deviceId, DeviceStatus ds, DeviceProfile deviceProfile) {
         synchronized (mModelMap) {
-            DeviceModel deviceModel = getDevice(deviceId);
+            DeviceModel deviceModel = mModelMap.get(deviceId);
             if (deviceModel != null) {
                 deviceModel.update(ds);
             } else {
@@ -523,7 +580,7 @@ public class DeviceCollection {
 
     private DeviceModel addOrUpdate(DeviceSync ds) {
         synchronized (mModelMap) {
-            DeviceModel deviceModel = getDevice(ds.id);
+            DeviceModel deviceModel = mModelMap.get(ds.id);
             if (deviceModel != null) {
                 deviceModel.update(ds);
             } else {

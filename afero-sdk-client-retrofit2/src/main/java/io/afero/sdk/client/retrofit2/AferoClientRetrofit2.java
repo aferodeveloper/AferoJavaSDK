@@ -27,6 +27,7 @@ import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.DeviceEventSource;
+import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
@@ -466,6 +467,17 @@ public class AferoClientRetrofit2 implements AferoClient {
     @Override
     public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
         return mAferoService.putDeviceTimezone(mActiveAccountId, deviceModel.getId(), new DeviceTimezone(tz.getID()));
+    }
+
+    /**
+     * Afero Cloud API call to get a snapshot of the devices (and their state) associated with the
+     * active account.
+     *
+     * @return {@link Observable} that initiates the call on subscribe
+     */
+    @Override
+    public Observable<DeviceSync[]> getDevicesWithState() {
+        return mAferoService.getDevicesWithState(mActiveAccountId);
     }
 
     /**
