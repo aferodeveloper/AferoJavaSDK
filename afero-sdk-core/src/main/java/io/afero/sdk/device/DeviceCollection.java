@@ -220,11 +220,8 @@ public class DeviceCollection {
 
     /**
      * @return {@link Observable} containing a snapshot of all devices in the {@code DeviceCollection}
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public Observable<DeviceModel> getDevices() {
-        throwIfNotStarted();
-
         // Make a copy of the map since the original could change while the Observable is iterating.
         Map<String,DeviceModel> mapCopy = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         synchronized (mModelMap) {
@@ -237,11 +234,8 @@ public class DeviceCollection {
      * @param deviceId Identifier of a {@link DeviceModel}.
      * @return the {@link DeviceModel} with the specified {@code deviceId}, or {@null} if no such
      * {@link DeviceModel} exists.
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public DeviceModel getDevice(String deviceId) {
-        throwIfNotStarted();
-
         synchronized (mModelMap) {
             return mModelMap.get(deviceId);
         }
@@ -251,55 +245,47 @@ public class DeviceCollection {
      * @return Observable that emits {@link DeviceModel}s as they are created and added to the
      * collection either as the result of events from {@link DeviceEventSource} or a call to
      * {@link DeviceCollection#addDevice(String, boolean)}.
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public Observable<DeviceModel> observeCreates() {
-        throwIfNotStarted();
-
         return mModelCreateSubject;
+    }
+
+    /**
+     * @return Observable that emits when an existing {@link DeviceModel} is updated.
+     */
+    public Observable<DeviceModel> observeUpdates() {
+        return mModelUpdateSubject;
     }
 
     /**
      * @return Observable that emits {@link DeviceModel}s as they are removed from the collection
      * either as the result of events from {@link DeviceEventSource} or a call to
      * {@link DeviceCollection#removeDevice(DeviceModel)}.
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public Observable<DeviceModel> observeDeletes() {
-        throwIfNotStarted();
-
         return mModelDeleteSubject.onBackpressureBuffer();
     }
 
     /**
      * @return Observable that emits {@link DeviceModel}s that have received a new
      * {@link DeviceProfile}
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public Observable<DeviceModel> observeProfileChanges() {
-        throwIfNotStarted();
-
         return mModelProfileChangeSubject;
     }
 
     /**
      * @return Observable that emits the DeviceCollection whenever a new "snapshot" of devices has
      * been processed.
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public Observable<DeviceCollection> observeSnapshots() {
-        throwIfNotStarted();
-
         return mModelSnapshotSubject;
     }
 
     /**
      * @return The current count of {@link DeviceModel}s in the collection.
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public int getCount() {
-        throwIfNotStarted();
-
         synchronized (mModelMap) {
             return mModelMap.size();
         }
@@ -315,18 +301,15 @@ public class DeviceCollection {
     /**
      * Removes all {@link DeviceModel}s from the local cache. Typically done when signing out
      * or switching active accounts.
-     * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public void reset() {
-        throwIfNotStarted();
-
         Observable<DeviceModel> devices = getDevices();
 
         synchronized (mModelMap) {
             mModelMap.clear();
         }
 
-        devices.subscribe(new Action1<DeviceModel>() {
+        devices.forEach(new Action1<DeviceModel>() {
             @Override
             public void call(DeviceModel deviceModel) {
                 mModelDeleteSubject.onNext(deviceModel);
@@ -363,7 +346,7 @@ public class DeviceCollection {
 
                         TreeSet<String> deviceSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
                         for (DeviceSync ds : deviceSyncs) {
-                            deviceSet.add(ds.id);
+                            deviceSet.add(ds.getDeviceId());
                         }
 
                         for (DeviceSync ds : deviceSyncs) {
@@ -397,7 +380,7 @@ public class DeviceCollection {
                             public void call(DeviceSync[] deviceSync) {
 
                                 for (DeviceSync ds : deviceSync) {
-                                    DeviceModel deviceModel = getDevice(ds.id);
+                                    DeviceModel deviceModel = getDevice(ds.getDeviceId());
                                     DeviceProfile profile = mDeviceProfileCollection.getProfileFromID(ds.profileId);
                                     if (profile != null) {
                                         deviceModel.setProfile(profile);
@@ -421,7 +404,7 @@ public class DeviceCollection {
                             @Override
                             public void call(DeviceSync deviceSync) {
                                 AfLog.i("DeviceCollection.observeUpdate.onNext: deviceSync=" + deviceSync.toString());
-                                DeviceModel deviceModel = getDevice(deviceSync.id);
+                                DeviceModel deviceModel = getDevice(deviceSync.getDeviceId());
                                 if (deviceModel != null) {
                                     deviceModel.update(deviceSync);
                                     mModelUpdateSubject.onNext(deviceModel);
@@ -441,7 +424,7 @@ public class DeviceCollection {
                         new Action1<DeviceState>() {    // onNext
                             @Override
                             public void call(DeviceState deviceState) {
-//                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
+                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
                                 DeviceModel deviceModel = getDevice(deviceState.id);
                                 if (deviceModel != null) {
                                     deviceModel.update(deviceState.status);
@@ -482,7 +465,6 @@ public class DeviceCollection {
                         new Action1<DeviceError>() {    // onNext
                             @Override
                             public void call(DeviceError deviceError) {
-//                            AfLog.i("DeviceCollection.observeState.onNext: deviceState=" + deviceState.toString());
                                 DeviceModel deviceModel = getDevice(deviceError.id);
                                 if (deviceModel != null) {
                                     deviceModel.onError(deviceError);
@@ -571,6 +553,7 @@ public class DeviceCollection {
             DeviceModel deviceModel = mModelMap.get(deviceId);
             if (deviceModel != null) {
                 deviceModel.update(ds);
+                mModelUpdateSubject.onNext(deviceModel);
             } else {
                 deviceModel = add(deviceId, ds, deviceProfile);
             }
@@ -580,9 +563,10 @@ public class DeviceCollection {
 
     private DeviceModel addOrUpdate(DeviceSync ds) {
         synchronized (mModelMap) {
-            DeviceModel deviceModel = mModelMap.get(ds.id);
+            DeviceModel deviceModel = mModelMap.get(ds.getDeviceId());
             if (deviceModel != null) {
                 deviceModel.update(ds);
+                mModelUpdateSubject.onNext(deviceModel);
             } else {
                 add(ds);
             }
@@ -607,6 +591,7 @@ public class DeviceCollection {
                 public void onNext(DeviceProfile profile) {
                     deviceModel.setProfile(profile);
                     mModelProfileChangeSubject.onNext(deviceModel);
+                    mModelUpdateSubject.onNext(deviceModel);
                 }
             });
     }
@@ -615,7 +600,7 @@ public class DeviceCollection {
         DeviceProfile profile = mDeviceProfileCollection.getProfileFromID(ds.profileId);
 
         if (profile != null) {
-            DeviceModel deviceModel = new DeviceModel(ds.id, profile, false, mAferoClient);
+            DeviceModel deviceModel = new DeviceModel(ds.getDeviceId(), profile, false, mAferoClient);
             deviceModel.update(ds);
 
             return add(deviceModel);

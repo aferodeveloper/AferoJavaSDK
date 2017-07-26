@@ -27,7 +27,6 @@ import butterknife.OnClick;
 import butterknife.OnEditorAction;
 import io.afero.sdk.android.clock.AndroidClock;
 import io.afero.sdk.android.log.AndroidLog;
-import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.retrofit2.AferoClientRetrofit2;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
@@ -48,8 +47,6 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
-
-    private static final int DEFAULT_SERVICE_TIMEOUT = 60;
 
     private Subscription mTokenRefreshSubscription;
     private Subscription mConclaveStatusSubscription;
@@ -107,12 +104,10 @@ public class MainActivity extends AppCompatActivity {
             : null;
 
         AferoClientRetrofit2.Config aferoClientConfig = new AferoClientRetrofit2.ConfigBuilder()
-                .clientId(BuildConfig.AFERO_CLIENT_ID)
-                .clientSecret(BuildConfig.AFERO_CLIENT_SECRET)
+                .oauthClientId(BuildConfig.AFERO_CLIENT_ID)
+                .oauthClientSecret(BuildConfig.AFERO_CLIENT_SECRET)
                 .baseUrl(BuildConfig.AFERO_SERVICE_URL)
                 .logLevel(BuildConfig.HTTP_LOG_LEVEL)
-                .defaultTimeout(DEFAULT_SERVICE_TIMEOUT)
-                .imageScale(AferoClient.ImageScale.fromDisplayDensity(getResources().getDisplayMetrics().density))
                 .build();
 
         mAferoClient = new AferoClientRetrofit2(aferoClientConfig);
@@ -123,23 +118,41 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mDeviceCollection = new DeviceCollection(mAferoClient, ClientID.get(this));
-        mDeviceCollection.start();
+        mDeviceCollection.start()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new DeviceCollectionStartObserver(this));
+
+        mDeviceEventSource = (ConclaveDeviceEventSource)mDeviceCollection.getDeviceEventSource();
+        mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(MainActivity.this);
+
+        mConclaveStatusSubscription = mDeviceEventSource.observeConclaveStatus()
+                .onBackpressureBuffer()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<ConclaveClient.Status>() {
+                    @Override
+                    public void call(ConclaveClient.Status status) {
+                        onConclaveStatusChange(status);
+                    }
+                });
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, ClientID.get(this));
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
-        mDeviceEventSource = (ConclaveDeviceEventSource)mDeviceCollection.getDeviceEventSource();
-        mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(this);
+        if (mAferoClient.getToken() != null) {
+            startDeviceStream();
+        }
+
+        mDeviceListView.start(mDeviceCollection);
 
         setupViews();
 
         showConclaveStatus(ConclaveClient.Status.DISCONNECTED);
 
         PermissionsHelper.checkRequiredPermissions(this);
+    }
 
-        if (token != null) {
-            startDeviceStream();
-        }
+    private void onDeviceCollectionStartCompleted() {
+        AfLog.i("onDeviceCollectionStartCompleted");
     }
 
     @Override
@@ -172,28 +185,16 @@ public class MainActivity extends AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new TokenObserver(this));
 
-        mConclaveStatusSubscription = mDeviceEventSource.observeConclaveStatus()
-                .onBackpressureBuffer()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<ConclaveClient.Status>() {
-                    @Override
-                    public void call(ConclaveClient.Status status) {
-                        onConclaveStatusChange(status);
-                    }
-                });
-
         if (mConnectivityReceiver == null) {
             mConnectivityReceiver = new ConnectivityReceiver(this);
         }
         registerReceiver(mConnectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
-        mAferoSofthub.onResume();
-
         if (isActiveNetworkConnectedOrConnecting() && isSignedIn()) {
-            if ((!mDeviceEventSource.isConnected()) && mDeviceEventStreamSubscription == null) {
-                startDeviceStream();
-            }
+            startDeviceStream();
         }
+
+        mAferoSofthub.onResume();
     }
 
     @OnClick(R.id.button_sign_out)
@@ -202,8 +203,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupViews() {
-        mDeviceListView.start(mDeviceCollection);
-
         if (isSignedIn()) {
             mSignInGroup.setVisibility(View.GONE);
             mStatusGroup.setVisibility(View.VISIBLE);
@@ -311,10 +310,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startDeviceStream() {
-        mDeviceEventStreamSubscription = registerClient()
+        if (mDeviceEventSource != null && (!mDeviceEventSource.isConnected()) && mDeviceEventStreamSubscription == null) {
+            mDeviceEventStreamSubscription = registerClient()
                 .concatMap(new StartDeviceEventStreamFunc(this))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(mDeviceEventSourceConnectObserver);
+        }
     }
 
     private void onConclaveStatusChange(ConclaveClient.Status status) {
@@ -368,9 +369,7 @@ public class MainActivity extends AppCompatActivity {
             hideNoNetworkView();
 
             if (isSignedIn()) {
-                if (mDeviceEventSource != null && (!mDeviceEventSource.isConnected()) && mDeviceEventStreamSubscription == null) {
-                    startDeviceStream();
-                }
+                startDeviceStream();
             }
         } else {
             showNoNetworkView();
@@ -492,7 +491,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static class DeviceEventSourceConnectObserver extends RxUtils.WeakObserver<Object, MainActivity> {
 
-        public DeviceEventSourceConnectObserver(MainActivity strongRef) {
+        DeviceEventSourceConnectObserver(MainActivity strongRef) {
             super(strongRef);
         }
 
@@ -525,6 +524,28 @@ public class MainActivity extends AppCompatActivity {
             if (activity != null) {
                 activity.onConnectivityChange();
             }
+        }
+    }
+
+    private class DeviceCollectionStartObserver extends RxUtils.WeakObserver<DeviceCollection, MainActivity> {
+
+        DeviceCollectionStartObserver(MainActivity activity) {
+            super(activity);
+        }
+
+        @Override
+        public void onCompleted(final MainActivity activity) {
+            activity.onDeviceCollectionStartCompleted();
+        }
+
+        @Override
+        public void onError(MainActivity activity, Throwable t) {
+            t.printStackTrace();
+        }
+
+        @Override
+        public void onNext(MainActivity activity, DeviceCollection deviceCollection) {
+            AfLog.d("DeviceCollectionStartObserver.onNext");
         }
     }
 }

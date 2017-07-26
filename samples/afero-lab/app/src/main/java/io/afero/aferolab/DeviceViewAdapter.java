@@ -23,9 +23,8 @@ import rx.functions.Action1;
 
 public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.ViewHolder> {
 
-    private Subscription mSnapshotSubscription;
     private Subscription mCreateSubscription;
-    private Subscription mProfileChangeSubscription;
+    private Subscription mUpdateSubscription;
     private Subscription mRemoveSubscription;
     private final Vector<DeviceModel> mDevices = new Vector<>();
 
@@ -75,36 +74,31 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
     };
 
     public DeviceViewAdapter(DeviceCollection deviceCollection) {
-        addDevices(deviceCollection.getDevices());
+        updateDevices(deviceCollection.getDevices());
 
-        mCreateSubscription = addDevices(deviceCollection.observeCreates());
-
-        mProfileChangeSubscription = addDevices(deviceCollection.observeProfileChanges());
-
+        mCreateSubscription = updateDevices(deviceCollection.observeCreates());
+        mUpdateSubscription = updateDevices(deviceCollection.observeUpdates());
         mRemoveSubscription = removeDevices(deviceCollection.observeDeletes());
     }
 
     public void stop() {
-        mSnapshotSubscription = RxUtils.safeUnSubscribe(mSnapshotSubscription);
         mCreateSubscription = RxUtils.safeUnSubscribe(mCreateSubscription);
+        mUpdateSubscription = RxUtils.safeUnSubscribe(mUpdateSubscription);
         mRemoveSubscription = RxUtils.safeUnSubscribe(mRemoveSubscription);
-        mProfileChangeSubscription = RxUtils.safeUnSubscribe(mProfileChangeSubscription);
     }
 
     public int indexOf(DeviceModel deviceModel) {
         return mDevices.indexOf(deviceModel);
     }
 
-    private Subscription addDevices(Observable<DeviceModel> devices) {
-        return devices
-            .onBackpressureBuffer()
+    private Subscription updateDevices(Observable<DeviceModel> devices) {
+        return devices.onBackpressureBuffer()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(mAddDeviceAction);
     }
 
     private Subscription removeDevices(Observable<DeviceModel> devices) {
-        return devices
-            .observeOn(AndroidSchedulers.mainThread())
+        return devices.observeOn(AndroidSchedulers.mainThread())
             .subscribe(new Action1<DeviceModel>() {
                 @Override
                 public void call(DeviceModel deviceModel) {
