@@ -352,7 +352,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
 
     public void triggerAttributeChange(DeviceModel deviceModel) {
         DeviceSync ds = new DeviceSync();
-        ds.id = deviceModel.getId();
+        ds.setDeviceId(deviceModel.getId());
         mAttributeChangeSubject.onNext(ds);
     }
 }

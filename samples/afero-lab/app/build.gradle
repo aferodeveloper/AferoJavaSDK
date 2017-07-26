@@ -5,7 +5,9 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '0.6.0'
 final String sdkVersionSuffix = project.findProperty('aferoSDKVersionSuffix') ?: ''
+
 String sdkHubbyVersionSuffix = project.findProperty('aferoSDKHubbyVersionSuffix') ?: '-prod'
 
 if (sdkHubbyVersionSuffix.equals("''")) {
@@ -59,8 +61,6 @@ android {
         exclude 'META-INF/NOTICE.txt'
     }
 }
-
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '0.6.0'
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])

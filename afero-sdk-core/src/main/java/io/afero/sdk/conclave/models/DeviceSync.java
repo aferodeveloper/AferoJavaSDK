@@ -58,7 +58,7 @@ public class DeviceSync {
     public static final int UPDATE_STATE_CONFLICT = 4;
     public static final int UPDATE_STATE_TIMEOUT = 5;
 
-    public String id;
+    public String deviceId;
     public String profileId;
     public int seq;
     public long createdTimeStamp;
@@ -71,10 +71,26 @@ public class DeviceSync {
     public Integer requestId;
     public Integer state;
 
+    public void setDeviceState(DeviceStatus s) {
+        status = s;
+    }
+
+    public void setId(String id) {
+        deviceId = id;
+    }
+
+    public void setDeviceId(String id) {
+        deviceId = id;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
     @Override
     public String toString() {
         return "{ " +
-                "id='" + id + '\'' +
+                "deviceId='" + deviceId + '\'' +
                 ", profileId='" + profileId + '\'' +
                 ", seq=" + seq +
                 ", createdTimeStamp=" + createdTimeStamp +

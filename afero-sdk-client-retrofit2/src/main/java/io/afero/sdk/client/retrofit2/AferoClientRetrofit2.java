@@ -723,7 +723,7 @@ public class AferoClientRetrofit2 implements AferoClient {
      *
      * @return the baseUrl specified in the {@link Config}
      */
-    protected String getBaseUrl() {
+    public String getBaseUrl() {
         return mConfig.baseUrl;
     }
 

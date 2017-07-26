@@ -104,12 +104,6 @@ public class DeviceCollectionTest {
     @Test
     public void getDevices() throws Exception {
         newDeviceCollectionTester()
-                // getDevices should throw if called before start
-                .deviceCollectionGetDevicesWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionAddDevice()
 
@@ -121,12 +115,6 @@ public class DeviceCollectionTest {
 
     @Test
     public void reset() throws Exception {
-        newDeviceCollectionTester()
-                // reset should throw if called before start
-                .deviceCollectionResetWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
         newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionAddDevice()
@@ -142,12 +130,6 @@ public class DeviceCollectionTest {
     @Test
     public void observeCreates() throws Exception {
         newDeviceCollectionTester()
-                // observeCreates should throw if called before start
-                .deviceCollectionObserveCreatesWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStartWithNoDevices()
                 .deviceCollectionObserveCreates()
 
@@ -159,12 +141,6 @@ public class DeviceCollectionTest {
 
     @Test
     public void observeProfileChanges() throws Exception {
-        newDeviceCollectionTester()
-                // observeProfileChanges should throw if called before start
-                .deviceCollectionObserveProfileChangesWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
         newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionObserveProfileChanges()
@@ -180,12 +156,6 @@ public class DeviceCollectionTest {
     @Test
     public void observeSnapshots() throws Exception {
         newDeviceCollectionTester()
-                // observeSnapshots should throw if called before start
-                .deviceCollectionObserveSnapshotsWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionObserveSnapshots()
 
@@ -197,12 +167,6 @@ public class DeviceCollectionTest {
 
     @Test
     public void observeDeletes() throws Exception {
-        newDeviceCollectionTester()
-                // observeDeletes should throw if called before start
-                .deviceCollectionObserveDeletesWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
         // test deletes emitted in response to snapshots
         newDeviceCollectionTester()
                 .deviceCollectionStart()
@@ -242,33 +206,16 @@ public class DeviceCollectionTest {
     @Test
     public void getCount() throws Exception {
         newDeviceCollectionTester()
-                // getCount should throw if called before start
-                .deviceCollectionGetCountWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .verifyGetCountReturnsExpectedCount(1)
 
                 .deviceCollectionAddDevice()
                 .verifyGetCountReturnsExpectedCount(2)
-
-                // getCount should throw is called after stop
-                .deviceCollectionStop()
-                .deviceCollectionGetCountWithCatch()
-                .verifyThrownIllegalStateException()
                 ;
     }
 
     @Test
     public void getDevice() throws Exception {
-        newDeviceCollectionTester()
-                // getDevice should throw if called before start
-                .deviceCollectionGetDevicesWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
         newDeviceCollectionTester()
                 .deviceCollectionStart()
 
