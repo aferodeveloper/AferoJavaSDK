@@ -81,7 +81,8 @@ public class DeviceWifiSetupTest {
 
     public static DeviceModel createDeviceModel() {
         MockDeviceEventSource messageSource = new MockDeviceEventSource();
-        DeviceCollection deviceCollection = makeDeviceCollection(messageSource).start();
+        DeviceCollection deviceCollection = makeDeviceCollection(messageSource);
+        deviceCollection.start().toBlocking().subscribe();
         final DeviceModel[] deviceModelResult = new DeviceModel[1];
         deviceCollection.addDevice("wifiSetupDevice", false)
                 .toBlocking()
