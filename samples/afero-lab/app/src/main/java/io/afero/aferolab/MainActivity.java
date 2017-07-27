@@ -113,14 +113,13 @@ public class MainActivity extends AppCompatActivity {
         mAferoClient = new AferoClientRetrofit2(aferoClientConfig);
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
+        mDeviceCollection = new DeviceCollection(mAferoClient, ClientID.get(this));
+
         if (token != null) {
             mAferoClient.setToken(new AccessToken(accessToken, refreshToken));
+            mDeviceCollection.start()
+                    .subscribe(new DeviceCollectionStartObserver(this));
         }
-
-        mDeviceCollection = new DeviceCollection(mAferoClient, ClientID.get(this));
-        mDeviceCollection.start()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new DeviceCollectionStartObserver(this));
 
         mDeviceEventSource = (ConclaveDeviceEventSource)mDeviceCollection.getDeviceEventSource();
         mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(MainActivity.this);
@@ -247,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
 
         showConclaveStatus(ConclaveClient.Status.CONNECTING);
 
-        mSignInSubscription = mAferoClient.getAccessToken(email, password, AferoClientRetrofit2.GRANT_TYPE_PASSWORD)
+        mSignInSubscription = mAferoClient.getAccessToken(email, password)
                 .concatMap(new MapAccessTokenToUserDetails())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new SignInObserver(this));
@@ -276,6 +275,9 @@ public class MainActivity extends AppCompatActivity {
 
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
+        mDeviceCollection.start()
+                .subscribe(new DeviceCollectionStartObserver(this));
+
         startDeviceStream();
     }
 
@@ -296,6 +298,7 @@ public class MainActivity extends AppCompatActivity {
         mAferoClient.setToken(null);
         mAferoClient.clearAccount();
 
+        mDeviceCollection.stop();
         mDeviceCollection.reset();
 
         setupViews();
