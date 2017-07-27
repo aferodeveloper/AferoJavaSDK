@@ -25,6 +25,7 @@ import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.kiban.hubby.Hubby;
@@ -189,7 +190,7 @@ public class AferoSofthubTest {
         makeHubbyHelperTester()
                 .startHubbyCompletely()
 
-                .hubbyCallbackAssociationNeeded("association-id")
+                .hubbyCallbackAssociationNeeded("aferoSofthubTest")
 
                 .verifyAssociatedDeviceId("device-id")
             ;
@@ -475,75 +476,6 @@ public class AferoSofthubTest {
         }
     }
 
-    class MockAferoClient implements AferoClient {
-
-        @Override
-        public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode) {
-            return null;
-        }
-
-        @Override
-        public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
-            return null;
-        }
-
-        @Override
-        public Observable<DeviceProfile> getDeviceProfile(String profileId) {
-            return null;
-        }
-
-        @Override
-        public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
-            return null;
-        }
-
-        @Override
-        public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
-            return null;
-        }
-
-        @Override
-        public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
-            return null;
-        }
-
-        @Override
-        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
-            return null;
-        }
-
-        @Override
-        public Observable<DeviceAssociateResponse> deviceAssociate(String associationId) {
-            DeviceAssociateResponse response = new DeviceAssociateResponse();
-            response.deviceId = "device-id";
-            return Observable.just(response);
-        }
-
-        @Override
-        public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
-            return null;
-        }
-
-        @Override
-        public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
-            return Observable.just(null);
-        }
-
-        @Override
-        public String getActiveAccountId() {
-            return "account-id";
-        }
-
-        @Override
-        public int getStatusCode(Throwable t) {
-            return 0;
-        }
-
-        @Override
-        public boolean isTransferVerificationError(Throwable t) {
-            return false;
-        }
-    }
 
     static class StartObserver implements Observer<AferoSofthub> {
 

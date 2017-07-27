@@ -7,22 +7,13 @@ package io.afero.sdk.device;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.TimeZone;
 import java.util.Vector;
 
-import io.afero.sdk.client.afero.AferoClient;
-import io.afero.sdk.client.afero.models.ActionResponse;
-import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceRequest;
-import io.afero.sdk.client.afero.models.Location;
-import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.MockDeviceEventSource;
 import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.conclave.models.InvalidateMessage;
-import rx.Observable;
 import rx.Observer;
 import rx.functions.Action1;
 
@@ -44,7 +35,7 @@ public class DeviceCollectionTest {
                 .verifyDeviceEventSourceHasOneObserver()
 
                 // start again should throw
-                .deviceCollectionStartWithCatch()
+                .deviceCollectionStart()
                 .verifyThrownIllegalStateException()
                 ;
     }
@@ -84,7 +75,7 @@ public class DeviceCollectionTest {
                 .deviceCollectionAddDevice()
 
                 .verifyAddDeviceReturnedDeviceModel()
-                .verifyGetCountReturnsExpectedCount(1)
+                .verifyGetCountReturnsExpectedCount(2)
                 .verifyGetDeviceReturnsNonNull("device-id")
         ;
     }
@@ -113,17 +104,11 @@ public class DeviceCollectionTest {
     @Test
     public void getDevices() throws Exception {
         newDeviceCollectionTester()
-                // getDevices should throw if called before start
-                .deviceCollectionGetDevicesWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionAddDevice()
 
                 .verifyAddDeviceReturnedDeviceModel()
-                .verifyGetCountReturnsExpectedCount(1)
+                .verifyGetCountReturnsExpectedCount(2)
                 .verifyGetDeviceReturnsNonNull("device-id")
         ;
     }
@@ -131,16 +116,10 @@ public class DeviceCollectionTest {
     @Test
     public void reset() throws Exception {
         newDeviceCollectionTester()
-                // reset should throw if called before start
-                .deviceCollectionResetWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionAddDevice()
 
-                .verifyGetCountReturnsExpectedCount(1)
+                .verifyGetCountReturnsExpectedCount(2)
 
                 .deviceCollectionReset()
 
@@ -151,13 +130,7 @@ public class DeviceCollectionTest {
     @Test
     public void observeCreates() throws Exception {
         newDeviceCollectionTester()
-                // observeCreates should throw if called before start
-                .deviceCollectionObserveCreatesWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
-        newDeviceCollectionTester()
-                .deviceCollectionStart()
+                .deviceCollectionStartWithNoDevices()
                 .deviceCollectionObserveCreates()
 
                 .deviceEventSourceSnapshot()
@@ -168,12 +141,6 @@ public class DeviceCollectionTest {
 
     @Test
     public void observeProfileChanges() throws Exception {
-        newDeviceCollectionTester()
-                // observeProfileChanges should throw if called before start
-                .deviceCollectionObserveProfileChangesWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
         newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionObserveProfileChanges()
@@ -189,12 +156,6 @@ public class DeviceCollectionTest {
     @Test
     public void observeSnapshots() throws Exception {
         newDeviceCollectionTester()
-                // observeSnapshots should throw if called before start
-                .deviceCollectionObserveSnapshotsWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStart()
                 .deviceCollectionObserveSnapshots()
 
@@ -206,12 +167,6 @@ public class DeviceCollectionTest {
 
     @Test
     public void observeDeletes() throws Exception {
-        newDeviceCollectionTester()
-                // observeDeletes should throw if called before start
-                .deviceCollectionObserveDeletesWithCatch()
-                .verifyThrownIllegalStateException()
-        ;
-
         // test deletes emitted in response to snapshots
         newDeviceCollectionTester()
                 .deviceCollectionStart()
@@ -251,33 +206,16 @@ public class DeviceCollectionTest {
     @Test
     public void getCount() throws Exception {
         newDeviceCollectionTester()
-                // getCount should throw if called before start
-                .deviceCollectionGetCountWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
-        newDeviceCollectionTester()
                 .deviceCollectionStart()
-                .verifyGetCountReturnsExpectedCount(0)
-
-                .deviceCollectionAddDevice()
                 .verifyGetCountReturnsExpectedCount(1)
 
-                // getCount should throw is called after stop
-                .deviceCollectionStop()
-                .deviceCollectionGetCountWithCatch()
-                .verifyThrownIllegalStateException()
+                .deviceCollectionAddDevice()
+                .verifyGetCountReturnsExpectedCount(2)
                 ;
     }
 
     @Test
     public void getDevice() throws Exception {
-        newDeviceCollectionTester()
-                // getDevice should throw if called before start
-                .deviceCollectionGetDevicesWithCatch()
-                .verifyThrownIllegalStateException()
-                ;
-
         newDeviceCollectionTester()
                 .deviceCollectionStart()
 
@@ -296,9 +234,10 @@ public class DeviceCollectionTest {
     }
 
     private static class DeviceCollectionTester {
-        final ResourceLoader resourceLoader = new ResourceLoader("resources/deviceCollection/");
+        static final String PATH_PREFIX = "resources/deviceCollection/";
+        final ResourceLoader resourceLoader = new ResourceLoader(PATH_PREFIX);
+        final MockAferoClient aferoClient = new MockAferoClient(PATH_PREFIX);
         final MockDeviceEventSource deviceEventSource = new MockDeviceEventSource();
-        final MockAferoClient aferoClient = new MockAferoClient();
         final DeviceCollection deviceCollection;
 
         Throwable thrown;
@@ -314,18 +253,47 @@ public class DeviceCollectionTest {
         }
 
         DeviceCollectionTester deviceCollectionStart() {
-            deviceCollection.start();
+            deviceCollection.start().subscribe(new Observer<DeviceCollection>() {
+                @Override
+                public void onCompleted() {
+
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    thrown = e;
+                }
+
+                @Override
+                public void onNext(DeviceCollection deviceCollection) {
+
+                }
+            });
             return this;
         }
 
-        DeviceCollectionTester deviceCollectionStartWithCatch() {
-            try {
-                deviceCollection.start();
-            } catch (Throwable t) {
-                thrown = t;
-            }
+        DeviceCollectionTester deviceCollectionStartWithNoDevices() {
+            aferoClient.setFileGetDevices("getDevicesEmpty.json");
+            deviceCollection.start().subscribe(new Observer<DeviceCollection>() {
+                @Override
+                public void onCompleted() {
+
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    thrown = e;
+                }
+
+                @Override
+                public void onNext(DeviceCollection deviceCollection) {
+
+                }
+            });
+
             return this;
         }
+
 
         DeviceCollectionTester deviceCollectionStop() {
             deviceCollection.stop();
@@ -342,7 +310,7 @@ public class DeviceCollectionTest {
         }
 
         DeviceCollectionTester deviceCollectionAddDevice() {
-            deviceCollection.addDevice("test-association-id", false)
+            deviceCollection.addDevice("genericDevice", false)
                     .subscribe(new Action1<DeviceModel>() {
                         @Override
                         public void call(DeviceModel deviceModel) {
@@ -598,96 +566,5 @@ public class DeviceCollectionTest {
             }
         }
 
-    }
-
-    private static class MockAferoClient implements AferoClient {
-
-        private final ResourceLoader mLoader = new ResourceLoader("resources/deviceCollection/");
-
-        MockAferoClient() {
-        }
-
-        @Override
-        public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode) {
-            return null;
-        }
-
-        @Override
-        public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
-            return null;
-        }
-
-        @Override
-        public Observable<DeviceProfile> getDeviceProfile(String profileId) {
-            try {
-                return Observable.just(mLoader.createObjectFromJSONResource(
-                        "getDeviceProfile/" + profileId + ".json",
-                        DeviceProfile.class));
-            } catch (IOException e) {
-                return Observable.error(e);
-            }
-        }
-
-        @Override
-        public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
-            try {
-                return Observable.just(mLoader.createObjectFromJSONResource(
-                        "getAccountDeviceProfiles.json",
-                        DeviceProfile[].class));
-            } catch (IOException e) {
-                return Observable.error(e);
-            }
-        }
-
-        @Override
-        public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
-            return null;
-        }
-
-        @Override
-        public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
-            return null;
-        }
-
-        @Override
-        public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
-            try {
-                return Observable.just(mLoader.createObjectFromJSONResource(
-                        "deviceAssociateGetProfile.json",
-                        DeviceAssociateResponse.class));
-            } catch (IOException e) {
-                return Observable.error(e);
-            }
-        }
-
-        @Override
-        public Observable<DeviceAssociateResponse> deviceAssociate(String associationId) {
-            return null;
-        }
-
-        @Override
-        public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
-            return Observable.just(deviceModel);
-        }
-
-        @Override
-        public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
-            return Observable.just(null);
-        }
-
-        @Override
-        public String getActiveAccountId() {
-            return null;
-        }
-
-        @Override
-        public int getStatusCode(Throwable t) {
-            return 0;
-        }
-
-        @Override
-        public boolean isTransferVerificationError(Throwable t) {
-            return false;
-        }
     }
 }

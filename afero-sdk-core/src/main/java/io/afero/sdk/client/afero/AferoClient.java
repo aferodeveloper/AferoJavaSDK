@@ -13,6 +13,7 @@ import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import rx.Observable;
@@ -38,6 +39,8 @@ public interface AferoClient {
     Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel);
 
     Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz);
+
+    Observable<DeviceSync[]> getDevicesWithState();
 
     String getActiveAccountId();
 

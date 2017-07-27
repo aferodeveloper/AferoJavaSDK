@@ -17,6 +17,8 @@ import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
+import io.afero.sdk.conclave.models.DeviceSync;
+import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -159,4 +161,8 @@ public interface AferoClientAPI {
             @Body DeviceRequest[] body
     );
 
+    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes")
+    Observable<DeviceSync[]> getDevicesWithState(
+            @Path("accountId") String accountId
+    );
 }

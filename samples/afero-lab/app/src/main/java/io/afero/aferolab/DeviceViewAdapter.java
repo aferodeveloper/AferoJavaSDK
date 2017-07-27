@@ -20,13 +20,11 @@ import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func1;
 
 public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.ViewHolder> {
 
-    private Subscription mSnapshotSubscription;
     private Subscription mCreateSubscription;
-    private Subscription mProfileChangeSubscription;
+    private Subscription mUpdateSubscription;
     private Subscription mRemoveSubscription;
     private final Vector<DeviceModel> mDevices = new Vector<>();
 
@@ -44,21 +42,30 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
                 int i = mDevices.indexOf(deviceModel);
                 if (i != -1) {
                     mDevices.remove(i);
+
+                    if (!isDevicePresentable(deviceModel)) {
+                        notifyItemRemoved(i);
+                        return;
+                    }
+
                     int newIndex = Collections.binarySearch(mDevices, deviceModel, mSortComparator);
                     if (newIndex < 0) {
                         newIndex = -newIndex - 1;
                     }
+
                     mDevices.add(newIndex, deviceModel);
+
                     if (newIndex != i) {
                         notifyItemMoved(i, newIndex);
                     } else {
                         notifyItemChanged(i);
                     }
-                } else {
+                } else if (isDevicePresentable(deviceModel)) {
                     i = Collections.binarySearch(mDevices, deviceModel, mSortComparator);
                     if (i < 0) {
                         i = -i - 1;
                     }
+
                     mDevices.add(i, deviceModel);
                     notifyItemInserted(i);
                 }
@@ -66,46 +73,32 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
         }
     };
 
-    private static class DeviceIsPresentableFilter implements Func1<DeviceModel, Boolean> {
-        @Override
-        public Boolean call(DeviceModel deviceModel) {
-            return deviceModel.getPresentation() != null;
-        }
-    };
-    private final DeviceIsPresentableFilter mDeviceFilter = new DeviceIsPresentableFilter();
-
     public DeviceViewAdapter(DeviceCollection deviceCollection) {
-        addDevices(deviceCollection.getDevices());
+        updateDevices(deviceCollection.getDevices());
 
-        mCreateSubscription = addDevices(deviceCollection.observeCreates());
-
-        mProfileChangeSubscription = addDevices(deviceCollection.observeProfileChanges());
-
+        mCreateSubscription = updateDevices(deviceCollection.observeCreates());
+        mUpdateSubscription = updateDevices(deviceCollection.observeUpdates());
         mRemoveSubscription = removeDevices(deviceCollection.observeDeletes());
     }
 
     public void stop() {
-        mSnapshotSubscription = RxUtils.safeUnSubscribe(mSnapshotSubscription);
         mCreateSubscription = RxUtils.safeUnSubscribe(mCreateSubscription);
+        mUpdateSubscription = RxUtils.safeUnSubscribe(mUpdateSubscription);
         mRemoveSubscription = RxUtils.safeUnSubscribe(mRemoveSubscription);
-        mProfileChangeSubscription = RxUtils.safeUnSubscribe(mProfileChangeSubscription);
     }
 
     public int indexOf(DeviceModel deviceModel) {
         return mDevices.indexOf(deviceModel);
     }
 
-    private Subscription addDevices(Observable<DeviceModel> devices) {
-        return devices
-            .filter(mDeviceFilter)
-            .onBackpressureBuffer()
+    private Subscription updateDevices(Observable<DeviceModel> devices) {
+        return devices.onBackpressureBuffer()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(mAddDeviceAction);
     }
 
     private Subscription removeDevices(Observable<DeviceModel> devices) {
-        return devices
-            .observeOn(AndroidSchedulers.mainThread())
+        return devices.observeOn(AndroidSchedulers.mainThread())
             .subscribe(new Action1<DeviceModel>() {
                 @Override
                 public void call(DeviceModel deviceModel) {
@@ -118,6 +111,10 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
                     }
                 }
             });
+    }
+
+    private boolean isDevicePresentable(DeviceModel deviceModel) {
+        return deviceModel.getPresentation() != null;
     }
 
     @Override

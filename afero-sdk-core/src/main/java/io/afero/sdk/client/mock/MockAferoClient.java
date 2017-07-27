@@ -6,6 +6,7 @@ package io.afero.sdk.client.mock;
 
 import java.io.IOException;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
@@ -15,22 +16,23 @@ import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import rx.Observable;
 
 public class MockAferoClient implements AferoClient {
 
-    private final ResourceLoader mLoader = new ResourceLoader();
-    private final String pathPrefix;
+    private final ResourceLoader mLoader;
     private DeviceAssociateResponse mDeviceAssociateResponse;
+    private String mFileNameGetDevices = "getDevices.json";
 
     public MockAferoClient() {
-        pathPrefix = "";
+        mLoader = new ResourceLoader();
     }
 
     public MockAferoClient(String pathPrefix) {
-        this.pathPrefix = pathPrefix;
+        mLoader = new ResourceLoader(pathPrefix);
     }
 
     @Override
@@ -50,12 +52,23 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<DeviceProfile> getDeviceProfile(String profileId) {
-        return null;
+        try {
+            return Observable.just(mLoader.createObjectFromJSONResource(
+                    "getDeviceProfile/" + profileId + ".json",
+                    DeviceProfile.class));
+        } catch (IOException e) {
+            return Observable.error(e);
+        }
     }
 
     @Override
     public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
-        return null;
+        return Observable.fromCallable(new Callable<DeviceProfile[]>() {
+            @Override
+            public DeviceProfile[] call() throws Exception {
+                return mLoader.createObjectFromJSONResource("getAccountDeviceProfiles.json", DeviceProfile[].class);
+            }
+        });
     }
 
     @Override
@@ -73,7 +86,7 @@ public class MockAferoClient implements AferoClient {
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {
-                dar = mLoader.createObjectFromJSONResource(pathPrefix + "deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
+                dar = mLoader.createObjectFromJSONResource("deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
             }
             return Observable.just(dar);
         } catch (IOException e) {
@@ -86,7 +99,7 @@ public class MockAferoClient implements AferoClient {
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {
-                dar = mLoader.createObjectFromJSONResource(pathPrefix + "deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
+                dar = mLoader.createObjectFromJSONResource("deviceAssociate/" + associationId + ".json", DeviceAssociateResponse.class);
             }
             return Observable.just(dar);
         } catch (IOException e) {
@@ -97,12 +110,22 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
-        return null;
+        return Observable.just(deviceModel);
     }
 
     @Override
     public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
         return Observable.just(null);
+    }
+
+    @Override
+    public Observable<DeviceSync[]> getDevicesWithState() {
+        return Observable.fromCallable(new Callable<DeviceSync[]>() {
+            @Override
+            public DeviceSync[] call() throws Exception {
+                return mLoader.createObjectFromJSONResource(mFileNameGetDevices, DeviceSync[].class);
+            }
+        });
     }
 
     @Override
@@ -126,5 +149,9 @@ public class MockAferoClient implements AferoClient {
 
     public void clearDeviceAssociateResponse() {
         mDeviceAssociateResponse = null;
+    }
+
+    public void setFileGetDevices(String file) {
+        mFileNameGetDevices = file;
     }
 }
