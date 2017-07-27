@@ -299,6 +299,13 @@ public class DeviceCollection {
     }
 
     /**
+     * @return true is {@link #start()} has completed successfully.
+     */
+    public boolean isStarted() {
+        return mIsStarted;
+    }
+
+    /**
      * Removes all {@link DeviceModel}s from the local cache. Typically done when signing out
      * or switching active accounts.
      */
@@ -542,10 +549,6 @@ public class DeviceCollection {
         mInvalidateSubscription = RxUtils.safeUnSubscribe(mInvalidateSubscription);
         mOTASubscription = RxUtils.safeUnSubscribe(mOTASubscription);
         mMetricSubscription = RxUtils.safeUnSubscribe(mMetricSubscription);
-    }
-
-    private boolean isStarted() {
-        return mIsStarted;
     }
 
     private DeviceModel addOrUpdate(String deviceId, DeviceStatus ds, DeviceProfile deviceProfile) {

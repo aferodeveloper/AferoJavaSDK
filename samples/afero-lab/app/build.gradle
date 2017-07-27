@@ -5,8 +5,7 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '0.6.0'
-final String sdkVersionSuffix = project.findProperty('aferoSDKVersionSuffix') ?: ''
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '0.6.1'
 
 String sdkHubbyVersionSuffix = project.findProperty('aferoSDKHubbyVersionSuffix') ?: '-prod'
 
@@ -65,10 +64,10 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile "io.afero.sdk:afero-sdk-core:${sdkVersion}${sdkVersionSuffix}"
-    compile "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}${sdkVersionSuffix}"
-    compile "io.afero.sdk:afero-sdk-android:${sdkVersion}${sdkVersionSuffix}"
-    compile "io.afero.sdk:afero-sdk-softhub:${sdkVersion}${sdkVersionSuffix}"
+    compile "io.afero.sdk:afero-sdk-core:${sdkVersion}"
+    compile "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
+    compile "io.afero.sdk:afero-sdk-android:${sdkVersion}"
+    compile "io.afero.sdk:afero-sdk-softhub:${sdkVersion}"
     compile "io.afero.sdk:hubby:1.0.494${sdkHubbyVersionSuffix}@aar"
 
     // https://github.com/square/retrofit
