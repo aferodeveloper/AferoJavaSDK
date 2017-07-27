@@ -151,10 +151,6 @@ public class MainActivity extends AppCompatActivity {
         PermissionsHelper.checkRequiredPermissions(this);
     }
 
-    private void onDeviceCollectionStartCompleted() {
-        AfLog.i("onDeviceCollectionStartCompleted");
-    }
-
     @Override
     protected void onPause() {
         super.onPause();
@@ -535,17 +531,14 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onCompleted(final MainActivity activity) {
-            activity.onDeviceCollectionStartCompleted();
         }
 
         @Override
         public void onError(MainActivity activity, Throwable t) {
-            t.printStackTrace();
         }
 
         @Override
         public void onNext(MainActivity activity, DeviceCollection deviceCollection) {
-            AfLog.d("DeviceCollectionStartObserver.onNext");
         }
     }
 }
