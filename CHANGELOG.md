@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-Version 0.6.1 *(2017-07-07)*
+Version 0.6.1 *(2017-07-27)*
 ----------------------------
 
  * Refactored `DeviceCollection.start()` to return `rx.Observable<DeviceCollection>`.
@@ -21,7 +21,7 @@ Version 0.6.1 *(2017-07-07)*
      * `RetryOnError` is now private
  * AferoLab sample app updated to accomodate above changes.
 
-Version 0.6.0 *(2017-07-)*
+Version 0.6.0 *(2017-07-12)*
 ----------------------------
 
 Initial release.
