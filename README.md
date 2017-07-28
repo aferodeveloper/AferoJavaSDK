@@ -1,8 +1,8 @@
 ---
 author: Tony Myles
 title: "AferoJavaSDK"
-date: 2017-Jul-11
-status: 0.6.0
+date: 2017-Jul-27
+status: 0.6.1
 ---
 
 # AferoJavaSDK
@@ -35,24 +35,24 @@ The SDK is composed of four separate modules.
 
 The `afero-sdk-core` module is required for base functionality.
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-core:0.6.0'
+    compile 'io.afero.sdk:afero-sdk-core:0.6.1'
 ```
 
 The `afero-sdk-client-retrofit2` module provides an optional implementation of the AferoClient REST API interface using [Retrofit2](http://square.github.io/retrofit/) and [okhttp3](http://square.github.io/okhttp/). If you choose not to include this module in your project, you will need to develop your own implementation of AferoClient using your preferred http client library.
 
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-client-retrofit2:0.6.0'
+    compile 'io.afero.sdk:afero-sdk-client-retrofit2:0.6.1'
 ```
 
 The `afero-sdk-android` module is required for Android development.
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-android:0.6.0'
+    compile 'io.afero.sdk:afero-sdk-android:0.6.1'
 ```
 
 The `afero-sdk-softhub` module and `hubby` binary are required for Afero soft hub functionality.
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-softhub:0.6.0'
-    compile 'io.afero.sdk:hubby:1.0.476@aar'
+    compile 'io.afero.sdk:afero-sdk-softhub:0.6.1'
+    compile 'io.afero.sdk:hubby:1.0.494@aar'
 ```
 
 ## LICENSE
