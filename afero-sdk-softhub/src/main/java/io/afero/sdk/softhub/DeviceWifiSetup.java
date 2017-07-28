@@ -19,17 +19,20 @@ import io.kiban.hubby.Hubby;
 import io.kiban.hubby.SetupWifiCallback;
 import io.kiban.hubby.SetupWifiCallback.SetupWifiState;
 import io.kiban.hubby.WifiSSIDEntry;
+import rx.Emitter;
 import rx.Observable;
 import rx.Observer;
-import rx.Subscriber;
 import rx.Subscription;
 import rx.functions.Action1;
+import rx.functions.Cancellable;
+import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 
 public class DeviceWifiSetup {
 
     protected final DeviceModel mDeviceModel;
     protected final AferoClient mAferoClient;
+    private final WifiSetupImpl mWifiSetupImpl;
 
     /*
         Wi-Fi state:
@@ -75,15 +78,21 @@ public class DeviceWifiSetup {
     private WifiState mSteadyState = WifiState.NOT_CONNECTED;
 
     protected BehaviorSubject<WifiState> mSetupStateSubject = BehaviorSubject.create();
-    protected BehaviorSubject<WifiState> mSteadyStateSubject = BehaviorSubject.create();
+    private BehaviorSubject<WifiState> mSteadyStateSubject = BehaviorSubject.create();
 
     private DeviceProfile.Attribute mSetupStateAttribute;
     private DeviceProfile.Attribute mSteadyStateAttribute;
     private Subscription mDeviceUpdateSubscription;
 
     public DeviceWifiSetup(DeviceModel deviceModel, AferoClient aferoClient) {
+        this(new HubbyWifiSetupImpl(), deviceModel, aferoClient);
+    }
+
+    @SuppressWarnings("WeakerAccess") // used in unit tests
+    DeviceWifiSetup(WifiSetupImpl impl, DeviceModel deviceModel, AferoClient aferoClient) {
         mDeviceModel = deviceModel;
         mAferoClient = aferoClient;
+        mWifiSetupImpl = impl;
 
         mSetupStateAttribute = deviceModel.getAttributeById(Hubby.WIFI_SETUP_STATE_ATTRIBUTE);
         mSteadyStateAttribute = deviceModel.getAttributeById(ATTRIBUTE_WIFI_STEADY_STATE);
@@ -109,11 +118,11 @@ public class DeviceWifiSetup {
                 }
             });
 
-        Hubby.localViewingStateChange(mDeviceModel.getId(), true);
+        mWifiSetupImpl.localViewingStateChange(mDeviceModel.getId(), true);
     }
 
     public void stop() {
-        Hubby.localViewingStateChange(mDeviceModel.getId(), false);
+        mWifiSetupImpl.localViewingStateChange(mDeviceModel.getId(), false);
         mDeviceUpdateSubscription = RxUtils.safeUnSubscribe(mDeviceUpdateSubscription);
     }
 
@@ -133,14 +142,36 @@ public class DeviceWifiSetup {
         return mSteadyStateSubject;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public Observable<WifiSSIDEntry> getWifiSSIDList() {
-        return Observable.create(getGetWifiListOnSubscribe());
+        return Observable.create(new Action1<Emitter<List<WifiSSIDEntry>>>() {
+                @Override
+                public void call(Emitter<List<WifiSSIDEntry>> wifiSSIDEntryEmitter) {
+                    final GetWifiListCallback wifiListCallback = new GetWifiListCallback(wifiSSIDEntryEmitter, mDeviceModel, mAferoClient);
+                    mWifiSetupImpl.getWifiSSIDListFromHub(mDeviceModel.getId(), wifiListCallback);
+
+                }
+            }, Emitter.BackpressureMode.LATEST)
+            .flatMap(new Func1<List<WifiSSIDEntry>, Observable<WifiSSIDEntry>>() {
+                @Override
+                public Observable<WifiSSIDEntry> call(List<WifiSSIDEntry> wifiSSIDEntries) {
+                    return Observable.from(wifiSSIDEntries);
+                }
+            });
     }
 
-    public Observable<SetupWifiState> sendWifiCredential(String ssid, String password) {
-        return Observable.create(getSendWifiCredentialOnSubscribe(ssid, password));
+    @SuppressWarnings("WeakerAccess")
+    public Observable<SetupWifiState> sendWifiCredential(final String ssid, final String password) {
+        return Observable.create(new Action1<Emitter<SetupWifiState>>() {
+                @Override
+                public void call(Emitter<SetupWifiState> wifiStateEmitter) {
+                        SendWifiCredentialCallback cb = new SendWifiCredentialCallback(wifiStateEmitter, mDeviceModel, mAferoClient);
+                        mWifiSetupImpl.sendWifiCredentialToHub(mDeviceModel.getId(), ssid, password, cb);
+                }
+            }, Emitter.BackpressureMode.BUFFER);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static String getWifiSSID(DeviceModel deviceModel) {
         boolean isWifiCapable = isWifiSetupCapable(deviceModel);
         if (!isWifiCapable) {
@@ -165,10 +196,12 @@ public class DeviceWifiSetup {
         return wifiNetwork;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static boolean isWifiSetup(DeviceModel deviceModel) {
         return getWifiSSID(deviceModel) != null;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static boolean isWifiSetupCapable(DeviceModel deviceModel) {
         return deviceModel.getAttributeById(Hubby.WIFI_SETUP_STATE_ATTRIBUTE) != null;
     }
@@ -200,107 +233,42 @@ public class DeviceWifiSetup {
         }
     }
 
-    protected Observable.OnSubscribe<SetupWifiState> getSendWifiCredentialOnSubscribe(final String ssid, final String password) {
-        return new Observable.OnSubscribe<SetupWifiState>() {
-            @Override
-            public void call(final Subscriber<? super SetupWifiState> subscriber) {
-                SendWifiCredentialCallback cb = new SendWifiCredentialCallback(subscriber, mDeviceModel, mAferoClient);
-                subscriber.add(getSendWifiCredentialSubscription(cb));
-                Hubby.sendWifiCredentialToHub(mDeviceModel.getId(), ssid, password, cb);
-            }
-        };
-    }
+    protected final class GetWifiListCallback extends SetupWifiSubscriberCallback<List<WifiSSIDEntry>> {
 
-    protected Subscription getSendWifiCredentialSubscription(SetupWifiSubscriberCallback cb) {
-        return new CancelSendWifiCredentialSubscription(cb, mDeviceModel.getId());
-    }
+        public GetWifiListCallback(Emitter<List<WifiSSIDEntry>> wifiSSIDEntryEmitter, DeviceModel deviceModel, AferoClient aferoClient) {
+            super(wifiSSIDEntryEmitter, deviceModel, aferoClient);
 
-    private static final class CancelSendWifiCredentialSubscription implements Subscription {
-
-        private SetupWifiSubscriberCallback mCallback;
-        private String mHubId;
-
-        public CancelSendWifiCredentialSubscription(SetupWifiSubscriberCallback cb, String hubId) {
-            mCallback = cb;
-            mHubId = hubId;
+            wifiSSIDEntryEmitter.setCancellation(new Cancellable() {
+                @Override
+                public void cancel() throws Exception {
+                    if (isCancelable()) {
+                        mWifiSetupImpl.cancelGetWifiSSIDListFromHub(getDeviceModel().getId());
+                    }
+                }
+            });
         }
 
         @Override
-        public void unsubscribe() {
-            if (mCallback.isCancelable()) {
-                Hubby.cancelSendWifiCredentialToHub(mHubId);
-            }
-        }
-
-        @Override
-        public boolean isUnsubscribed() {
-            return false;
-        }
-    }
-
-    protected Observable.OnSubscribe<WifiSSIDEntry> getGetWifiListOnSubscribe() {
-        return new Observable.OnSubscribe<WifiSSIDEntry>() {
-            @Override
-            public void call(final Subscriber<? super WifiSSIDEntry> subscriber) {
-                GetWifiListCallback cb = new GetWifiListCallback(subscriber, mDeviceModel, mAferoClient);
-                subscriber.add(getWifiSSIDListSubscription(cb));
-                Hubby.getWifiSSIDListFromHub(mDeviceModel.getId(), cb);
-            }
-        };
-    }
-
-    protected Subscription getWifiSSIDListSubscription(SetupWifiSubscriberCallback cb) {
-        return new CancelGetWifiListSubscription(cb, mDeviceModel.getId());
-    }
-
-    private static final class CancelGetWifiListSubscription implements Subscription {
-
-        private SetupWifiSubscriberCallback mCallback;
-        private String mHubId;
-
-        public CancelGetWifiListSubscription(SetupWifiSubscriberCallback cb, String hubId) {
-            mCallback = cb;
-            mHubId = hubId;
-        }
-
-        @Override
-        public void unsubscribe() {
-            if (mCallback.isCancelable()) {
-                Hubby.cancelGetWifiSSIDListFromHub(mHubId);
-            }
-        }
-
-        @Override
-        public boolean isUnsubscribed() {
-            return false;
-        }
-    }
-
-    protected static final class GetWifiListCallback extends SetupWifiSubscriberCallback {
-
-        private Subscriber<? super WifiSSIDEntry> mSubscriber;
-
-        public GetWifiListCallback(Subscriber<? super WifiSSIDEntry> subscriber, DeviceModel deviceModel, AferoClient aferoClient) {
-            super(subscriber, deviceModel, aferoClient);
-            mSubscriber = subscriber;
-        }
-
-            @Override
         public void wifiListResult(String s, List<WifiSSIDEntry> list) {
-            for (WifiSSIDEntry we : list) {
-                mSubscriber.onNext(we);
-            }
-            mSubscriber.onCompleted();
+            emit(list);
+            completed();
         }
+
     }
 
-    protected static final class SendWifiCredentialCallback extends SetupWifiSubscriberCallback {
+    protected final class SendWifiCredentialCallback extends SetupWifiSubscriberCallback<SetupWifiState> {
 
-        private Subscriber<? super SetupWifiState> mSubscriber;
+        public SendWifiCredentialCallback(Emitter<SetupWifiState> wifiStateEmitter, DeviceModel deviceModel, AferoClient aferoClient) {
+            super(wifiStateEmitter, deviceModel, aferoClient);
 
-        public SendWifiCredentialCallback(Subscriber<? super SetupWifiState> subscriber, DeviceModel deviceModel, AferoClient aferoClient) {
-            super(subscriber, deviceModel, aferoClient);
-            mSubscriber = subscriber;
+            wifiStateEmitter.setCancellation(new Cancellable() {
+                @Override
+                public void cancel() throws Exception {
+                    if (isCancelable()) {
+                        mWifiSetupImpl.cancelSendWifiCredentialToHub(getDeviceModel().getId());
+                    }
+                }
+            });
         }
 
         public void onNext(SetupWifiState state) {
@@ -308,11 +276,11 @@ public class DeviceWifiSetup {
                 case START:
                 case AVAILABLE:
                 case CONNECTED:
-                    mSubscriber.onNext(state);
+                    emit(state);
                     break;
 
                 case DONE:
-                    mSubscriber.onNext(state);
+                    emit(state);
                     break;
             }
 
@@ -320,15 +288,15 @@ public class DeviceWifiSetup {
         }
     }
 
-    protected static class SetupWifiSubscriberCallback implements SetupWifiCallback {
+    protected static class SetupWifiSubscriberCallback<T> implements SetupWifiCallback {
 
         private final AferoClient mAferoClient;
+        private final Emitter<T> mEmitter;
         private final DeviceModel mDeviceModel;
-        private Subscriber<?> mSubscriber;
         private SetupWifiState mCurrentState;
 
-        public SetupWifiSubscriberCallback(Subscriber<?> subscriber, DeviceModel deviceModel, AferoClient aferoClient) {
-            mSubscriber = subscriber;
+        SetupWifiSubscriberCallback(Emitter<T> emitter, DeviceModel deviceModel, AferoClient aferoClient) {
+            mEmitter = emitter;
             mDeviceModel = deviceModel;
             mAferoClient = aferoClient;
         }
@@ -343,7 +311,7 @@ public class DeviceWifiSetup {
                     break;
 
                 case DONE:
-                    mSubscriber.onCompleted();
+                    completed();
                     break;
 
                 case CANCELLED:
@@ -352,12 +320,12 @@ public class DeviceWifiSetup {
                 case TIMED_OUT_CONNECT:
                 case TIMED_OUT_COMMUNICATING:
                 case FAILED:
-                    mSubscriber.onError(new Error("setupWifiState=" + state));
+                    error(new Error("setupWifiState=" + state));
                     break;
             }
         }
 
-        public boolean isCancelable() {
+        boolean isCancelable() {
             if (mCurrentState != null) {
                 switch (mCurrentState) {
                     case START:
@@ -382,24 +350,16 @@ public class DeviceWifiSetup {
         @Override
         public void setupState(String hubId, int stateValue) {
 
-            if (mSubscriber.isUnsubscribed()) {
-                return;
-            }
-
             SetupWifiState state = fromSetupWifiStateValue(stateValue);
             if (state != null) {
                 onNext(state);
             } else {
-                mSubscriber.onError(new Error("setupWifiState is NULL"));
+                error(new Error("setupWifiState is NULL"));
             }
         }
 
         @Override
         public boolean writeAttribute(final String deviceId, int attributeId, final String type, final String hexData) {
-
-            if (mSubscriber.isUnsubscribed()) {
-                return false;
-            }
 
             PostActionBody body = new PostActionBody();
             body.type = type;
@@ -414,9 +374,7 @@ public class DeviceWifiSetup {
                     @Override
                     public void onError(Throwable e) {
                         AfLog.e(e);
-                        if (!mSubscriber.isUnsubscribed()) {
-                            mSubscriber.onError(new Throwable(e));
-                        }
+                        mEmitter.onError(new Throwable(e));
                     }
 
                     @Override
@@ -429,9 +387,25 @@ public class DeviceWifiSetup {
         @Override
         public void wifiListResult(String s, List<WifiSSIDEntry> list) {
         }
+
+        protected DeviceModel getDeviceModel() {
+            return mDeviceModel;
+        }
+
+        protected void emit(T t) {
+            mEmitter.onNext(t);
+        }
+
+        protected void error(Throwable t) {
+            mEmitter.onError(t);
+        }
+
+        protected void completed() {
+            mEmitter.onCompleted();
+        }
     }
 
-    public static SetupWifiState fromSetupWifiStateValue(int value) {
+    private static SetupWifiState fromSetupWifiStateValue(int value) {
         for (SetupWifiState s : SetupWifiState.values()) {
             if (s.getValue() == value) {
                 return s;
@@ -442,5 +416,42 @@ public class DeviceWifiSetup {
 
     public DeviceModel getDeviceModel() {
         return mDeviceModel;
+    }
+
+    interface WifiSetupImpl {
+        void localViewingStateChange(String deviceId, boolean state);
+
+        void getWifiSSIDListFromHub(String deviceId, GetWifiListCallback cb);
+        void cancelGetWifiSSIDListFromHub(String deviceId);
+
+        void sendWifiCredentialToHub(String deviceId, String ssid, String password, SetupWifiCallback cb);
+        void cancelSendWifiCredentialToHub(String deviceId);
+    }
+
+    private static class HubbyWifiSetupImpl implements WifiSetupImpl {
+        @Override
+        public void localViewingStateChange(String deviceId, boolean state) {
+            Hubby.localViewingStateChange(deviceId, true);
+        }
+
+        @Override
+        public void getWifiSSIDListFromHub(String deviceId, GetWifiListCallback cb) {
+            Hubby.getWifiSSIDListFromHub(deviceId, cb);
+        }
+
+        @Override
+        public void cancelGetWifiSSIDListFromHub(String deviceId) {
+            Hubby.cancelGetWifiSSIDListFromHub(deviceId);
+        }
+
+        @Override
+        public void sendWifiCredentialToHub(String deviceId, String ssid, String password, SetupWifiCallback cb) {
+            Hubby.sendWifiCredentialToHub(deviceId, ssid, password, cb);
+        }
+
+        @Override
+        public void cancelSendWifiCredentialToHub(String deviceId) {
+            Hubby.cancelSendWifiCredentialToHub(deviceId);
+        }
     }
 }
