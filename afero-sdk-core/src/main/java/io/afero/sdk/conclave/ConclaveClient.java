@@ -33,7 +33,7 @@ import javax.net.ssl.SSLSocketFactory;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
-import rx.Subscriber;
+import rx.Observable;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
@@ -72,7 +72,7 @@ public class ConclaveClient {
     private PublishSubject<Status> mStatusSubject = PublishSubject.create();
     private final Object mConnectLock = new Object();
 
-    public synchronized rx.Observable<Object> connect(ConclaveAccessDetails cad) {
+    public synchronized Observable<ConclaveClient> connect(ConclaveAccessDetails cad) {
         mRetryDelay = 0;
 
         if (cad.conclaveHosts != null) {
@@ -89,31 +89,18 @@ public class ConclaveClient {
             close();
         }
 
-        return rx.Observable.create(new rx.Observable.OnSubscribe<Object>() {
+        return Observable.fromCallable(new Callable<ConclaveClient>() {
             @Override
-            public void call(Subscriber<? super Object> subscriber) {
-                try {
-                    synchronized (mConnectLock) {
+            public ConclaveClient call() throws Exception {
 
-                        if ((!subscriber.isUnsubscribed()) && (!isConnected())) {
-                            openSocket();
-
-                            if (!subscriber.isUnsubscribed()) {
-                                readloop();
-                            } else {
-                                closeSocket();
-                                throw new Exception("ConclaveClient.connect was unsubscribed");
-                            }
-                        }
-
+                synchronized (mConnectLock) {
+                    if (!isConnected()) {
+                        openSocket();
+                        readloop();
                     }
-
-                    subscriber.onNext(null);
-                    subscriber.onCompleted();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    subscriber.onError(e);
                 }
+
+                return ConclaveClient.this;
             }
         }).subscribeOn(Schedulers.io());
     }
@@ -136,9 +123,9 @@ public class ConclaveClient {
         write(new ConclaveMessage.Say(event, data));
     }
 
-    public rx.Observable<ConclaveMessage.Say> sayAsync(String event, Object data) {
+    public Observable<ConclaveMessage.Say> sayAsync(String event, Object data) {
         ConclaveMessage.Say say = new ConclaveMessage.Say(event, data);
-        return rx.Observable.fromCallable(new SayCallable(say))
+        return Observable.fromCallable(new SayCallable(say))
             .subscribeOn(Schedulers.io());
     }
 
@@ -159,7 +146,7 @@ public class ConclaveClient {
 
             if (mSocket != null) {
                 mStatusSubject.onNext(ConclaveClient.Status.DISCONNECTED);
-                rx.Observable.fromCallable(new CloseSocketCallable(mSocket))
+                Observable.fromCallable(new CloseSocketCallable(mSocket))
                     .subscribeOn(Schedulers.io());
                 mSocket = null;
             }
@@ -217,11 +204,11 @@ public class ConclaveClient {
         return mSocket != null && mSocket.isConnected();
     }
 
-    public rx.Observable<Status> statusObservable() {
+    public Observable<Status> statusObservable() {
         return mStatusSubject;
     }
 
-    public rx.Observable<JsonNode> messageObservable() {
+    public Observable<JsonNode> messageObservable() {
         return mMessageSubject;
     }
 
