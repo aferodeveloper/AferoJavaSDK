@@ -3,6 +3,7 @@
  */
 
 apply plugin: 'com.android.library'
+apply from: 'fat-aar.gradle'
 
 repositories {
     maven {
@@ -40,7 +41,7 @@ dependencies {
 
     compile project(path: ':afero-sdk-core')
 
-    compile 'io.afero.sdk:hubby:1.0.494-prod@aar'
+    embedded "io.afero.sdk:hubby:1.0.501@aar"
 
     compile 'com.android.support:support-annotations:25.3.1'
 
@@ -58,16 +59,52 @@ publishing {
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
 
-            pom.withXml {
-                def dependencies = asNode().appendNode('dependencies')
-                configurations.getByName("_releaseCompile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
-                    // don't include local dependencies
-                    if (it.moduleVersion != 'unspecified') {
-                        def dependency = dependencies.appendNode('dependency')
-                        dependency.appendNode('groupId', it.moduleGroup)
-                        dependency.appendNode('artifactId', it.moduleName)
-                        dependency.appendNode('version', it.moduleVersion)
+            List<String> embedList = new ArrayList<>();
+            Map<String, ResolvedDependency> depList = new LinkedHashMap<>();
+
+            // List all embedded dependencies
+            configurations.embedded.allDependencies.each {
+                def depName = String.format("%s:%s", it.group, it.name)
+                embedList.add(depName);
+            }
+
+            // Collect all first level dependencies except embedded ones
+            configurations.compile.resolvedConfiguration.firstLevelModuleDependencies.each {
+                ResolvedDependency dep ->
+                    def depName = String.format("%s:%s", dep.moduleGroup, dep.moduleName)
+                    if (!embedList.contains(depName) && !depList.containsKey(depName)) {
+                        depList.put(depName, dep)
                     }
+            }
+
+            // Collect all second level dependencies of embedded ones
+            configurations.embedded.resolvedConfiguration.firstLevelModuleDependencies.each {
+                // Second level dependencies
+                it.children.each {
+                    ResolvedDependency dep ->
+                        def depName = String.format("%s:%s", dep.moduleGroup, dep.moduleName)
+                        if (!embedList.contains(depName) && !depList.containsKey(depName)) {
+                            depList.put(depName, dep)
+                        }
+                }
+            }
+
+            pom.withXml {
+                def dependenciesNode = asNode().appendNode('dependencies')
+
+                // Iterate over the compile dependencies, adding a <dependency> node for each
+                depList.values().each {
+                    ResolvedDependency dep ->
+                        def hasGroup = dep.moduleGroup != null
+                        def hasName = (dep.moduleName != null && !"unspecified".equals(dep.moduleName))
+                        def hasVersion = (dep.moduleVersion != null && !"unspecified".equals(dep.moduleVersion))
+
+                        if (hasGroup && hasName && hasVersion) {
+                            def depNode = dependenciesNode.appendNode('dependency')
+                            depNode.appendNode('groupId', dep.moduleGroup)
+                            depNode.appendNode('artifactId', dep.moduleName)
+                            depNode.appendNode('version', dep.moduleVersion)
+                        }
                 }
             }
         }
