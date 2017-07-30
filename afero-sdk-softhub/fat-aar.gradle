@@ -188,21 +188,7 @@ private List getMergedInputResourceSets(List inputResourceSet) {
 
     embeddedAarDirs.each { aarPath ->
         try {
-            def resname
-            if (gradleApiVersion >= 2.3f) {
-                def parentProject = project.rootProject.name.toString()
-                def startIndex = aarPath.indexOf('/' + parentProject)
-                def endIndex = aarPath.indexOf('/build/')
-
-                if (startIndex < 1 || endIndex < 1) {
-                    return;
-                }
-
-                resname = aarPath.substring(startIndex, endIndex).replace('/', ':')
-            } else {
-                resname = (aarPath.split(exploded_aar_dir)[1]).replace('/', ':');
-            }
-
+            def resname = (aarPath.split(exploded_aar_dir)[1]).replace('/', ':');
             def rs = ResourceSetClass.newInstance([resname, true] as Object[])
             rs.addSource(file("$aarPath/res"))
             newInputResourceSet += rs
