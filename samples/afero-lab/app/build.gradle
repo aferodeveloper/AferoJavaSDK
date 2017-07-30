@@ -5,14 +5,11 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '0.6.1'
-final String sdkHubbyVersion = project.findProperty('aferoSDKHubbyVersion') ?: '1.0.501'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '0.6.2'
 
 repositories {
-
     maven {
         url "https://afero.jfrog.io/afero/${sdkRepoKey}"
-        artifactUrls "https://afero.jfrog.io/afero/hubby-android"
         credentials {
             username project.aferoArtifactoryUserName
             password project.aferoArtifactoryPassword
@@ -64,7 +61,6 @@ dependencies {
     compile "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
     compile "io.afero.sdk:afero-sdk-android:${sdkVersion}"
     compile "io.afero.sdk:afero-sdk-softhub:${sdkVersion}"
-    compile "io.afero.sdk:hubby:${sdkHubbyVersion}@aar"
 
     // https://github.com/square/retrofit
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
