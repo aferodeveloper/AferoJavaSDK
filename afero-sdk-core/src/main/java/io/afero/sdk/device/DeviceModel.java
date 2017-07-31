@@ -48,7 +48,7 @@ import rx.subjects.PublishSubject;
  * This class manages the attribute state and events associated with a particular instance of an
  * Afero peripheral device.
  */
-public class DeviceModel implements ControlModel {
+public final class DeviceModel implements ControlModel {
 
     public static class ApiClientError implements AferoError {
         public int code;
@@ -186,79 +186,6 @@ public class DeviceModel implements ControlModel {
         }
 
         return state;
-    }
-
-    public void update(DeviceSync deviceSync) {
-
-        mDeviceSyncUpdateSubject.onNext(deviceSync);
-
-        if (deviceSync.requestId != null && deviceSync.requestId != 0) {
-            MetricUtil.getInstance().end(deviceSync.requestId, Clock.getElapsedMillis(), true, null);
-        }
-
-        // See https://kibanlabs.atlassian.net/browse/ANDROID-606
-        // "For states 0, 1, 4, and 5 your going to want to update the UI with the value that is returned.
-        // In each of these cases the device is going to be returning the current value. In the failure"
-        // cases this value will not be the value that you attempted to set. It will likely be the
-        // previous value of that attribute.
-        // For states 2 and 3 the device is going to return 0 length for the value, so we probably
-        // don't want to update the UI with that value." --lucas
-        boolean hasValidValues = true;
-        if (deviceSync.state != null) {
-            switch (deviceSync.state) {
-                case DeviceSync.UPDATE_STATE_UNKNOWN_UUID:
-                case DeviceSync.UPDATE_STATE_LENGTH_EXCEEDED:
-                    hasValidValues = false;
-                    break;
-            }
-        }
-
-        boolean hasChanged = false;
-        if (hasValidValues && deviceSync.attributes != null) {
-            hasChanged = true;
-            for (DeviceSync.AttributeEntry ae : deviceSync.attributes) {
-                updateAttributeValues(ae.id, ae.value);
-            }
-        }
-
-        if (hasValidValues && deviceSync.attribute != null) {
-            hasChanged = true;
-            updateAttributeValues(deviceSync.attribute.id, deviceSync.attribute.value);
-        }
-
-        if (deviceSync.profileId != null) {
-            hasChanged = true;
-            mProfileId = deviceSync.profileId;
-        }
-
-        if (deviceSync.friendlyName != null) {
-            hasChanged = true;
-            mName = deviceSync.friendlyName;
-        }
-
-        if (deviceSync.status != null) {
-            hasChanged = updateStatus(deviceSync.status) || hasChanged;
-        }
-
-        if (deviceSync.virtual != mIsVirtual) {
-            hasChanged = true;
-            mIsVirtual = deviceSync.virtual;
-        }
-
-        if (deviceSync.tags != null) {
-            for (DeviceTag tag : deviceSync.tags) {
-                putTag(tag.deviceTagId, tag.value);
-            }
-        }
-
-        if (mPendingUpdateCount > 0) {
-            mPendingUpdateCount--;
-            hasChanged = true;
-        }
-
-        if (hasChanged) {
-            mUpdateSubject.onNext(this);
-        }
     }
 
     public boolean isOTAInProgress() {
@@ -500,27 +427,6 @@ public class DeviceModel implements ControlModel {
         return ad != null ? ad.mPendingValue : null;
     }
 
-    private void updateAttributeValues(int attrId, String value) {
-        try {
-            AttributeData data = mAttributes.get(attrId);
-            if (data == null) {
-                data = new AttributeData();
-                mAttributes.put(attrId, data);
-            }
-
-            DeviceProfile.Attribute attribute = getAttributeById(attrId);
-            if (attribute != null && value != null) {
-                data.mCurrentValue = new AttributeValue(value, attribute.getDataType());
-                data.mPendingValue = new AttributeValue(value, attribute.getDataType());
-            }
-            data.mExpectedUpdateTime = 0;
-
-            mLastError = null;
-        } catch (Exception e) {
-            AfLog.e(e);
-        }
-    }
-
     public String toJSONString() {
         String result;
 
@@ -647,6 +553,79 @@ public class DeviceModel implements ControlModel {
 
     // non-public ------------------------------------------------------------------
 
+    void update(DeviceSync deviceSync) {
+
+        mDeviceSyncUpdateSubject.onNext(deviceSync);
+
+        if (deviceSync.requestId != null && deviceSync.requestId != 0) {
+            MetricUtil.getInstance().end(deviceSync.requestId, Clock.getElapsedMillis(), true, null);
+        }
+
+        // See https://kibanlabs.atlassian.net/browse/ANDROID-606
+        // "For states 0, 1, 4, and 5 your going to want to update the UI with the value that is returned.
+        // In each of these cases the device is going to be returning the current value. In the failure"
+        // cases this value will not be the value that you attempted to set. It will likely be the
+        // previous value of that attribute.
+        // For states 2 and 3 the device is going to return 0 length for the value, so we probably
+        // don't want to update the UI with that value." --lucas
+        boolean hasValidValues = true;
+        if (deviceSync.state != null) {
+            switch (deviceSync.state) {
+                case DeviceSync.UPDATE_STATE_UNKNOWN_UUID:
+                case DeviceSync.UPDATE_STATE_LENGTH_EXCEEDED:
+                    hasValidValues = false;
+                    break;
+            }
+        }
+
+        boolean hasChanged = false;
+        if (hasValidValues && deviceSync.attributes != null) {
+            hasChanged = true;
+            for (DeviceSync.AttributeEntry ae : deviceSync.attributes) {
+                updateAttributeValues(ae.id, ae.value);
+            }
+        }
+
+        if (hasValidValues && deviceSync.attribute != null) {
+            hasChanged = true;
+            updateAttributeValues(deviceSync.attribute.id, deviceSync.attribute.value);
+        }
+
+        if (deviceSync.profileId != null) {
+            hasChanged = true;
+            mProfileId = deviceSync.profileId;
+        }
+
+        if (deviceSync.friendlyName != null) {
+            hasChanged = true;
+            mName = deviceSync.friendlyName;
+        }
+
+        if (deviceSync.status != null) {
+            hasChanged = updateStatus(deviceSync.status) || hasChanged;
+        }
+
+        if (deviceSync.virtual != mIsVirtual) {
+            hasChanged = true;
+            mIsVirtual = deviceSync.virtual;
+        }
+
+        if (deviceSync.tags != null) {
+            for (DeviceTag tag : deviceSync.tags) {
+                putTag(tag.deviceTagId, tag.value);
+            }
+        }
+
+        if (mPendingUpdateCount > 0) {
+            mPendingUpdateCount--;
+            hasChanged = true;
+        }
+
+        if (hasChanged) {
+            mUpdateSubject.onNext(this);
+        }
+    }
+
     void update(DeviceStatus deviceStatus) {
         if (updateStatus(deviceStatus)) {
             mUpdateSubject.onNext(this);
@@ -699,6 +678,27 @@ public class DeviceModel implements ControlModel {
                     setLocation(locationState);
                 }
             });
+    }
+
+    private void updateAttributeValues(int attrId, String value) {
+        try {
+            AttributeData data = mAttributes.get(attrId);
+            if (data == null) {
+                data = new AttributeData();
+                mAttributes.put(attrId, data);
+            }
+
+            DeviceProfile.Attribute attribute = getAttributeById(attrId);
+            if (attribute != null && value != null) {
+                data.mCurrentValue = new AttributeValue(value, attribute.getDataType());
+                data.mPendingValue = new AttributeValue(value, attribute.getDataType());
+            }
+            data.mExpectedUpdateTime = 0;
+
+            mLastError = null;
+        } catch (Exception e) {
+            AfLog.e(e);
+        }
     }
 
     private void onError(Throwable e) {
