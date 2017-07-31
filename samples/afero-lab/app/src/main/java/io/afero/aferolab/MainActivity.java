@@ -380,19 +380,19 @@ public class MainActivity extends AppCompatActivity {
         PermissionsHelper.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
     }
 
-    private static class StartDeviceEventStreamFunc extends RxUtils.WeakFunc1<Response, Observable<Object>, MainActivity> {
+    private static class StartDeviceEventStreamFunc extends RxUtils.WeakFunc1<Response, Observable<ConclaveDeviceEventSource>, MainActivity> {
 
         StartDeviceEventStreamFunc(MainActivity strongRef) {
             super(strongRef);
         }
 
         @Override
-        public Observable<Object> call(MainActivity activity, Response baseResponse) {
+        public Observable<ConclaveDeviceEventSource> call(MainActivity activity, Response baseResponse) {
             return activity.callStartDeviceEventStream();
         }
     }
 
-    private Observable<Object> callStartDeviceEventStream() {
+    private Observable<ConclaveDeviceEventSource> callStartDeviceEventStream() {
         if (!mDeviceEventSource.hasStarted()) {
             final String accountId = mAferoClient.getActiveAccountId();
             final String userId = mUserId;
@@ -488,7 +488,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static class DeviceEventSourceConnectObserver extends RxUtils.WeakObserver<Object, MainActivity> {
+    private static class DeviceEventSourceConnectObserver extends RxUtils.WeakObserver<ConclaveDeviceEventSource, MainActivity> {
 
         DeviceEventSourceConnectObserver(MainActivity strongRef) {
             super(strongRef);
@@ -505,7 +505,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onNext(MainActivity activity, Object o) {
+        public void onNext(MainActivity activity, ConclaveDeviceEventSource o) {
         }
     }
 

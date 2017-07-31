@@ -94,7 +94,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         return mConclaveClient.statusObservable();
     }
 
-    public rx.Observable<DeviceEventSource> start(String accountId, String userId, String type) {
+    public rx.Observable<ConclaveDeviceEventSource> start(String accountId, String userId, String type) {
         mAccountId = accountId;
         mUserId = userId;
         mType = type;
@@ -147,7 +147,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         mConclaveClient.close();
     }
 
-    public rx.Observable<DeviceEventSource> reconnect() {
+    public rx.Observable<ConclaveDeviceEventSource> reconnect() {
 
         if (mConclaveSubscription != null) {
             mConclaveSubscription.unsubscribe();
@@ -156,13 +156,13 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         mConclaveSubscription = mConclaveClient.messageObservable()
             .subscribe(mConclaveObserver);
 
-        rx.Observable<DeviceEventSource> connectObservable;
+        rx.Observable<ConclaveDeviceEventSource> connectObservable;
 
         if (mConclaveAccessDetails == null) {
             connectObservable = mConclaveAccessManager.getAccess(mClientId)
-                .flatMap(new Func1<ConclaveAccessDetails, Observable<DeviceEventSource>>() {
+                .flatMap(new Func1<ConclaveAccessDetails, Observable<ConclaveDeviceEventSource>>() {
                     @Override
-                    public Observable<DeviceEventSource> call(ConclaveAccessDetails conclaveAccessDetails) {
+                    public Observable<ConclaveDeviceEventSource> call(ConclaveAccessDetails conclaveAccessDetails) {
                         mToken = null;
 
                         setConclaveAccessDetails(conclaveAccessDetails);
@@ -174,12 +174,12 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
                         AfLog.i("ConclaveDeviceEventSource.reconnect: mAccountId = " + mAccountId);
 
                         return mConclaveClient.connect(conclaveAccessDetails)
-                            .map(new RxUtils.Mapper<ConclaveClient, DeviceEventSource>(ConclaveDeviceEventSource.this));
+                            .map(new RxUtils.Mapper<ConclaveClient, ConclaveDeviceEventSource>(ConclaveDeviceEventSource.this));
                     }
                 });
         } else {
             connectObservable = mConclaveClient.connect(mConclaveAccessDetails)
-                .map(new RxUtils.Mapper<ConclaveClient, DeviceEventSource>(this));
+                .map(new RxUtils.Mapper<ConclaveClient, ConclaveDeviceEventSource>(this));
         }
 
         return connectObservable;
