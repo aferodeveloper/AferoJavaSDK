@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 0.6.1 *(2017-08-??)*
+----------------------------
+
+ * `ConclaveDeviceEventSource.start` and `ConclaveDeviceEventSource.reconnect()` now return
+    `Observable<ConclaveDeviceEventSource>`.
+
+
 Version 0.6.1 *(2017-07-27)*
 ----------------------------
 
