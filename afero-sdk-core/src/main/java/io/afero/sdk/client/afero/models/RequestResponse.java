@@ -18,6 +18,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class RequestResponse {
+
+    public static final String STATUS_SUCCESS = "SUCCESS";
+
     public String status;
     public int requestId;
     public int statusCode;
@@ -25,6 +28,6 @@ public class RequestResponse {
 
     @JsonIgnore
     public boolean isSuccess() {
-        return "SUCCESS".equals(status);
+        return STATUS_SUCCESS.equals(status);
     }
 }

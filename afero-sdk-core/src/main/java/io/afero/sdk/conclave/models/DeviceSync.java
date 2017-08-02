@@ -71,6 +71,30 @@ public class DeviceSync {
     public Integer requestId;
     public Integer state;
 
+    public boolean hasValidAttributeValues() {
+        // See https://kibanlabs.atlassian.net/browse/ANDROID-606
+        // "For states 0, 1, 4, and 5 your going to want to update the UI with the value that is returned.
+        // In each of these cases the device is going to be returning the current value. In the failure"
+        // cases this value will not be the value that you attempted to set. It will likely be the
+        // previous value of that attribute.
+        // For states 2 and 3 the device is going to return 0 length for the value, so we probably
+        // don't want to update the UI with that value." --lucas
+        boolean hasValidValues = true;
+        if (state != null) {
+            switch (state) {
+                case DeviceSync.UPDATE_STATE_UNKNOWN_UUID:
+                case DeviceSync.UPDATE_STATE_LENGTH_EXCEEDED:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    public boolean hasRequestId() {
+        return requestId != null && requestId != 0;
+    }
+
     public void setDeviceState(DeviceStatus s) {
         status = s;
     }

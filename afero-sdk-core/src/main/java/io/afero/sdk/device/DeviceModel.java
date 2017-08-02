@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -102,6 +103,7 @@ public final class DeviceModel implements ControlModel {
     private AvailableState mAvailableState = AvailableState.NONE;
 
     private final PublishSubject<DeviceSync> mDeviceSyncUpdateSubject = PublishSubject.create();
+    private final PublishSubject<DeviceSync> mDeviceSyncPostUpdateSubject = PublishSubject.create();
     private final PublishSubject<AferoError> mErrorSubject = PublishSubject.create();
     private final PublishSubject<DeviceModel> mProfileUpdateSubject = PublishSubject.create();
     private final PublishSubject<ControlModel> mUpdateSubject = PublishSubject.create();
@@ -139,94 +141,17 @@ public final class DeviceModel implements ControlModel {
         mUpdateObservable = mUpdateSubject.onBackpressureBuffer();
     }
 
-    @JsonIgnore
-    @Override
-    public rx.Observable<ControlModel> getUpdateObservable() {
-        return mUpdateObservable;
-    }
-
-    @Override
-    public boolean enableDisplayRules() {
-        return true;
-    }
-
-    @Override
-    public boolean enableReadOnlyControls() {
-        return true;
-    }
-
-    @JsonIgnore
-    public rx.Observable<DeviceSync> getDeviceSyncObservable() {
-        return mDeviceSyncUpdateSubject;
-    }
-
-    @JsonIgnore
-    public rx.Observable<AferoError> getErrorObservable() {
-        return mErrorSubject.onBackpressureBuffer();
-    }
-
-    public rx.Observable<DeviceModel> getProfileObservable() {
-        return mProfileUpdateSubject;
-    }
-
-    @JsonProperty
-    public State getState() {
-        State state = State.NORMAL;
-        long now = Clock.getElapsedMillis();
-
-        for (AttributeData data : mAttributes.values()) {
-            if (data.mExpectedUpdateTime != 0) {
-                if (now > data.mExpectedUpdateTime) {
-                    state = State.UPDATE_TIMED_OUT;
-                } else {
-                    state = State.WAITING_FOR_UPDATE;
-                    break;
-                }
-            }
-        }
-
-        return state;
-    }
-
-    public boolean isOTAInProgress() {
-        return mOTAInProgress;
-    }
-
-    public int getOTAState() {
-        return mOTAState;
-    }
-
-    public int getOTAProgress() {
-        return mOTAProgress;
-    }
-
-    public void onOTAStop() {
-        cancelOTAWatchdog();
-
-        mOTAInProgress = false;
-        mOTAState = 0;
-        mOTAProgress = 0;
-
-        mUpdateSubject.onNext(this);
-    }
-
-    @JsonIgnore
-    public AferoError getLastError() {
-        return mLastError;
-    }
-
-    public void clearLastError() {
-        if (mLastError != null) {
-            mLastError = null;
-            mUpdateSubject.onNext(this);
-        }
-    }
-
+    /**
+     * @return Globally unique identifier for this device.
+     */
     @JsonProperty
     public String getId() {
         return mId;
     }
 
+    /**
+     * @return The friendly user-readable name of this device
+     */
     @JsonIgnore
     public String getName() {
 
@@ -255,6 +180,10 @@ public final class DeviceModel implements ControlModel {
         return name != null ? name : "";
     }
 
+    /**
+     * Sets the friendly name for this device. Sets only the local field, does not affect Afero Cloud.
+     * @param name String containing friendly name.
+     */
     public void setName(String name) {
         mName = name;
     }
@@ -347,17 +276,96 @@ public final class DeviceModel implements ControlModel {
         return mProfile != null ? mProfile.getPresentation(getId()) : null;
     }
 
-    @JsonProperty("attributes")
-    public HashMap<Integer,AttributeDebug> getAttributeValues() {
-        HashMap<Integer,AttributeDebug> result = new HashMap<>();
-        for (Map.Entry<Integer, AttributeData> attrEntry : mAttributes.entrySet()) {
-            AttributeData data = attrEntry.getValue();
-            AttributeDebug ad = new AttributeDebug();
-            ad.current = data.mCurrentValue != null ? data.mCurrentValue.toString() : null;
-            ad.pending = data.mPendingValue != null ? data.mPendingValue.toString() : null;
-            result.put(attrEntry.getKey(), ad);
+    @JsonIgnore
+    @Override
+    public rx.Observable<ControlModel> getUpdateObservable() {
+        return mUpdateObservable;
+    }
+
+    @Override
+    public boolean enableDisplayRules() {
+        return true;
+    }
+
+    @Override
+    public boolean enableReadOnlyControls() {
+        return true;
+    }
+
+    @JsonIgnore
+    public rx.Observable<DeviceSync> getDeviceSyncObservable() {
+        return mDeviceSyncUpdateSubject;
+    }
+
+    @JsonIgnore
+    public Observable<DeviceSync> getDeviceSyncPostUpdateObservable() {
+        return mDeviceSyncPostUpdateSubject;
+    }
+
+    @JsonIgnore
+    public rx.Observable<AferoError> getErrorObservable() {
+        return mErrorSubject.onBackpressureBuffer();
+    }
+
+    public rx.Observable<DeviceModel> getProfileObservable() {
+        return mProfileUpdateSubject;
+    }
+
+    @JsonProperty
+    public State getState() {
+        State state = State.NORMAL;
+        long now = Clock.getElapsedMillis();
+
+        for (AttributeData data : mAttributes.values()) {
+            if (data.mExpectedUpdateTime != 0) {
+                if (now > data.mExpectedUpdateTime) {
+                    state = State.UPDATE_TIMED_OUT;
+                } else {
+                    state = State.WAITING_FOR_UPDATE;
+                    break;
+                }
+            }
         }
-        return result;
+
+        return state;
+    }
+
+    public boolean isOTAInProgress() {
+        return mOTAInProgress;
+    }
+
+    public int getOTAState() {
+        return mOTAState;
+    }
+
+    public int getOTAProgress() {
+        return mOTAProgress;
+    }
+
+    public void onOTAStop() {
+        cancelOTAWatchdog();
+
+        mOTAInProgress = false;
+        mOTAState = 0;
+        mOTAProgress = 0;
+
+        mUpdateSubject.onNext(this);
+    }
+
+    @JsonIgnore
+    public AferoError getLastError() {
+        return mLastError;
+    }
+
+    public void clearLastError() {
+        if (mLastError != null) {
+            mLastError = null;
+            mUpdateSubject.onNext(this);
+        }
+    }
+
+    public WriteAttributeOperation writeAttribute() {
+        return new WriteAttributeOperation(this);
     }
 
     public void writeAttribute(DeviceProfile.Attribute attribute, AttributeValue value) {
@@ -382,41 +390,6 @@ public final class DeviceModel implements ControlModel {
         mUpdateSubject.onNext(this);
     }
 
-    private Observable<RequestResponse> attributeWrite(DeviceRequest[] requests) {
-
-        mLastError = null;
-
-        for (DeviceRequest dr : requests) {
-            AttributeData data = mAttributes.get(dr.attrId);
-            DeviceProfile.Attribute attribute = getAttributeById(dr.attrId);
-            if (data != null && attribute != null) {
-                data.mPendingValue = new AttributeValue(dr.value, attribute.getDataType());
-                data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
-
-                startWaitingForUpdate();
-            }
-        }
-
-        mUpdateSubject.onNext(this);
-
-        if (mOnNextDeviceRequestResponse == null) {
-            mOnNextDeviceRequestResponse = new OnNextDeviceRequest(this);
-        }
-        if (mOnErrorDeviceRequestResponse == null) {
-            mOnErrorDeviceRequestResponse = new OnErrorDeviceRequest(this);
-        }
-
-        return mAferoClient.postBatchAttributeWrite(this, requests, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
-            .flatMap(new Func1<RequestResponse[], Observable<RequestResponse>>() {
-                @Override
-                public Observable<RequestResponse> call(RequestResponse[] requestResponses) {
-                    return Observable.from(requestResponses)
-                            .doOnNext(mOnNextDeviceRequestResponse);
-                }
-            })
-            .doOnError(mOnErrorDeviceRequestResponse);
-    }
-
     public AttributeValue getAttributeCurrentValue(DeviceProfile.Attribute attribute) {
         AttributeData ad = getAttributeData(attribute);
         return ad != null ? ad.mCurrentValue : null;
@@ -425,6 +398,19 @@ public final class DeviceModel implements ControlModel {
     public AttributeValue getAttributePendingValue(DeviceProfile.Attribute attribute) {
         AttributeData ad = getAttributeData(attribute);
         return ad != null ? ad.mPendingValue : null;
+    }
+
+    @JsonProperty("attributes")
+    public HashMap<Integer,AttributeDebug> getAttributeValues() {
+        HashMap<Integer,AttributeDebug> result = new HashMap<>();
+        for (Map.Entry<Integer, AttributeData> attrEntry : mAttributes.entrySet()) {
+            AttributeData data = attrEntry.getValue();
+            AttributeDebug ad = new AttributeDebug();
+            ad.current = data.mCurrentValue != null ? data.mCurrentValue.toString() : null;
+            ad.pending = data.mPendingValue != null ? data.mPendingValue.toString() : null;
+            result.put(attrEntry.getKey(), ad);
+        }
+        return result;
     }
 
     public String toJSONString() {
@@ -444,6 +430,7 @@ public final class DeviceModel implements ControlModel {
         return result;
     }
 
+    @Override
     public void writeModelValue(DeviceProfile.Attribute attribute, BigDecimal newValue) {
         AttributeValue value = getAttributePendingValue(attribute);
         if (value != null) {
@@ -455,10 +442,15 @@ public final class DeviceModel implements ControlModel {
             }
         }
     }
-
     @Override
     public Observable<RequestResponse> writeModelValues(ArrayList<DeviceRequest> req) {
-        return attributeWrite(req.toArray(new DeviceRequest[req.size()]));
+        return postAttributeWriteRequests(req)
+            .flatMap(new Func1<RequestResponse[], Observable<RequestResponse>>() {
+                @Override
+                public Observable<RequestResponse> call(RequestResponse[] requestResponses) {
+                    return Observable.from(requestResponses);
+                }
+            });
     }
 
     @Override
@@ -482,14 +474,13 @@ public final class DeviceModel implements ControlModel {
 
     public boolean isRunning() {
         DeviceProfile.Presentation presentation = getPresentation();
-
         if (presentation != null) {
+
             for (Map.Entry<Integer,DeviceProfile.AttributeOptions> entry: presentation.getAttributeOptions().entrySet()) {
                 DeviceProfile.AttributeOptions ao = entry.getValue();
                 DeviceProfile.DisplayRule[] valueOptions = ao.getValueOptions();
 
                 if (valueOptions != null) {
-
                     DeviceProfile.Attribute attribute = getAttributeById(entry.getKey());
                     ApplyParams apply = new ApplyParams();
                     AttributeValue av = getAttributeCurrentValue(attribute);
@@ -553,32 +544,46 @@ public final class DeviceModel implements ControlModel {
 
     // non-public ------------------------------------------------------------------
 
+    Observable<RequestResponse[]> postAttributeWriteRequests(Collection<DeviceRequest> requests) {
+
+        mLastError = null;
+
+        for (DeviceRequest dr : requests) {
+            AttributeData data = mAttributes.get(dr.attrId);
+            DeviceProfile.Attribute attribute = getAttributeById(dr.attrId);
+            if (data != null && attribute != null) {
+                data.mPendingValue = new AttributeValue(dr.value, attribute.getDataType());
+                data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
+
+                startWaitingForUpdate();
+            }
+        }
+
+        mUpdateSubject.onNext(this);
+
+        if (mOnNextDeviceRequestResponse == null) {
+            mOnNextDeviceRequestResponse = new OnNextDeviceRequest(this);
+        }
+        if (mOnErrorDeviceRequestResponse == null) {
+            mOnErrorDeviceRequestResponse = new OnErrorDeviceRequest(this);
+        }
+
+        DeviceRequest[] reqArray = requests.toArray(new DeviceRequest[requests.size()]);
+        return mAferoClient.postBatchAttributeWrite(this, reqArray, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED);
+    }
+
+
     void update(DeviceSync deviceSync) {
 
         mDeviceSyncUpdateSubject.onNext(deviceSync);
 
-        if (deviceSync.requestId != null && deviceSync.requestId != 0) {
+        if (deviceSync.hasRequestId()) {
             MetricUtil.getInstance().end(deviceSync.requestId, Clock.getElapsedMillis(), true, null);
         }
 
-        // See https://kibanlabs.atlassian.net/browse/ANDROID-606
-        // "For states 0, 1, 4, and 5 your going to want to update the UI with the value that is returned.
-        // In each of these cases the device is going to be returning the current value. In the failure"
-        // cases this value will not be the value that you attempted to set. It will likely be the
-        // previous value of that attribute.
-        // For states 2 and 3 the device is going to return 0 length for the value, so we probably
-        // don't want to update the UI with that value." --lucas
-        boolean hasValidValues = true;
-        if (deviceSync.state != null) {
-            switch (deviceSync.state) {
-                case DeviceSync.UPDATE_STATE_UNKNOWN_UUID:
-                case DeviceSync.UPDATE_STATE_LENGTH_EXCEEDED:
-                    hasValidValues = false;
-                    break;
-            }
-        }
-
+        final boolean hasValidValues = deviceSync.hasValidAttributeValues();
         boolean hasChanged = false;
+
         if (hasValidValues && deviceSync.attributes != null) {
             hasChanged = true;
             for (DeviceSync.AttributeEntry ae : deviceSync.attributes) {
@@ -615,6 +620,8 @@ public final class DeviceModel implements ControlModel {
                 putTag(tag.deviceTagId, tag.value);
             }
         }
+
+        mDeviceSyncPostUpdateSubject.onNext(deviceSync);
 
         if (mPendingUpdateCount > 0) {
             mPendingUpdateCount--;
@@ -701,7 +708,7 @@ public final class DeviceModel implements ControlModel {
         }
     }
 
-    private void onError(Throwable e) {
+    void onError(Throwable e) {
         ApiClientError error = new ApiClientError();
         error.code = mAferoClient.getStatusCode(e);
 
