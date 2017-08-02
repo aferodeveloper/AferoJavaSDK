@@ -1,11 +1,17 @@
 Change Log
 ==========
 
-Version 0.6.1 *(2017-08-??)*
+Version 0.6.3 *(2017-08-??)*
 ----------------------------
 
  * `ConclaveDeviceEventSource.start` and `ConclaveDeviceEventSource.reconnect()` now return
     `Observable<ConclaveDeviceEventSource>`.
+
+
+Version 0.6.2 *(2017-08-2)*
+----------------------------
+
+ * Hotfix to use Hubby 1.0.495 for internal purposes.
 
 
 Version 0.6.1 *(2017-07-27)*
