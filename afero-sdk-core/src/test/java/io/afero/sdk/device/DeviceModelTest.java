@@ -9,11 +9,18 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.TreeMap;
+import java.util.Vector;
 
 import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AttributeValue;
+import io.afero.sdk.client.mock.MockAferoClient;
+import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.conclave.models.DeviceSync;
+import rx.Observable;
+import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DeviceModelTest extends AferoTest {
 
-    private static final String DEVICE_ID = "device-model-id";
+    private static final String DEVICE_ID = "deviceModel-model-id";
 
     public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) throws IOException {
         return new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
@@ -50,7 +57,7 @@ public class DeviceModelTest extends AferoTest {
 
         dm.update(ds);
 
-        assertEquals("device-model-id", dm.getId());
+        assertEquals("deviceModel-model-id", dm.getId());
         assertEquals("device-profile-id", dm.getProfileID());
         assertEquals("device-name", dm.getName());
 
@@ -93,4 +100,65 @@ public class DeviceModelTest extends AferoTest {
         String actual = av != null ? av.toString() : null;;
         assertEquals(expected, actual);
     }
+
+    @Test
+    public void testWriteAttribute() throws IOException {
+        makeWriteAttributeTester()
+                .deviceModelWriteAttribute(100, "32", AttributeValue.DataType.SINT8)
+                .deviceModelUpdate(1, 100, "32")
+
+                .verifyWriteResultStatus(100, WriteAttributeOperation.Result.Status.SUCCESS)
+                ;
+    }
+
+    private WriteAttributeTester makeWriteAttributeTester() throws IOException {
+        return new WriteAttributeTester();
+    }
+
+    private class WriteAttributeTester {
+        final ResourceLoader resourceLoader = new ResourceLoader("resources/");
+        final DeviceProfile deviceProfile;
+        final MockAferoClient aferoClient = new MockAferoClient();
+        final DeviceModel deviceModel;
+        TreeMap<Integer,WriteAttributeOperation.Result> writeResults = new TreeMap<>();
+
+        WriteAttributeTester() throws IOException {
+            deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
+            deviceModel = new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
+        }
+
+        DeviceProfile loadDeviceProfile(String path) throws IOException {
+            return resourceLoader.createObjectFromJSONResource(path, DeviceProfile.class);
+        }
+
+        WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
+            deviceModel.writeAttribute()
+                .put(attrId, new AttributeValue(value, type))
+                .commit()
+                .subscribe(new Action1<WriteAttributeOperation.Result>() {
+                    @Override
+                    public void call(WriteAttributeOperation.Result wr) {
+                        writeResults.put(wr.attributeId, wr);
+                    }
+                });
+
+            return this;
+        }
+
+        WriteAttributeTester deviceModelUpdate(int reqId, int attrId, String value) {
+            DeviceSync ds = new DeviceSync();
+            ds.requestId = reqId;
+            ds.attribute = new DeviceSync.AttributeEntry(attrId, value);
+            ds.setDeviceId(deviceModel.getId());
+            deviceModel.update(ds);
+
+            return this;
+        }
+
+        WriteAttributeTester verifyWriteResultStatus(int attrId, WriteAttributeOperation.Result.Status resultStatus) {
+            assertEquals(resultStatus, writeResults.get(attrId).status);
+            return this;
+        }
+    }
+
 }
