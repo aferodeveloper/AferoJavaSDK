@@ -103,11 +103,14 @@ public class DeviceModelTest extends AferoTest {
 
     @Test
     public void testWriteAttribute() throws IOException {
-        makeWriteAttributeTester()
-                .deviceModelWriteAttribute(100, "32", AttributeValue.DataType.SINT8)
-                .deviceModelUpdate(1, 100, "32")
+        final int ATTRIBUTE_ID = 100;
+        final String ATTRIBUTE_VALUE = "32";
 
-                .verifyWriteResultStatus(100, WriteAttributeOperation.Result.Status.SUCCESS)
+        makeWriteAttributeTester()
+                .deviceModelWriteAttribute(ATTRIBUTE_ID, ATTRIBUTE_VALUE, AttributeValue.DataType.SINT8)
+                .deviceModelUpdate(1, ATTRIBUTE_ID, ATTRIBUTE_VALUE)
+
+                .verifyWriteResultStatus(ATTRIBUTE_ID, WriteAttributeOperation.Result.Status.SUCCESS)
                 ;
     }
 
@@ -120,7 +123,7 @@ public class DeviceModelTest extends AferoTest {
         final DeviceProfile deviceProfile;
         final MockAferoClient aferoClient = new MockAferoClient();
         final DeviceModel deviceModel;
-        TreeMap<Integer,WriteAttributeOperation.Result> writeResults = new TreeMap<>();
+        TreeMap<Integer, WriteAttributeOperation.Result> writeResults = new TreeMap<>();
 
         WriteAttributeTester() throws IOException {
             deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
