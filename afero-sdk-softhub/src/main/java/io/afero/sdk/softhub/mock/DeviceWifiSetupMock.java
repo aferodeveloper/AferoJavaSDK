@@ -33,43 +33,65 @@ public class DeviceWifiSetupMock extends DeviceWifiSetup {
 
     private static WifiState mFinalWifiState = WifiState.PENDING;
 
-    protected Observable.OnSubscribe<SetupWifiCallback.SetupWifiState> getSendWifiCredentialOnSubscribe(final String ssid, final String password) {
-        return new Observable.OnSubscribe<SetupWifiCallback.SetupWifiState>() {
-            @Override
-            public void call(final Subscriber<? super SetupWifiCallback.SetupWifiState> subscriber) {
-                mCallback = new SendWifiCredentialCallback(subscriber, mDeviceModel, mAferoClient);
+    Observable.OnSubscribe<SetupWifiCallback.SetupWifiState> asyncWifiStateOnSubscribe = new Observable.OnSubscribe<SetupWifiCallback.SetupWifiState>() {
+        @Override
+        public void call(final Subscriber<? super SetupWifiCallback.SetupWifiState> subscriber) {
+            mCallback = new SendWifiCredentialCallback(subscriber, mDeviceModel, mAferoClient);
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.START.getValue());
-                        mSetupStateSubject.onNext(WifiState.PENDING);
-                        mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.AVAILABLE.getValue());
-                        mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.CONNECTED.getValue());
-                        mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.DONE.getValue());
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.START.getValue());
+                    mSetupStateSubject.onNext(WifiState.PENDING);
+                    mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.AVAILABLE.getValue());
+                    mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.CONNECTED.getValue());
+                    mCallback.setupState(HUB_ID, SetupWifiCallback.SetupWifiState.DONE.getValue());
 
-                        WifiState newState = WifiState.CONNECTED;
+                    WifiState newState = WifiState.CONNECTED;
 
-                        if (!mInUnitTest) {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-
-                            newState = WifiState.fromInt(mFinalWifiState.ordinal() + 1);
-                            if (newState == null) {
-                                newState = WifiState.ASSOCIATION_FAILED;
-                            }
-                            mFinalWifiState = newState;
+                    if (!mInUnitTest) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
 
-                        mSetupStateSubject.onNext(newState);
-
+                        newState = WifiState.fromInt(mFinalWifiState.ordinal() + 1);
+                        if (newState == null) {
+                            newState = WifiState.ASSOCIATION_FAILED;
+                        }
+                        mFinalWifiState = newState;
                     }
-                }).start();
-            }
-        };
+
+                    mSetupStateSubject.onNext(newState);
+
+                }
+            }).start();
+        }
+    };
+
+    Observable.OnSubscribe<SetupWifiCallback.SetupWifiState> syncWifiStateObsubscribe = new Observable.OnSubscribe<SetupWifiCallback.SetupWifiState>() {
+        @Override
+        public void call(final Subscriber<? super SetupWifiCallback.SetupWifiState> subscriber) {
+            mCallback = new SendWifiCredentialCallback(subscriber, mDeviceModel, mAferoClient);
+        }
+    };
+
+    Observable.OnSubscribe<SetupWifiCallback.SetupWifiState> wifiStateOnSubscribe = asyncWifiStateOnSubscribe;
+
+    public void useSyncWifiStateOnSubscribe() {
+        wifiStateOnSubscribe = syncWifiStateObsubscribe;
+    }
+
+    public void hubbyCallbackSetupState(SetupWifiCallback.SetupWifiState state) {
+        mCallback.setupState(HUB_ID, state.getValue());
+    }
+
+    protected void localViewingStateChange(boolean isViewing) {
+    }
+
+    protected Observable.OnSubscribe<SetupWifiCallback.SetupWifiState> getSendWifiCredentialOnSubscribe(final String ssid, final String password) {
+        return wifiStateOnSubscribe;
     }
 
     protected Observable.OnSubscribe<WifiSSIDEntry> getGetWifiListOnSubscribe() {

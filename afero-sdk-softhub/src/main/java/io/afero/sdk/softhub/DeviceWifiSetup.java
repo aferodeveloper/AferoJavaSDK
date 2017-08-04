@@ -109,12 +109,16 @@ public class DeviceWifiSetup {
                 }
             });
 
-        Hubby.localViewingStateChange(mDeviceModel.getId(), true);
+        localViewingStateChange(true);
     }
 
     public void stop() {
-        Hubby.localViewingStateChange(mDeviceModel.getId(), false);
+        localViewingStateChange(false);
         mDeviceUpdateSubscription = RxUtils.safeUnSubscribe(mDeviceUpdateSubscription);
+    }
+
+    protected void localViewingStateChange(boolean isViewing) {
+        Hubby.localViewingStateChange(mDeviceModel.getId(), isViewing);
     }
 
     public WifiState getSetupState() {
@@ -186,7 +190,7 @@ public class DeviceWifiSetup {
 
     private void updateSetupState() {
         WifiState ws = getStateFromAttribute(mSetupStateAttribute);
-        if (ws != null && !ws.equals(mSetupState)) {
+        if (ws != null) {
             mSetupState = ws;
             mSetupStateSubject.onNext(ws);
         }
@@ -194,7 +198,7 @@ public class DeviceWifiSetup {
 
     private void updateSteadyState() {
         WifiState ws = getStateFromAttribute(mSteadyStateAttribute);
-        if (ws != null && !ws.equals(mSteadyState)) {
+        if (ws != null) {
             mSteadyState = ws;
             mSteadyStateSubject.onNext(ws);
         }
