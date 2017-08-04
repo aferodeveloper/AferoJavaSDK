@@ -544,6 +544,27 @@ public final class DeviceModel implements ControlModel {
 
     // non-public ------------------------------------------------------------------
 
+    void onWriteStart(Collection<DeviceRequest> requests) {
+        mLastError = null;
+
+        for (DeviceRequest dr : requests) {
+            AttributeData data = mAttributes.get(dr.attrId);
+            DeviceProfile.Attribute attribute = getAttributeById(dr.attrId);
+            if (data != null && attribute != null) {
+                data.mPendingValue = new AttributeValue(dr.value, attribute.getDataType());
+                data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
+
+                startWaitingForUpdate();
+            }
+        }
+
+        mUpdateSubject.onNext(this);
+    }
+
+    void onWriteResult(WriteAttributeOperation.Result writeResult) {
+
+    }
+
     Observable<RequestResponse[]> postAttributeWriteRequests(Collection<DeviceRequest> requests) {
 
         mLastError = null;
