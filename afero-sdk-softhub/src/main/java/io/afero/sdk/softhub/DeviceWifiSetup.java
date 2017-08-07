@@ -5,6 +5,7 @@
 package io.afero.sdk.softhub;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
@@ -29,6 +30,8 @@ import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 
 public class DeviceWifiSetup {
+
+    private static final int TIMEOUT_DEFAULT = 60;
 
     protected final DeviceModel mDeviceModel;
     protected final AferoClient mAferoClient;
@@ -157,7 +160,8 @@ public class DeviceWifiSetup {
                 public Observable<WifiSSIDEntry> call(List<WifiSSIDEntry> wifiSSIDEntries) {
                     return Observable.from(wifiSSIDEntries);
                 }
-            });
+            })
+            .timeout(TIMEOUT_DEFAULT, TimeUnit.SECONDS);
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -165,10 +169,11 @@ public class DeviceWifiSetup {
         return Observable.create(new Action1<Emitter<SetupWifiState>>() {
                 @Override
                 public void call(Emitter<SetupWifiState> wifiStateEmitter) {
-                        SendWifiCredentialCallback cb = new SendWifiCredentialCallback(wifiStateEmitter, mDeviceModel, mAferoClient);
-                        mWifiSetupImpl.sendWifiCredentialToHub(mDeviceModel.getId(), ssid, password, cb);
+                    SendWifiCredentialCallback cb = new SendWifiCredentialCallback(wifiStateEmitter, mDeviceModel, mAferoClient);
+                    mWifiSetupImpl.sendWifiCredentialToHub(mDeviceModel.getId(), ssid, password, cb);
                 }
-            }, Emitter.BackpressureMode.BUFFER);
+            }, Emitter.BackpressureMode.BUFFER)
+            .timeout(TIMEOUT_DEFAULT, TimeUnit.SECONDS);
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -219,7 +224,7 @@ public class DeviceWifiSetup {
 
     private void updateSetupState() {
         WifiState ws = getStateFromAttribute(mSetupStateAttribute);
-        if (ws != null && !ws.equals(mSetupState)) {
+        if (ws != null) {
             mSetupState = ws;
             mSetupStateSubject.onNext(ws);
         }
@@ -227,7 +232,7 @@ public class DeviceWifiSetup {
 
     private void updateSteadyState() {
         WifiState ws = getStateFromAttribute(mSteadyStateAttribute);
-        if (ws != null && !ws.equals(mSteadyState)) {
+        if (ws != null) {
             mSteadyState = ws;
             mSteadyStateSubject.onNext(ws);
         }

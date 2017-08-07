@@ -12,10 +12,14 @@ import org.robolectric.annotation.Config;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.MockDeviceEventSource;
+import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
+import io.afero.sdk.device.DeviceProfile;
+import io.kiban.hubby.Hubby;
 import io.kiban.hubby.SetupWifiCallback;
 import io.kiban.hubby.WifiSSIDEntry;
 import rx.Observer;
@@ -32,7 +36,13 @@ public class DeviceWifiSetupTest {
     @Test
     public void testSendWifiCredential() throws Exception {
         createTester()
+                .deviceWifiSetupState(DeviceWifiSetup.WifiState.NOT_CONNECTED)
+
+                .startWifiSetup()
                 .sendWifiCredential("ssid", "password")
+
+                .deviceWifiSetupState(DeviceWifiSetup.WifiState.CONNECTED)
+
                 .verifySetupWifiState(SetupWifiCallback.SetupWifiState.DONE)
                 .verifySendWifiCredsNoError()
                 .verifySendWifiCredsComplete()
@@ -42,12 +52,33 @@ public class DeviceWifiSetupTest {
     @Test
     public void testGetWifiSSIDList() throws Exception {
         createTester()
+                .startWifiSetup()
                 .getWifiSSIDList()
+                .getWifiListCallbackSendList()
+
                 .verifyGetWifiSSIDListSize(5)
                 .verifyGetWifiSSIDListNoError()
                 .verifyGetWifiSSIDListComplete()
                 ;
     }
+
+    //  See https://kibanlabs.atlassian.net/browse/ANDROID-1176
+    @Test
+    public void testSendWifiCredential_ANDROID_1176() throws Exception {
+        createTester()
+                .deviceWifiSetupState(DeviceWifiSetup.WifiState.CONNECTED)
+
+                .startWifiSetup()
+                .sendWifiCredential("ssid", "password")
+
+                .deviceWifiSetupState(DeviceWifiSetup.WifiState.CONNECTED)
+
+                .verifySetupWifiState(SetupWifiCallback.SetupWifiState.DONE)
+                .verifyWifiSetupState(DeviceWifiSetup.WifiState.CONNECTED)
+                .verifySendWifiCredsComplete()
+        ;
+    }
+
 
     private static DeviceWifiSetupTester createTester() {
         return new DeviceWifiSetupTester();
@@ -55,29 +86,62 @@ public class DeviceWifiSetupTest {
 
     private static class DeviceWifiSetupTester {
 
+        final MockWifiSetupImpl wifiSetupImpl = new MockWifiSetupImpl();
+        final MockAferoClient aferoClient = new MockAferoClient();
+        final MockDeviceEventSource deviceEventSource = new MockDeviceEventSource();
+        final DeviceCollection deviceCollection = new DeviceCollection(deviceEventSource, aferoClient);
         final DeviceWifiSetup wifiSetup;
+
         SendWifiCredsObserver sendWifiCredsObserver = new SendWifiCredsObserver();
         GetWifiSSIDListObserver wifiSSIDListObserver = new GetWifiSSIDListObserver();
 
         DeviceWifiSetupTester() {
-            wifiSetup = new DeviceWifiSetup(new MockWifiSetup(), createDeviceModel(), new MockAferoClient());
+            deviceCollection.start().toBlocking().subscribe();
+            wifiSetup = new DeviceWifiSetup(wifiSetupImpl, createDeviceModel(), aferoClient);
+        }
+
+        DeviceWifiSetupTester startWifiSetup() {
+            wifiSetup.start();
+            return this;
         }
 
         DeviceWifiSetupTester sendWifiCredential(String ssid, String password) {
-
             wifiSetup.sendWifiCredential("ssid", "password")
-                    .toBlocking()
                     .subscribe(sendWifiCredsObserver);
+
+            wifiSetupCallback(SetupWifiCallback.SetupWifiState.START);
+            wifiSetupCallback(SetupWifiCallback.SetupWifiState.AVAILABLE);
+            wifiSetupCallback(SetupWifiCallback.SetupWifiState.CONNECTED);
+            wifiSetupCallback(SetupWifiCallback.SetupWifiState.DONE);
 
             return this;
         }
 
         DeviceWifiSetupTester getWifiSSIDList() {
-
             wifiSetup.getWifiSSIDList()
-                    .toBlocking()
                     .subscribe(wifiSSIDListObserver);
 
+            return this;
+        }
+
+        DeviceWifiSetupTester wifiSetupCallback(SetupWifiCallback.SetupWifiState state) {
+            wifiSetupImpl.hubbySetupCallback(state);
+            return this;
+        }
+
+        DeviceWifiSetupTester getWifiListCallbackSendList() {
+            wifiSetupImpl.hubbyWifiListCallbackSendList();
+            return this;
+        }
+
+        DeviceWifiSetupTester deviceWifiSetupState(DeviceWifiSetup.WifiState wifiState) {
+            DeviceModel deviceModel = wifiSetup.getDeviceModel();
+
+            DeviceSync ds = new DeviceSync();
+            ds.setDeviceId(deviceModel.getId());
+            ds.attribute = new DeviceSync.AttributeEntry(Hubby.WIFI_SETUP_STATE_ATTRIBUTE, Integer.toString(wifiState.ordinal()));
+
+            deviceEventSource.putAttributeChanges(ds);
             return this;
         }
 
@@ -110,9 +174,39 @@ public class DeviceWifiSetupTest {
             assertTrue(wifiSSIDListObserver.onCompleteCalled);
             return this;
         }
+
+        DeviceWifiSetupTester verifyWifiSetupState(DeviceWifiSetup.WifiState wifiState) {
+            DeviceProfile.Attribute wifiSetupStateAttribute = wifiSetup.getDeviceModel().getAttributeById(Hubby.WIFI_SETUP_STATE_ATTRIBUTE);
+            AttributeValue value = wifiSetup.getDeviceModel().getAttributeCurrentValue(wifiSetupStateAttribute);
+            assertEquals(Integer.toString(wifiState.ordinal()), value.toString());
+            return this;
+        }
+
+        private DeviceModel createDeviceModel() {
+            final DeviceModel[] deviceModelResult = new DeviceModel[1];
+            deviceCollection.addDevice("wifiSetupDevice", false)
+                    .toBlocking()
+                    .subscribe(new Action1<DeviceModel>() {
+                        @Override
+                        public void call(DeviceModel deviceModel) {
+                            deviceModelResult[0] = deviceModel;
+                        }
+                    }, new Action1<Throwable>() {
+                        @Override
+                        public void call(Throwable throwable) {
+                            throwable.printStackTrace();
+                        }
+                    });
+
+            return deviceModelResult[0];
+        }
     }
 
-    private static class MockWifiSetup implements DeviceWifiSetup.WifiSetupImpl {
+    private static class MockWifiSetupImpl implements DeviceWifiSetup.WifiSetupImpl {
+        private String deviceId;
+        private SetupWifiCallback setupWifiCallback;
+        private DeviceWifiSetup.GetWifiListCallback getWifiListCallback;
+
         @Override
         public void localViewingStateChange(String deviceId, boolean state) {
 
@@ -120,29 +214,8 @@ public class DeviceWifiSetupTest {
 
         @Override
         public void getWifiSSIDListFromHub(final String deviceId, final DeviceWifiSetup.GetWifiListCallback cb) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.START.getValue());
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.AVAILABLE.getValue());
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.CONNECTED.getValue());
-
-                    WifiSSIDEntry[] entries = {
-                            new WifiSSIDEntry("One", 55, true, false),
-                            new WifiSSIDEntry("Two", 55, true, false),
-                            new WifiSSIDEntry("Three", 55, true, false),
-                            new WifiSSIDEntry("Four", 55, true, false),
-                            new WifiSSIDEntry("Five", 55, true, false)
-                    };
-                    ArrayList<WifiSSIDEntry> list = new ArrayList<>(Arrays.asList(entries));
-
-                    cb.wifiListResult(deviceId, list);
-
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.DONE.getValue());
-
-                }
-            }).start();
-
+            this.deviceId = deviceId;
+            getWifiListCallback = cb;
         }
 
         @Override
@@ -150,17 +223,26 @@ public class DeviceWifiSetupTest {
 
         }
 
+        void hubbySetupCallback(SetupWifiCallback.SetupWifiState state) {
+            setupWifiCallback.setupState(deviceId, state.getValue());
+        }
+
+        void hubbyWifiListCallbackSendList() {
+            WifiSSIDEntry[] entries = {
+                    new WifiSSIDEntry("One", 55, true, false),
+                    new WifiSSIDEntry("Two", 55, true, false),
+                    new WifiSSIDEntry("Three", 55, true, false),
+                    new WifiSSIDEntry("Four", 55, true, false),
+                    new WifiSSIDEntry("Five", 55, true, false)
+            };
+
+            getWifiListCallback.wifiListResult(deviceId, new ArrayList<>(Arrays.asList(entries)));
+        }
+
         @Override
-        public void sendWifiCredentialToHub(final String deviceId, String ssid, String password, final SetupWifiCallback cb) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.START.getValue());
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.AVAILABLE.getValue());
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.CONNECTED.getValue());
-                    cb.setupState(deviceId, SetupWifiCallback.SetupWifiState.DONE.getValue());
-                }
-            }).start();
+        public void sendWifiCredentialToHub(String deviceId, String ssid, String password, SetupWifiCallback cb) {
+            this.deviceId = deviceId;
+            setupWifiCallback = cb;
         }
 
         @Override
@@ -211,31 +293,6 @@ public class DeviceWifiSetupTest {
         public void onNext(WifiSSIDEntry we) {
             ssidList.add(we);
         }
-    }
-
-    private static DeviceCollection makeDeviceCollection() {
-        return new DeviceCollection(new MockDeviceEventSource(), new MockAferoClient());
-    }
-
-    public static DeviceModel createDeviceModel() {
-        DeviceCollection deviceCollection = makeDeviceCollection();
-        deviceCollection.start().toBlocking().subscribe();
-        final DeviceModel[] deviceModelResult = new DeviceModel[1];
-        deviceCollection.addDevice("wifiSetupDevice", false)
-                .toBlocking()
-                .subscribe(new Action1<DeviceModel>() {
-                    @Override
-                    public void call(DeviceModel deviceModel) {
-                        deviceModelResult[0] = deviceModel;
-                    }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
-
-        return deviceModelResult[0];
     }
 
 }
