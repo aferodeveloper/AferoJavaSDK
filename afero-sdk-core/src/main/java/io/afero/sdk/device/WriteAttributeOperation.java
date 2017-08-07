@@ -4,6 +4,7 @@ import java.lang.ref.WeakReference;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
+import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AferoError;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.DeviceRequest;
@@ -19,11 +20,17 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
 
+/**
+ * The WriteAttributeOperation class provides a simple interface to writing {@link DeviceModel} attributes.
+ */
 public final class WriteAttributeOperation {
 
+    private static final int WRITE_ATTRIBUTE_RETRY_COUNT = 4;
     private static final long TIMEOUT_ROUND_TRIP = 30;
+    private static final int HTTP_LOCKED = 423; // https://tools.ietf.org/html/rfc4918#section-11.3
 
     private final WeakReference<DeviceModel> mDeviceModelRef;
+    private final AferoClient mAferoClient;
     private final TreeMap<Integer, DeviceRequest> mWriteRequests = new TreeMap<>();
     private final TreeMap<Integer, DeviceRequestResponsePair> mPendingResponses = new TreeMap<>();
 
@@ -31,6 +38,9 @@ public final class WriteAttributeOperation {
     private Subscription mDeviceSyncSubscription;
     private Subscription mDeviceErrorSubscription;
 
+    /**
+     * Class that represents the final status of a write to a particular device attribute.
+     */
     public static final class Result {
 
         public enum Status {
@@ -40,28 +50,48 @@ public final class WriteAttributeOperation {
 
         public final int attributeId;
         public final Status status;
-        private final long timestampMs;
+        public final long timestampMs;
 
-        private Result(int attrId, RequestResponse r) {
+        private Result(int attrId, RequestResponse r, Status s) {
             attributeId = attrId;
+            status = s != null ? s : r.isSuccess() ? Status.SUCCESS : Status.FAILURE;
             timestampMs = r.timestampMs;
-            status = r.isSuccess() ? Status.SUCCESS : Status.FAILURE;
         }
     }
 
-    WriteAttributeOperation(DeviceModel deviceModel) {
+    /**
+     * @param deviceModel {@link DeviceModel} on which attributes will be written
+     * @param aferoClient {@link AferoClient} to use for cloud API calls
+     */
+    WriteAttributeOperation(DeviceModel deviceModel, AferoClient aferoClient) {
         mDeviceModelRef = new WeakReference<>(deviceModel);
+        mAferoClient = aferoClient;
     }
 
     private WriteAttributeOperation() {
         mDeviceModelRef = null;
+        mAferoClient = null;
     }
 
+    /**
+     * Adds an attribute value to be written.
+     *
+     * @param attrId Id of the attribute
+     * @param value {@link AttributeValue} to write to the specified attribute
+     * @return this WriteAttributeOperation instance
+     */
     public WriteAttributeOperation put(int attrId, AttributeValue value) {
         mWriteRequests.put(attrId, new DeviceRequest(attrId, value.toString()));
         return this;
     }
 
+    /**
+     * Starts execution of the write operation.
+     *
+     * @return {@link Observable} the emits a {@link Result} for each attribute written. A result is
+     *          emitted when the device acknowledges that the attribute has been changed, or an
+     *          error has occurred in transit.
+     */
     public Observable<Result> commit() {
 
         if (mWriteRequests.isEmpty()) {
@@ -74,7 +104,8 @@ public final class WriteAttributeOperation {
         }
 
         // see http://wiki.afero.io/display/CD/Batch+Attribute+Requests
-        return deviceModel.postAttributeWriteRequests(mWriteRequests.values())
+        DeviceRequest[] reqArray = mWriteRequests.values().toArray(new DeviceRequest[mWriteRequests.size()]);
+        return mAferoClient.postBatchAttributeWrite(deviceModel, reqArray, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
             .flatMap(new Func1<RequestResponse[], Observable<Result>>() {
                 @Override
                 public Observable<Result> call(RequestResponse[] requestResponses) {
@@ -153,7 +184,7 @@ public final class WriteAttributeOperation {
         return new Func1<DeviceRequestResponsePair, Result>() {
             @Override
             public Result call(DeviceRequestResponsePair drrp) {
-                return new Result(drrp.deviceRequest.attrId, drrp.requestResponse);
+                return new Result(drrp.deviceRequest.attrId, drrp.requestResponse, null);
             }
         };
     }
@@ -172,7 +203,7 @@ public final class WriteAttributeOperation {
                         @Override
                         public void call(DeviceSync deviceSync) {
                             if (deviceSync.hasRequestId()) {
-                                emitResult(deviceSync.requestId);
+                                emitResult(deviceSync.requestId, Result.Status.SUCCESS);
                             }
                         }
                     });
@@ -183,7 +214,7 @@ public final class WriteAttributeOperation {
                         public void call(AferoError error) {
                             DeviceRequestResponsePair drrp = getResponseFromError(error);
                             if (drrp != null) {
-                                emitResult(drrp.requestResponse.requestId);
+                                emitResult(drrp.requestResponse.requestId, Result.Status.FAILURE);
                             }
                         }
                     });
@@ -201,7 +232,7 @@ public final class WriteAttributeOperation {
         };
     }
 
-    private void emitResult(int requestId) {
+    private void emitResult(int requestId, Result.Status status) {
         if (mEmitter == null) {
             return;
         }
@@ -209,7 +240,7 @@ public final class WriteAttributeOperation {
         // if this deviceSync matches one of our requestIds, emit it
         DeviceRequestResponsePair drrp = mPendingResponses.remove(requestId);
         if (drrp != null) {
-            mEmitter.onNext(new Result(drrp.deviceRequest.attrId, drrp.requestResponse));
+            mEmitter.onNext(new Result(drrp.deviceRequest.attrId, drrp.requestResponse, status));
         }
 
         // no more responses left means we're done
