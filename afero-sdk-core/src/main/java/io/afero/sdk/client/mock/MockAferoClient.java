@@ -27,6 +27,7 @@ public class MockAferoClient implements AferoClient {
     private final ResourceLoader mLoader;
     private DeviceAssociateResponse mDeviceAssociateResponse;
     private String mFileNameGetDevices = "getDevices.json";
+    private Observable<RequestResponse[]> postBatchAttributeWriteResponse;
 
     public MockAferoClient() {
         mLoader = new ResourceLoader();
@@ -44,15 +45,20 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
-        RequestResponse[] response = new RequestResponse[body.length];
-        for (int i = 0; i < response.length; ++i) {
-            RequestResponse rr = new RequestResponse();
-            rr.requestId = i + 1;
-            rr.status = RequestResponse.STATUS_SUCCESS;
-            rr.timestampMs = System.currentTimeMillis();
-            response[i] = rr;
+
+        if (postBatchAttributeWriteResponse == null) {
+            RequestResponse[] response = new RequestResponse[body.length];
+            for (int i = 0; i < response.length; ++i) {
+                RequestResponse rr = new RequestResponse();
+                rr.requestId = i + 1;
+                rr.status = RequestResponse.STATUS_SUCCESS;
+                rr.timestampMs = System.currentTimeMillis();
+                response[i] = rr;
+            }
+            return Observable.just(response);
         }
-        return Observable.just(response);
+
+        return postBatchAttributeWriteResponse;
     }
 
     @Override
@@ -158,5 +164,9 @@ public class MockAferoClient implements AferoClient {
 
     public void setFileGetDevices(String file) {
         mFileNameGetDevices = file;
+    }
+
+    public void setPostBatchAttributeWriteResponse(Observable<RequestResponse[]> response) {
+        postBatchAttributeWriteResponse = response;
     }
 }
