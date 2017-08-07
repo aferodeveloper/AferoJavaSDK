@@ -365,7 +365,7 @@ public final class DeviceModel implements ControlModel {
     }
 
     public WriteAttributeOperation writeAttribute() {
-        return new WriteAttributeOperation(this);
+        return new WriteAttributeOperation(this, mAferoClient);
     }
 
     public void writeAttribute(DeviceProfile.Attribute attribute, AttributeValue value) {
@@ -562,7 +562,8 @@ public final class DeviceModel implements ControlModel {
     }
 
     void onWriteResult(WriteAttributeOperation.Result writeResult) {
-
+        // as results come in cancel the timers on corresponding attributes
+        // or let existing logic in update handle it?
     }
 
     Observable<RequestResponse[]> postAttributeWriteRequests(Collection<DeviceRequest> requests) {
