@@ -16,6 +16,7 @@ import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
+import io.afero.sdk.device.WriteAttributeOperation;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
@@ -152,7 +153,7 @@ public class OfflineScheduler {
     }
 
     public synchronized void writeToDevice() {
-        ArrayList<DeviceRequest> req = new ArrayList<>();
+        WriteAttributeOperation writer = mDeviceModel.writeAttribute();
 
         for (int i = 0; i < mEventMaxCount; ++i) {
             final int onAttrId = getEventIdAtIndex(i);
@@ -164,14 +165,15 @@ public class OfflineScheduler {
                 AttributeValue onValue = onEvent != null ? makeAttributeValue(onEvent) : null;
 
                 if (hasAttributeChanged(onAttribute, onValue)) {
-                    req.add(new DeviceRequest(onAttrId, onValue != null ? onValue.toString() : OfflineScheduleEvent.ZERO_DATA));
+                    writer.put(onAttrId, new AttributeValue(
+                            onValue != null ? onValue.toString() : OfflineScheduleEvent.ZERO_DATA,
+                            onAttribute.getDataType()));
                 }
             }
         }
 
-        if (!req.isEmpty()) {
-            mDeviceModel.writeModelValues(req)
-                .subscribe(new RxUtils.IgnoreResponseObserver<>());
+        if (!writer.isEmpty()) {
+            writer.commit().subscribe(new RxUtils.IgnoreResponseObserver<>());
         }
     }
 
