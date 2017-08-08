@@ -86,6 +86,13 @@ public final class WriteAttributeOperation {
     }
 
     /**
+     * @return {@code true} if this WriteAttributeOperation contains no attributes; false otherwise.
+     */
+    public boolean isEmpty() {
+        return mWriteRequests.isEmpty();
+    }
+
+    /**
      * Starts execution of the write operation.
      *
      * @return {@link Observable} the emits a {@link Result} for each attribute written. A result is
