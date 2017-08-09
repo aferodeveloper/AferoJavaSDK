@@ -8,16 +8,15 @@ import android.util.Log;
 
 import io.afero.sdk.log.AfLog;
 
+
 public class AndroidLog implements AfLog.Impl {
 
-    private String mTag = "";
-
-    public AndroidLog(String tag) {
-        setTag(tag);
+    public AndroidLog() {
+        this("");
     }
 
-    public void setTag(String tag) {
-        mTag = tag;
+    public AndroidLog(String tag) {
+        AfLog.setTag(tag);
     }
 
     @Override
@@ -36,28 +35,33 @@ public class AndroidLog implements AfLog.Impl {
     }
 
     @Override
-    public void i(String s) {
-        Log.i(mTag, s);
+    public void v(String s) {
+        Log.v(AfLog.getTag(), s);
     }
 
     @Override
     public void d(String s) {
-        Log.d(mTag, s);
+        Log.d(AfLog.getTag(), s);
+    }
+
+    @Override
+    public void i(String s) {
+        Log.i(AfLog.getTag(), s);
     }
 
     @Override
     public void w(String s) {
-        Log.w(mTag, s);
+        Log.w(AfLog.getTag(), s);
     }
 
     @Override
     public void e(String s) {
-        Log.e(mTag, s);
+        Log.e(AfLog.getTag(), s);
     }
 
     @Override
     public void e(Throwable t) {
-        Log.e(mTag, t.getMessage());
+        Log.e(AfLog.getTag(), t.getMessage());
         t.printStackTrace();
     }
 

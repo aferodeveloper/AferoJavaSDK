@@ -6,6 +6,7 @@ package io.afero.sdk.device;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -498,7 +499,7 @@ public class DeviceCollection {
                                 return;
                             }
 
-                            switch (im.kind.toLowerCase()) {
+                            switch (im.kind.toLowerCase(Locale.ROOT)) {
                                 case "profiles":
                                     String profileId = im.json.get("profileId").asText();
                                     updateDeviceProfile(deviceModel, profileId);

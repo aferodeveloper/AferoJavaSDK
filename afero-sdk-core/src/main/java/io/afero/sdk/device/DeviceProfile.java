@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -114,7 +115,7 @@ public class DeviceProfile {
         @JsonProperty
         public void setDataType(String dataTypeString) {
             try {
-                mDataType = AttributeValue.DataType.valueOf(dataTypeString.toUpperCase());
+                mDataType = AttributeValue.DataType.valueOf(dataTypeString.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e){
                 AfLog.e(e);
             }
@@ -982,7 +983,7 @@ public class DeviceProfile {
 
     @JsonIgnore
     public Attribute findAttributeWithSemanticType(String semanticType) {
-        semanticType = semanticType.toLowerCase();
+        semanticType = semanticType.toLowerCase(Locale.ROOT);
 
         for (DeviceProfile.Service service : getServices()) {
             for (Attribute attribute : service.getAttributes()) {

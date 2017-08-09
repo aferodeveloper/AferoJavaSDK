@@ -7,6 +7,7 @@ package io.afero.sdk.device;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Locale;
 import java.util.Map;
 
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
@@ -226,7 +227,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
 
     private void onNextConclave(JsonNode node) {
         Map.Entry<String,JsonNode> entry = node.fields().next();
-        String key = entry.getKey().toLowerCase();
+        String key = entry.getKey().toLowerCase(Locale.ROOT);
 
         if (key.equals("public") || key.equals("private")) {
             onMessage(entry.getValue());
@@ -269,7 +270,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
 
     private void onMessage(JsonNode node) {
         try {
-            String event = node.get(KEY_EVENT).asText().toLowerCase();
+            String event = node.get(KEY_EVENT).asText().toLowerCase(Locale.ROOT);
             JsonNode data = node.get(KEY_DATA);
             final ObjectMapper mapper = JSONUtils.getObjectMapper();
 

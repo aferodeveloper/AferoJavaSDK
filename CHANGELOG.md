@@ -4,15 +4,24 @@ Change Log
 Version 0.6.3 *(2017-08-??)*
 ----------------------------
 
+ * Changed `afero-sdk-softhub` build to embed hubby library within the softhub .aar. This
+   means apps no longer need to reference hubby in their dependencies and eliminates any
+   possibility of a version mismatch between the SDK and apps.
+ * New: AfLog now support the notion of `FilterLevel` so the volume of logging output can
+   be managed.
+ * New: `DeviceModel.writeAttribute()` call replaces all variants of `writeModelValue()`,
+   which have now been deprecated.
+ * Fix: `DeviceWifiSetup` will no longer hang if the device was already connected, and wifi
+   setup state doesn't change.
+ * JavaDoc added for `DeviceModel`.
+ * Refactored parts of `ConclaveClient` and `DeviceWifiSetup` to remove deprecated RxJava calls.
  * `ConclaveDeviceEventSource.start` and `ConclaveDeviceEventSource.reconnect()` now return
     `Observable<ConclaveDeviceEventSource>`.
-
 
 Version 0.6.2 *(2017-08-2)*
 ----------------------------
 
  * Hotfix to use Hubby 1.0.495 for internal purposes.
-
 
 Version 0.6.1 *(2017-07-27)*
 ----------------------------

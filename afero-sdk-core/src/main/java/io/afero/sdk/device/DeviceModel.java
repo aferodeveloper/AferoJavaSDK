@@ -182,43 +182,64 @@ public final class DeviceModel implements ControlModel {
 
     /**
      * Sets the friendly name for this device. Sets only the local field, does not affect Afero Cloud.
+     *
      * @param name String containing friendly name.
      */
     public void setName(String name) {
         mName = name;
     }
 
+    @Deprecated
     @Override
     @JsonIgnore
     public void setAvailable(boolean available) {
         // not used
     }
 
+    /**
+     * @return {@code true} if the device is currently
+     */
     @JsonProperty
     public boolean isAvailable() {
         return mAvailableState == AvailableState.AVAILABLE;
     }
 
+    /**
+     * @return {@code true} if the device is a non-physical cloud-based instance
+     */
     @JsonProperty
     public boolean isVirtual() {
         return mIsVirtual;
     }
 
+    /**
+     * @return {@code true} if the device is a development version such as Modulo-1 or Modulo-2
+     */
     @JsonProperty
     public boolean isDeveloperDevice() {
         return mIsDeveloperDevice;
     }
 
+    /**
+     * @return integer represent the signal strength of the device's active wireless connection.
+     */
     @JsonProperty
     public int getRSSI() {
         return mRSSI;
     }
 
+    /**
+     * @return {@code true} if the device has completed the secure handshake with the Afero Cloud.
+     */
     @JsonProperty
     public boolean isLinked() {
         return mIsLinked;
     }
 
+    /**
+     * @return {@code true} if this device communicates directly with the Afero Cloud; {@code false}
+     * if the device uses a bridge.
+     */
     @JsonProperty
     public boolean isDirect() { return mDirect; }
 
@@ -368,6 +389,17 @@ public final class DeviceModel implements ControlModel {
         return new WriteAttributeOperation(this, mAferoClient);
     }
 
+    public AttributeValue getAttributeCurrentValue(DeviceProfile.Attribute attribute) {
+        AttributeData ad = getAttributeData(attribute);
+        return ad != null ? ad.mCurrentValue : null;
+    }
+
+    public AttributeValue getAttributePendingValue(DeviceProfile.Attribute attribute) {
+        AttributeData ad = getAttributeData(attribute);
+        return ad != null ? ad.mPendingValue : null;
+    }
+
+    @Deprecated
     public void writeAttribute(DeviceProfile.Attribute attribute, AttributeValue value) {
 
         if (mAferoClient == null) return; // for unit tests
@@ -390,46 +422,7 @@ public final class DeviceModel implements ControlModel {
         mUpdateSubject.onNext(this);
     }
 
-    public AttributeValue getAttributeCurrentValue(DeviceProfile.Attribute attribute) {
-        AttributeData ad = getAttributeData(attribute);
-        return ad != null ? ad.mCurrentValue : null;
-    }
-
-    public AttributeValue getAttributePendingValue(DeviceProfile.Attribute attribute) {
-        AttributeData ad = getAttributeData(attribute);
-        return ad != null ? ad.mPendingValue : null;
-    }
-
-    @JsonProperty("attributes")
-    public HashMap<Integer,AttributeDebug> getAttributeValues() {
-        HashMap<Integer,AttributeDebug> result = new HashMap<>();
-        for (Map.Entry<Integer, AttributeData> attrEntry : mAttributes.entrySet()) {
-            AttributeData data = attrEntry.getValue();
-            AttributeDebug ad = new AttributeDebug();
-            ad.current = data.mCurrentValue != null ? data.mCurrentValue.toString() : null;
-            ad.pending = data.mPendingValue != null ? data.mPendingValue.toString() : null;
-            result.put(attrEntry.getKey(), ad);
-        }
-        return result;
-    }
-
-    public String toJSONString() {
-        String result;
-
-        try {
-            result = "Device:\n";
-            result += JSONUtils.writeValueAsPrettyString(this);
-            result += "\n\nProfile:\n";
-            result += JSONUtils.writeValueAsPrettyString(getProfile());
-            result += "\n\nPresentation:\n";
-            result += JSONUtils.writeValueAsPrettyString(getPresentation());
-        } catch (JsonProcessingException e) {
-            result = e.getMessage();
-        }
-
-        return result;
-    }
-
+    @Deprecated
     @Override
     public void writeModelValue(DeviceProfile.Attribute attribute, BigDecimal newValue) {
         AttributeValue value = getAttributePendingValue(attribute);
@@ -442,6 +435,8 @@ public final class DeviceModel implements ControlModel {
             }
         }
     }
+
+    @Deprecated
     @Override
     public Observable<RequestResponse> writeModelValues(ArrayList<DeviceRequest> req) {
         return postAttributeWriteRequests(req)
@@ -453,6 +448,7 @@ public final class DeviceModel implements ControlModel {
             });
     }
 
+    @Deprecated
     @Override
     public void writeModelValue(DeviceProfile.Attribute attribute, AttributeValue value) {
         try {
@@ -462,16 +458,19 @@ public final class DeviceModel implements ControlModel {
         }
     }
 
+    @Deprecated
     @Override
     public AttributeValue readPendingValue(DeviceProfile.Attribute attribute) {
         return getAttributePendingValue(attribute);
     }
 
+    @Deprecated
     @Override
     public AttributeValue readCurrentValue(DeviceProfile.Attribute attribute) {
         return getAttributeCurrentValue(attribute);
     }
 
+    @Deprecated
     public boolean isRunning() {
         DeviceProfile.Presentation presentation = getPresentation();
         if (presentation != null) {
@@ -517,12 +516,35 @@ public final class DeviceModel implements ControlModel {
         return getTags().get(key);
     }
 
-    public void putSelectedGroupKey(String key) {
-        putTag(TAG_SELECTED_GROUP, key);
+    @JsonProperty("attributes")
+    public HashMap<Integer,AttributeDebug> getAttributeValues() {
+        HashMap<Integer,AttributeDebug> result = new HashMap<>();
+        for (Map.Entry<Integer, AttributeData> attrEntry : mAttributes.entrySet()) {
+            AttributeData data = attrEntry.getValue();
+            AttributeDebug ad = new AttributeDebug();
+            ad.current = data.mCurrentValue != null ? data.mCurrentValue.toString() : null;
+            ad.pending = data.mPendingValue != null ? data.mPendingValue.toString() : null;
+            result.put(attrEntry.getKey(), ad);
+        }
+        return result;
     }
 
-    public String getSelectedGroupKey() {
-        return getTag(TAG_SELECTED_GROUP);
+    @Override
+    public String toString() {
+        String result;
+
+        try {
+            result = "Device:\n";
+            result += JSONUtils.writeValueAsPrettyString(this);
+            result += "\n\nProfile:\n";
+            result += JSONUtils.writeValueAsPrettyString(getProfile());
+            result += "\n\nPresentation:\n";
+            result += JSONUtils.writeValueAsPrettyString(getPresentation());
+        } catch (JsonProcessingException e) {
+            result = e.getMessage();
+        }
+
+        return result;
     }
 
     @Override
