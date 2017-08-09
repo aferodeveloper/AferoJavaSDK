@@ -181,7 +181,10 @@ public class OfflineScheduler {
         DeviceProfile.Attribute attribute = mDeviceModel.getAttributeById(DeviceProfile.SCHEDULE_FLAGS_ATTRIBUTE_ID);
         if (attribute != null) {
             AttributeValue newValue = new AttributeValue(isOn ? "1" : "0", attribute.getDataType());
-            mDeviceModel.writeAttribute(attribute, newValue);
+            mDeviceModel.writeAttribute()
+                .put(attribute.getId(), newValue)
+                .commit()
+                .subscribe(new RxUtils.IgnoreResponseObserver<WriteAttributeOperation.Result>());
         }
     }
 
@@ -323,7 +326,10 @@ public class OfflineScheduler {
             if (isNewValueEmpty) {
                 newValue = mNullValue;
             }
-            mDeviceModel.writeAttribute(attribute, newValue);
+            mDeviceModel.writeAttribute()
+                .put(attribute.getId(), newValue)
+                .commit()
+                .subscribe(new RxUtils.IgnoreResponseObserver<WriteAttributeOperation.Result>());
             return true;
         }
 
