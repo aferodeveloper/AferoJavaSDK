@@ -7,9 +7,40 @@ package io.afero.sdk.log;
 public class AfLog {
 
     private static Impl mImpl = new JavaLog();
+    private static String mTag = "";
+    private static FilterLevel mFilterLevel = FilterLevel.VERBOSE;
+
+    public enum FilterLevel {
+        VERBOSE,
+        DEBUG,
+        INFO,
+        WARNING,
+        ERROR,
+        SILENT
+    };
 
     public static void init(AfLog.Impl impl) {
         mImpl = impl;
+        mTag = "";
+        mFilterLevel = FilterLevel.VERBOSE;
+    }
+
+    public static void setTag(String tag) {
+        mTag = tag;
+    }
+
+    public static String getTag() {
+        return mTag;
+    }
+
+    public static void setFilterLevel(FilterLevel level) {
+        if (level != null) {
+            mFilterLevel = level;
+        }
+    }
+
+    public static FilterLevel getFilterLevel() {
+        return mFilterLevel;
     }
 
     public static void setUserEmail(String email) {
@@ -24,24 +55,44 @@ public class AfLog {
         mImpl.setString(key, value);
     }
 
-    public static void i(String s) {
-        mImpl.i(s);
+    public static void v(String s) {
+        if (passesFilter(FilterLevel.VERBOSE)) {
+            mImpl.v(s);
+        }
     }
 
     public static void d(String s) {
-        mImpl.d(s);
+        if (passesFilter(FilterLevel.DEBUG)) {
+            mImpl.d(s);
+        }
+    }
+
+    public static void i(String s) {
+        if (passesFilter(FilterLevel.INFO)) {
+            mImpl.i(s);
+        }
     }
 
     public static void w(String s) {
-        mImpl.w(s);
+        if (passesFilter(FilterLevel.WARNING)) {
+            mImpl.w(s);
+        }
     }
 
     public static void e(String s) {
-        mImpl.e(s);
+        if (passesFilter(FilterLevel.ERROR)) {
+            mImpl.e(s);
+        }
     }
 
     public static void e(Throwable t) {
-        mImpl.e(t);
+        if (passesFilter(FilterLevel.ERROR)) {
+            mImpl.e(t);
+        }
+    }
+
+    private static boolean passesFilter(FilterLevel level) {
+        return mFilterLevel.compareTo(level) <= 0;
     }
 
     public static void content(String type) {
@@ -56,12 +107,17 @@ public class AfLog {
         mImpl.content(type, id, name);
     }
 
+    static Impl getImpl() {
+        return mImpl;
+    }
+
     public interface Impl {
         void setUserEmail(String email);
         void setUserId(String email);
         void setString(String key, String value);
-        void i(String s);
+        void v(String s);
         void d(String s);
+        void i(String s);
         void w(String s);
         void e(String s);
         void e(Throwable t);

@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.zip.DeflaterOutputStream;
@@ -304,7 +305,7 @@ public class ConclaveClient {
         try {
             ObjectMapper mapper = JSONUtils.getObjectMapper();
             Map.Entry<String,JsonNode> entry = node.fields().next();
-            String key = entry.getKey().toLowerCase();
+            String key = entry.getKey().toLowerCase(Locale.ROOT);
 
             if (key.equals("hello")) {
                 ConclaveMessage.HelloFields hello = mapper.treeToValue(node.get("hello"), ConclaveMessage.HelloFields.class);
