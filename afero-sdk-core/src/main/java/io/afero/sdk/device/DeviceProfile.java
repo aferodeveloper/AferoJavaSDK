@@ -507,7 +507,7 @@ public class DeviceProfile {
         }
     }
 
-    private static class CurrentAttributeValue implements DisplayRulesProcessor.Value {
+    private static class CurrentAttributeValue implements DisplayRulesProcessor.Value<DeviceModel> {
         Attribute mAttribute;
 
         CurrentAttributeValue(Attribute attribute) {
@@ -515,12 +515,12 @@ public class DeviceProfile {
         }
 
         @Override
-        public AttributeValue get(ControlModel model) {
-            return model.readPendingValue(mAttribute);
+        public AttributeValue get(DeviceModel model) {
+            return model.getAttributeCurrentValue(mAttribute);
         }
     }
 
-    private static class PendingAttributeValue implements DisplayRulesProcessor.Value {
+    private static class PendingAttributeValue implements DisplayRulesProcessor.Value<DeviceModel> {
         Attribute mAttribute;
 
         PendingAttributeValue(Attribute attribute) {
@@ -528,8 +528,8 @@ public class DeviceProfile {
         }
 
         @Override
-        public AttributeValue get(ControlModel model) {
-            return model.readPendingValue(mAttribute);
+        public AttributeValue get(DeviceModel model) {
+            return model.getAttributePendingValue(mAttribute);
         }
     }
 
@@ -537,19 +537,19 @@ public class DeviceProfile {
         public abstract DisplayRulesProcessor.Rule makeRule(Attribute attribute, String match, ApplyParams apply);
     }
 
-    private static class PendingValueRuleMaker extends RuleMaker {
+    private static class DevicePendingValueRuleMaker extends RuleMaker {
         @Override
         public DisplayRulesProcessor.Rule makeRule(Attribute attribute, String match, ApplyParams apply) {
             PendingAttributeValue value = new PendingAttributeValue(attribute);
-            return new DisplayRulesProcessor.Rule(value, match, apply);
+            return new DisplayRulesProcessor.Rule<>(value, match, apply);
         }
     }
 
-    public static class CurrentValueRuleMaker extends RuleMaker {
+    public static class DeviceCurrentValueRuleMaker extends RuleMaker {
         @Override
         public DisplayRulesProcessor.Rule makeRule(Attribute attribute, String match, ApplyParams apply) {
             CurrentAttributeValue value = new CurrentAttributeValue(attribute);
-            return new DisplayRulesProcessor.Rule(value, match, apply);
+            return new DisplayRulesProcessor.Rule<>(value, match, apply);
         }
     }
 
@@ -653,7 +653,7 @@ public class DeviceProfile {
         @JsonIgnore
         public DisplayRulesProcessor getDisplayRulesProcessor(DeviceProfile deviceProfile, String deviceId) {
             if (mDisplayRulesProcessor == null && mDisplayRules != null) {
-                mDisplayRulesProcessor = new DisplayRulesProcessor(createDisplayRules(mDisplayRules, deviceProfile, deviceId, null, new CurrentValueRuleMaker()));
+                mDisplayRulesProcessor = new DisplayRulesProcessor(createDisplayRules(mDisplayRules, deviceProfile, deviceId, null, new DeviceCurrentValueRuleMaker()));
             }
 
             return mDisplayRulesProcessor;
@@ -916,11 +916,11 @@ public class DeviceProfile {
         }
 
         @JsonProperty
-        public void setAttributeMap(TreeMap<String,Integer> map) {
+        public void setAttributeMap(Map<String,Integer> map) {
             mAttributeMap.putAll(map);
         }
 
-        public TreeMap<String,Integer> getAttributeMap() {
+        public Map<String,Integer> getAttributeMap() {
             return mAttributeMap;
         }
 
@@ -929,10 +929,14 @@ public class DeviceProfile {
             mDisplayRules = rules;
         }
 
+        public DeviceProfile.DisplayRule[] getDisplayRules() {
+            return mDisplayRules;
+        }
+
         @JsonIgnore
         public DisplayRulesProcessor getDisplayRulesProcessor(DeviceProfile deviceProfile, String deviceId, Attribute defaultAttribute) {
             if (mDisplayRulesProcessor == null && mDisplayRules != null) {
-                mDisplayRulesProcessor = new DisplayRulesProcessor(createDisplayRules(mDisplayRules, deviceProfile, deviceId, defaultAttribute, new PendingValueRuleMaker()));
+                mDisplayRulesProcessor = new DisplayRulesProcessor(createDisplayRules(mDisplayRules, deviceProfile, deviceId, defaultAttribute, new DevicePendingValueRuleMaker()));
             }
             return mDisplayRulesProcessor;
         }
