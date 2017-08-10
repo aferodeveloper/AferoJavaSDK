@@ -14,7 +14,7 @@ import java.util.Map;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.ApplyParams;
-import io.afero.sdk.device.ControlModel;
+import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.device.DisplayRulesProcessor;
 
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class DisplayRulesProcessorTest {
 
-    static class IntValue implements DisplayRulesProcessor.Value {
+    static class IntValue implements DisplayRulesProcessor.Value<DeviceModel> {
 
         AttributeValue mValue;
 
@@ -33,12 +33,12 @@ public class DisplayRulesProcessorTest {
         }
 
         @Override
-        public AttributeValue get(ControlModel model) {
+        public AttributeValue get(DeviceModel model) {
             return mValue;
         }
     }
 
-    private static DisplayRulesProcessor.Rule[] createRules(DeviceProfile.DisplayRule[] displayRules, DisplayRulesProcessor.Value value) {
+    private static DisplayRulesProcessor.Rule[] createRules(DeviceProfile.DisplayRule[] displayRules, DisplayRulesProcessor.Value<DeviceModel> value) {
         DisplayRulesProcessor.Rule[] rules = new DisplayRulesProcessor.Rule[displayRules.length];
         int i = 0;
 
@@ -46,7 +46,7 @@ public class DisplayRulesProcessorTest {
 
             ApplyParams apply = ApplyParams.create(rule.apply);
 
-            DisplayRulesProcessor.Rule newRule = new DisplayRulesProcessor.Rule(value, rule.match, apply);
+            DisplayRulesProcessor.Rule<DeviceModel> newRule = new DisplayRulesProcessor.Rule<>(value, rule.match, apply);
             rules[i] = newRule;
             ++i;
         }
@@ -67,7 +67,7 @@ public class DisplayRulesProcessorTest {
         result.put("zero", 0);
 
         DeviceProfile.DisplayRule[] rules = objectMapper.readValue(is, DeviceProfile.DisplayRule[].class);
-        DisplayRulesProcessor processor = new DisplayRulesProcessor(createRules(rules, value));
+        DisplayRulesProcessor<DeviceModel> processor = new DisplayRulesProcessor<>(createRules(rules, value));
 
         value.set(666);
         processor.process(result, null);
@@ -187,7 +187,7 @@ public class DisplayRulesProcessorTest {
         IntValue value = new IntValue();
         ApplyParams result = new ApplyParams();
         DeviceProfile.DisplayRule[] rules = objectMapper.readValue(is, DeviceProfile.DisplayRule[].class);
-        DisplayRulesProcessor processor = new DisplayRulesProcessor(createRules(rules, value));
+        DisplayRulesProcessor<DeviceModel> processor = new DisplayRulesProcessor<>(createRules(rules, value));
 
         value.set(0);
         processor.process(result, null);

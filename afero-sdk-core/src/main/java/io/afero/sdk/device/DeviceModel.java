@@ -49,7 +49,7 @@ import rx.subjects.PublishSubject;
  * This class manages the attribute state and events associated with a particular instance of an
  * Afero peripheral device.
  */
-public final class DeviceModel implements ControlModel {
+public final class DeviceModel {
 
     public static class ApiClientError implements AferoError {
         public int code;
@@ -106,8 +106,8 @@ public final class DeviceModel implements ControlModel {
     private final PublishSubject<DeviceSync> mDeviceSyncPostUpdateSubject = PublishSubject.create();
     private final PublishSubject<AferoError> mErrorSubject = PublishSubject.create();
     private final PublishSubject<DeviceModel> mProfileUpdateSubject = PublishSubject.create();
-    private final PublishSubject<ControlModel> mUpdateSubject = PublishSubject.create();
-    private final Observable<ControlModel> mUpdateObservable;
+    private final PublishSubject<DeviceModel> mUpdateSubject = PublishSubject.create();
+    private final Observable<DeviceModel> mUpdateObservable;
 
     private boolean mOTAInProgress;
     private int mOTAState;
@@ -190,7 +190,6 @@ public final class DeviceModel implements ControlModel {
     }
 
     @Deprecated
-    @Override
     @JsonIgnore
     public void setAvailable(boolean available) {
         // not used
@@ -298,19 +297,8 @@ public final class DeviceModel implements ControlModel {
     }
 
     @JsonIgnore
-    @Override
-    public rx.Observable<ControlModel> getUpdateObservable() {
+    public rx.Observable<DeviceModel> getUpdateObservable() {
         return mUpdateObservable;
-    }
-
-    @Override
-    public boolean enableDisplayRules() {
-        return true;
-    }
-
-    @Override
-    public boolean enableReadOnlyControls() {
-        return true;
     }
 
     @JsonIgnore
@@ -423,7 +411,6 @@ public final class DeviceModel implements ControlModel {
     }
 
     @Deprecated
-    @Override
     public void writeModelValue(DeviceProfile.Attribute attribute, BigDecimal newValue) {
         AttributeValue value = getAttributePendingValue(attribute);
         if (value != null) {
@@ -437,7 +424,6 @@ public final class DeviceModel implements ControlModel {
     }
 
     @Deprecated
-    @Override
     public Observable<RequestResponse> writeModelValues(ArrayList<DeviceRequest> req) {
         return postAttributeWriteRequests(req)
             .flatMap(new Func1<RequestResponse[], Observable<RequestResponse>>() {
@@ -449,7 +435,6 @@ public final class DeviceModel implements ControlModel {
     }
 
     @Deprecated
-    @Override
     public void writeModelValue(DeviceProfile.Attribute attribute, AttributeValue value) {
         try {
             writeAttribute(attribute, value);
@@ -459,13 +444,11 @@ public final class DeviceModel implements ControlModel {
     }
 
     @Deprecated
-    @Override
     public AttributeValue readPendingValue(DeviceProfile.Attribute attribute) {
         return getAttributePendingValue(attribute);
     }
 
     @Deprecated
-    @Override
     public AttributeValue readCurrentValue(DeviceProfile.Attribute attribute) {
         return getAttributeCurrentValue(attribute);
     }

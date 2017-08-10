@@ -11,7 +11,6 @@ import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.device.ControlModel;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.log.AfLog;
@@ -113,9 +112,9 @@ public class DeviceWifiSetup {
 
     public void start() {
         mDeviceUpdateSubscription = mDeviceModel.getUpdateObservable()
-            .subscribe(new Action1<ControlModel>() {
+            .subscribe(new Action1<DeviceModel>() {
                 @Override
-                public void call(ControlModel controlModel) {
+                public void call(DeviceModel d) {
                     updateSetupState();
                     updateSteadyState();
                 }
