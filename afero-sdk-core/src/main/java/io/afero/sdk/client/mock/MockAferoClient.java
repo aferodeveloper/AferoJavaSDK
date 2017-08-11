@@ -88,6 +88,11 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
+    public Observable<Location> putDeviceLocation(String deviceId, Location location) {
+        return Observable.just(location);
+    }
+
+    @Override
     public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
         return null;
     }

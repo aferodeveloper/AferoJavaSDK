@@ -29,6 +29,7 @@ import io.afero.sdk.client.afero.models.LocationState;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.RequestResponse;
 import io.afero.sdk.conclave.ConclaveMessage;
+import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceError;
 import io.afero.sdk.conclave.models.DeviceMute;
 import io.afero.sdk.conclave.models.DeviceSync;
@@ -41,6 +42,8 @@ import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
+import rx.functions.Action0;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
@@ -56,7 +59,7 @@ public final class DeviceModel {
         public String status;
     }
 
-    public enum State {
+    public enum UpdateState {
         NORMAL,
         WAITING_FOR_UPDATE,
         UPDATE_TIMED_OUT
@@ -102,7 +105,7 @@ public final class DeviceModel {
 
     private AvailableState mAvailableState = AvailableState.NONE;
 
-    private final PublishSubject<DeviceSync> mDeviceSyncUpdateSubject = PublishSubject.create();
+    private final PublishSubject<DeviceSync> mDeviceSyncPreUpdateSubject = PublishSubject.create();
     private final PublishSubject<DeviceSync> mDeviceSyncPostUpdateSubject = PublishSubject.create();
     private final PublishSubject<AferoError> mErrorSubject = PublishSubject.create();
     private final PublishSubject<DeviceModel> mProfileUpdateSubject = PublishSubject.create();
@@ -119,7 +122,7 @@ public final class DeviceModel {
     private boolean mIsVirtual;
     private final boolean mIsDeveloperDevice;
 
-    private LocationState mLocationState = new LocationState(LocationState.State.Invalid);
+    private LocationState mLocationState = new LocationState(LocationState.State.INVALID);
 
     private AferoError mLastError;
 
@@ -142,7 +145,7 @@ public final class DeviceModel {
     }
 
     /**
-     * @return Globally unique identifier for this device.
+     * @return globally unique identifier for this device.
      */
     @JsonProperty
     public String getId() {
@@ -150,7 +153,13 @@ public final class DeviceModel {
     }
 
     /**
-     * @return The friendly user-readable name of this device
+     * Get a friendly user-readable name for this device.
+     *
+     * @return String set via {@link #setName(String)},
+     * if null or empty returns {@link DeviceProfile.Presentation#getLabel()},
+     * if null or empty returns {@link DeviceProfile#getDeviceType()},
+     * if null or empty returns {@link #getProfileID()},
+     * if null returns empty string.
      */
     @JsonIgnore
     public String getName() {
@@ -242,115 +251,193 @@ public final class DeviceModel {
     @JsonProperty
     public boolean isDirect() { return mDirect; }
 
+    /**
+     * Get the location set for this device. This is optionally set via the Afero app when the
+     * device is associated with an account.
+     *
+     * @return {@link LocationState} attached to this device.
+     */
     @JsonIgnore
     public LocationState getLocationState() {
         return mLocationState;
     }
 
+    /**
+     * Calls the Afero Cloud API to set the location for this device.
+     *
+     * @return {@link Observable} that emits the {@link Location} attached to this device.
+     */
     @JsonIgnore
-    public void setLocation(LocationState locationState) {
-
-        if (locationState != null) {
-            mLocationState = locationState;
-            if (mLocationState.getState().equals(LocationState.State.Valid)) {
-                mUpdateSubject.onNext(this);
-            }
-        }
+    public Observable<Location> setLocation(Location location) {
+        return mAferoClient.putDeviceLocation(getId(), location)
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        setLocationState(new LocationState(LocationState.State.INVALID));
+                    }
+                })
+                .doOnNext(new Action1<Location>() {
+                    @Override
+                    public void call(Location location) {
+                        setLocationState(new LocationState(location));
+                    }
+                });
     }
 
+    /**
+     * @return String contained the ID of the {@link DeviceProfile} associated with this device.
+     */
     @JsonProperty
     public String getProfileID() {
         return mProfileId;
     }
 
-    @JsonIgnore
-    public void setProfile(DeviceProfile newProfile) {
-        DeviceProfile oldProfile = mProfile;
-        mProfile = newProfile;
-        mProfileId = newProfile.getId();
-
-        // ideally we could check the profile ids here, but we still can't
-        // tell if this is just a presentation update
-        if (oldProfile != newProfile) {
-            mProfileUpdateSubject.onNext(this);
-        }
-    }
-
+    /**
+     * @return {@link DeviceProfile} associated with this device.
+     */
     @JsonIgnore
     public DeviceProfile getProfile() {
         return mProfile;
     }
 
-    @JsonIgnore
-    public DeviceProfile.Attribute getPrimaryOperationAttribute() {
-        return mProfile != null ? mProfile.getPrimaryOperationAttribute(getId()) : null;
-    }
-
-    @JsonIgnore
-    public DeviceProfile.Attribute getAttributeById(int id) {
-        return mProfile != null ? mProfile.getAttributeById(id) : null;
-    }
-
+    /**
+     * @return {@link DeviceProfile.Presentation} associated with this device, or null if none exists.
+     */
     @JsonIgnore
     public DeviceProfile.Presentation getPresentation() {
         return mProfile != null ? mProfile.getPresentation(getId()) : null;
     }
 
+    /**
+     * @param id unique identifier of the desired Attribute.
+     * @return {@link DeviceProfile.Attribute} with the specifed id, or {@code null} no such Attribute was found.
+     */
+    @JsonIgnore
+    public DeviceProfile.Attribute getAttributeById(int id) {
+        return mProfile != null ? mProfile.getAttributeById(id) : null;
+    }
+
+    /**
+     * This "primary operation" concept is application defined. It can also be thought of as the "default" attribute.
+     *
+     * @return {@link DeviceProfile.Attribute} defined via <a href="https://developer.afero.io/docs/en/?target=Projects.html">Profile Editor</a>
+     * as the primary operation.
+     */
+    @JsonIgnore
+    public DeviceProfile.Attribute getPrimaryOperationAttribute() {
+        return mProfile != null ? mProfile.getPrimaryOperationAttribute(getId()) : null;
+    }
+
+    /**
+     * Gets an {@link Observable} that emits this DeviceModel whenever a change occurs in the
+     * connected state of the device, or the values of any of its {@link DeviceProfile.Attribute}s.
+     *
+     * @return {@link Observable}
+     */
     @JsonIgnore
     public rx.Observable<DeviceModel> getUpdateObservable() {
         return mUpdateObservable;
     }
 
+    /**
+     * Gets an {@link Observable} that emits a {@link DeviceSync} whenever this device receives
+     * one via the {@link DeviceEventSource}. {@link Observer#onNext(Object)} will be called *before*
+     * the DeviceModel is updated as a result of the DeviceSync event.
+     *
+     * @return {@link Observable}
+     */
     @JsonIgnore
-    public rx.Observable<DeviceSync> getDeviceSyncObservable() {
-        return mDeviceSyncUpdateSubject;
+    public rx.Observable<DeviceSync> getDeviceSyncPreUpdateObservable() {
+        return mDeviceSyncPreUpdateSubject;
     }
 
+    /**
+     * Gets an {@link Observable} that emits a {@link DeviceSync} whenever this device receives
+     * one via the {@link DeviceEventSource}. {@link Observer#onNext(Object)} will be called *after*
+     * the DeviceModel is updated as a result of the DeviceSync event.
+     *
+     * @return {@link Observable}
+     */
     @JsonIgnore
     public Observable<DeviceSync> getDeviceSyncPostUpdateObservable() {
         return mDeviceSyncPostUpdateSubject;
     }
 
+    /**
+     * Gets an {@link Observable} that emits a {@link AferoError} whenever this device receives
+     * one via the {@link DeviceEventSource}. The AferoError may be an instance of {@link DeviceError},
+     * {@link ApiClientError}, or {@link DeviceMute}.
+     *
+     * @return {@link Observable}
+     */
     @JsonIgnore
     public rx.Observable<AferoError> getErrorObservable() {
         return mErrorSubject.onBackpressureBuffer();
     }
 
+    /**
+     * Gets an {@link Observable} that emits this {@link DeviceModel} whenever the
+     * {@link DeviceProfile} is replaced as a result of an OTA update. This usually occurs during
+     * development while using the <a href="https://developer.afero.io/docs/en/?target=Projects.html">Profile Editor</a>
+     * to make changes to the DeviceProfile.
+     *
+     * @return {@link Observable}
+     * @see <a href="https://developer.afero.io/docs/en/?target=Publish.html">Profile Editor: Publish Your Project</a>
+     */
     public rx.Observable<DeviceModel> getProfileObservable() {
         return mProfileUpdateSubject;
     }
 
+    /**
+     * Gets the {@link UpdateState} of this device which indicates if any
+     * {@link DeviceProfile.Attribute} is either waiting for an update or has timed out while
+     * waiting after a write operation.
+     *
+     * @return {@link UpdateState}
+     * @see #writeAttributes()
+     */
     @JsonProperty
-    public State getState() {
-        State state = State.NORMAL;
+    public UpdateState getState() {
+        UpdateState updateState = UpdateState.NORMAL;
         long now = Clock.getElapsedMillis();
 
         for (AttributeData data : mAttributes.values()) {
             if (data.mExpectedUpdateTime != 0) {
                 if (now > data.mExpectedUpdateTime) {
-                    state = State.UPDATE_TIMED_OUT;
+                    updateState = UpdateState.UPDATE_TIMED_OUT;
                 } else {
-                    state = State.WAITING_FOR_UPDATE;
+                    updateState = UpdateState.WAITING_FOR_UPDATE;
                     break;
                 }
             }
         }
 
-        return state;
+        return updateState;
     }
 
+    /**
+     * @return true if this {@link DeviceModel} is currently receiving an OTA update; false otherwise.
+     */
     public boolean isOTAInProgress() {
         return mOTAInProgress;
     }
 
+    /**
+     * @return Integer indicating the state of any OTA update in progress.
+     * @see OTAInfo
+     */
     public int getOTAState() {
         return mOTAState;
     }
 
+    /**
+     * @return Integer representing the percentage of completion of any in progress OTA update.
+     */
     public int getOTAProgress() {
         return mOTAProgress;
     }
 
+    @Deprecated
     public void onOTAStop() {
         cancelOTAWatchdog();
 
@@ -361,11 +448,19 @@ public final class DeviceModel {
         mUpdateSubject.onNext(this);
     }
 
+    /**
+     * @return The most recent {@link AferoError} received for this device.
+     * @see #getErrorObservable()
+     * @see #clearLastError()
+     */
     @JsonIgnore
     public AferoError getLastError() {
         return mLastError;
     }
 
+    /**
+     * Clears the {@link AferoError} returned by {@link #getLastError()}
+     */
     public void clearLastError() {
         if (mLastError != null) {
             mLastError = null;
@@ -373,20 +468,37 @@ public final class DeviceModel {
         }
     }
 
-    public WriteAttributeOperation writeAttribute() {
+    /**
+     *
+     *
+     * @return {@link WriteAttributeOperation} that can be used to write the values of multiple
+     * {@link DeviceProfile.Attribute}s.
+     */
+    public WriteAttributeOperation writeAttributes() {
         return new WriteAttributeOperation(this, mAferoClient);
     }
 
+    /**
+     * @param attribute {@link DeviceProfile.Attribute}
+     * @return {@link AttributeValue} of the specified Attribute.
+     */
     public AttributeValue getAttributeCurrentValue(DeviceProfile.Attribute attribute) {
         AttributeData ad = getAttributeData(attribute);
         return ad != null ? ad.mCurrentValue : null;
     }
 
+    /**
+     * @param attribute {@link DeviceProfile.Attribute}
+     * @return {@link AttributeValue} of the specified Attribute.
+     */
     public AttributeValue getAttributePendingValue(DeviceProfile.Attribute attribute) {
         AttributeData ad = getAttributeData(attribute);
         return ad != null ? ad.mPendingValue : null;
     }
 
+    /**
+     * Deprecated. Use {@link #writeAttributes()} instead.
+     */
     @Deprecated
     public void writeAttribute(DeviceProfile.Attribute attribute, AttributeValue value) {
 
@@ -410,6 +522,9 @@ public final class DeviceModel {
         mUpdateSubject.onNext(this);
     }
 
+    /**
+     * Deprecated. Use {@link #writeAttributes()} instead.
+     */
     @Deprecated
     public void writeModelValue(DeviceProfile.Attribute attribute, BigDecimal newValue) {
         AttributeValue value = getAttributePendingValue(attribute);
@@ -423,6 +538,9 @@ public final class DeviceModel {
         }
     }
 
+    /**
+     * Deprecated. Use {@link #writeAttributes()} instead.
+     */
     @Deprecated
     public Observable<RequestResponse> writeModelValues(ArrayList<DeviceRequest> req) {
         return postAttributeWriteRequests(req)
@@ -434,6 +552,9 @@ public final class DeviceModel {
             });
     }
 
+    /**
+     * Deprecated. Use {@link #writeAttributes()} instead.
+     */
     @Deprecated
     public void writeModelValue(DeviceProfile.Attribute attribute, AttributeValue value) {
         try {
@@ -443,11 +564,17 @@ public final class DeviceModel {
         }
     }
 
+    /**
+     * Deprecated. Use {@link #getAttributePendingValue(DeviceProfile.Attribute)} instead.
+     */
     @Deprecated
     public AttributeValue readPendingValue(DeviceProfile.Attribute attribute) {
         return getAttributePendingValue(attribute);
     }
 
+    /**
+     * Deprecated. Use {@link #getAttributeCurrentValue(DeviceProfile.Attribute)} instead.
+     */
     @Deprecated
     public AttributeValue readCurrentValue(DeviceProfile.Attribute attribute) {
         return getAttributeCurrentValue(attribute);
@@ -549,6 +676,18 @@ public final class DeviceModel {
 
     // non-public ------------------------------------------------------------------
 
+    void setProfile(DeviceProfile newProfile) {
+        DeviceProfile oldProfile = mProfile;
+        mProfile = newProfile;
+        mProfileId = newProfile.getId();
+
+        // ideally we could check the profile ids here, but we still can't
+        // tell if this is just a presentation update
+        if (oldProfile != newProfile) {
+            mProfileUpdateSubject.onNext(this);
+        }
+    }
+
     void onWriteStart(Collection<DeviceRequest> requests) {
         mLastError = null;
 
@@ -602,7 +741,7 @@ public final class DeviceModel {
 
     void update(DeviceSync deviceSync) {
 
-        mDeviceSyncUpdateSubject.onNext(deviceSync);
+        mDeviceSyncPreUpdateSubject.onNext(deviceSync);
 
         if (deviceSync.hasRequestId()) {
             MetricUtil.getInstance().end(deviceSync.requestId, Clock.getElapsedMillis(), true, null);
@@ -693,7 +832,7 @@ public final class DeviceModel {
     }
 
     void updateLocation() {
-        setLocation(new LocationState(LocationState.State.Invalid));
+        setLocationState(new LocationState(LocationState.State.INVALID));
         mAferoClient.getDeviceLocation(this)
             .subscribe(new Observer<Location>() {
                 @Override
@@ -708,10 +847,16 @@ public final class DeviceModel {
 
                 @Override
                 public void onNext(Location location) {
-                    LocationState locationState = new LocationState(location);
-                    setLocation(locationState);
+                    setLocationState(new LocationState(location));
                 }
             });
+    }
+
+    private void setLocationState(LocationState locationState) {
+        mLocationState = locationState;
+        if (mLocationState.getState().equals(LocationState.State.VALID)) {
+            mUpdateSubject.onNext(this);
+        }
     }
 
     private void updateAttributeValues(int attrId, String value) {
@@ -762,12 +907,7 @@ public final class DeviceModel {
     private void startWaitingForUpdate() {
         mPendingWriteSubscription = Observable.just(this)
             .delay(WRITE_TIMEOUT_INTERVAL, TimeUnit.MILLISECONDS)
-            .subscribe(new RxUtils.WeakAction1<DeviceModel, DeviceModel>(this) {
-                @Override
-                public void call(DeviceModel strongRef, DeviceModel deviceModel) {
-                    deviceModel.onUpdateTimeout();
-                }
-            });
+            .subscribe(new UpdateTimeoutAction(this));
     }
 
     private void onUpdateTimeout() {
@@ -806,12 +946,7 @@ public final class DeviceModel {
 
         mOTAWatchdogSubscription = Observable.just(mOTAProgress)
                 .delay(OTA_WATCHDOG_DELAY, TimeUnit.MILLISECONDS)
-                .subscribe(new RxUtils.WeakAction1<Integer, DeviceModel>(this) {
-                    @Override
-                    public void call(DeviceModel deviceModel, Integer progress) {
-                        deviceModel.onOTAWatchdogFired(progress);
-                    }
-                });
+                .subscribe(new OTAWatchdogAction(this));
     }
 
     private void cancelOTAWatchdog() {
@@ -906,5 +1041,29 @@ public final class DeviceModel {
             mTags = new HashMap<>();
         }
         return mTags;
+    }
+
+    private static class UpdateTimeoutAction extends RxUtils.WeakAction1<DeviceModel, DeviceModel> {
+
+        UpdateTimeoutAction(DeviceModel deviceModel) {
+            super(deviceModel);
+        }
+
+        @Override
+        public void call(DeviceModel deviceModel, DeviceModel nextDeviceModel) {
+            nextDeviceModel.onUpdateTimeout();
+        }
+    }
+
+    private static class OTAWatchdogAction extends RxUtils.WeakAction1<Integer, DeviceModel> {
+
+        OTAWatchdogAction(DeviceModel strongRef) {
+            super(strongRef);
+        }
+
+        @Override
+        public void call(DeviceModel deviceModel, Integer progress) {
+            deviceModel.onOTAWatchdogFired(progress);
+        }
     }
 }

@@ -60,7 +60,7 @@ public class OfflineScheduler {
         mEventMaxCount = mDeviceModel.getProfile().getScheduleAttributeCount();
 
         mDeviceSyncSubscription = RxUtils.safeUnSubscribe(mDeviceSyncSubscription);
-        mDeviceSyncSubscription = mDeviceModel.getDeviceSyncObservable()
+        mDeviceSyncSubscription = mDeviceModel.getDeviceSyncPreUpdateObservable()
             .filter(new Func1<DeviceSync, Boolean>() {
                 @Override
                 public Boolean call(DeviceSync deviceSync) {
@@ -153,7 +153,7 @@ public class OfflineScheduler {
     }
 
     public synchronized void writeToDevice() {
-        WriteAttributeOperation writer = mDeviceModel.writeAttribute();
+        WriteAttributeOperation writer = mDeviceModel.writeAttributes();
 
         for (int i = 0; i < mEventMaxCount; ++i) {
             final int onAttrId = getEventIdAtIndex(i);
@@ -181,7 +181,7 @@ public class OfflineScheduler {
         DeviceProfile.Attribute attribute = mDeviceModel.getAttributeById(DeviceProfile.SCHEDULE_FLAGS_ATTRIBUTE_ID);
         if (attribute != null) {
             AttributeValue newValue = new AttributeValue(isOn ? "1" : "0", attribute.getDataType());
-            mDeviceModel.writeAttribute()
+            mDeviceModel.writeAttributes()
                 .put(attribute.getId(), newValue)
                 .commit()
                 .subscribe(new RxUtils.IgnoreResponseObserver<WriteAttributeOperation.Result>());
@@ -326,7 +326,7 @@ public class OfflineScheduler {
             if (isNewValueEmpty) {
                 newValue = mNullValue;
             }
-            mDeviceModel.writeAttribute()
+            mDeviceModel.writeAttributes()
                 .put(attribute.getId(), newValue)
                 .commit()
                 .subscribe(new RxUtils.IgnoreResponseObserver<WriteAttributeOperation.Result>());
