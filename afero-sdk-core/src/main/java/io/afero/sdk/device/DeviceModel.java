@@ -198,12 +198,6 @@ public final class DeviceModel {
         mName = name;
     }
 
-    @Deprecated
-    @JsonIgnore
-    public void setAvailable(boolean available) {
-        // not used
-    }
-
     /**
      * @return {@code true} if the device is currently
      */
@@ -255,11 +249,27 @@ public final class DeviceModel {
      * Get the location set for this device. This is optionally set via the Afero app when the
      * device is associated with an account.
      *
-     * @return {@link LocationState} attached to this device.
+     * @return {@link Observable} that emits {@link LocationState} attached to this device.
      */
     @JsonIgnore
-    public LocationState getLocationState() {
-        return mLocationState;
+    public Observable<LocationState> getLocationState() {
+        if (!LocationState.State.VALID.equals(mLocationState.getState())) {
+            return mAferoClient.getDeviceLocation(this)
+                    .map(new Func1<Location, LocationState>() {
+                        @Override
+                        public LocationState call(Location location) {
+                            return new LocationState(location);
+                        }
+                    })
+                    .doOnNext(new Action1<LocationState>() {
+                        @Override
+                        public void call(LocationState locationState) {
+                            setLocationState(locationState);
+                        }
+                    });
+        }
+
+        return Observable.just(mLocationState);
     }
 
     /**
@@ -662,9 +672,10 @@ public final class DeviceModel {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DeviceModel that = (DeviceModel) o;
+        final String thisId = mId;
+        final String thatId = ((DeviceModel)o).mId;
 
-        return mId != null ? mId.equals(that.mId) : that.mId == null;
+        return thisId != null ? thisId.equals(thatId) : thatId == null;
 
     }
 
@@ -831,25 +842,8 @@ public final class DeviceModel {
         mUpdateSubject.onNext(this);
     }
 
-    void updateLocation() {
+    void invalidateLocationState() {
         setLocationState(new LocationState(LocationState.State.INVALID));
-        mAferoClient.getDeviceLocation(this)
-            .subscribe(new Observer<Location>() {
-                @Override
-                public void onCompleted() {
-
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    AfLog.e("Unable to get location " + e);
-                }
-
-                @Override
-                public void onNext(Location location) {
-                    setLocationState(new LocationState(location));
-                }
-            });
     }
 
     private void setLocationState(LocationState locationState) {
