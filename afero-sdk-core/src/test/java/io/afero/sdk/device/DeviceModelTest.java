@@ -107,7 +107,7 @@ public class DeviceModelTest extends AferoTest {
                 .deviceModelWriteAttribute(ATTRIBUTE_ID, ATTRIBUTE_VALUE, AttributeValue.DataType.SINT8)
                 .deviceModelUpdate(1, ATTRIBUTE_ID, ATTRIBUTE_VALUE)
 
-                .verifyWriteResultStatus(ATTRIBUTE_ID, WriteAttributeOperation.Result.Status.SUCCESS)
+                .verifyWriteResultStatus(ATTRIBUTE_ID, AttributeWriter.Result.Status.SUCCESS)
                 ;
     }
 
@@ -120,7 +120,7 @@ public class DeviceModelTest extends AferoTest {
         final DeviceProfile deviceProfile;
         final MockAferoClient aferoClient = new MockAferoClient();
         final DeviceModel deviceModel;
-        TreeMap<Integer, WriteAttributeOperation.Result> writeResults = new TreeMap<>();
+        TreeMap<Integer, AttributeWriter.Result> writeResults = new TreeMap<>();
 
         WriteAttributeTester() throws IOException {
             deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
@@ -135,9 +135,9 @@ public class DeviceModelTest extends AferoTest {
             deviceModel.writeAttributes()
                 .put(attrId, new AttributeValue(value, type))
                 .commit()
-                .subscribe(new Action1<WriteAttributeOperation.Result>() {
+                .subscribe(new Action1<AttributeWriter.Result>() {
                     @Override
-                    public void call(WriteAttributeOperation.Result wr) {
+                    public void call(AttributeWriter.Result wr) {
                         writeResults.put(wr.attributeId, wr);
                     }
                 });
@@ -155,7 +155,7 @@ public class DeviceModelTest extends AferoTest {
             return this;
         }
 
-        WriteAttributeTester verifyWriteResultStatus(int attrId, WriteAttributeOperation.Result.Status resultStatus) {
+        WriteAttributeTester verifyWriteResultStatus(int attrId, AttributeWriter.Result.Status resultStatus) {
             assertEquals(resultStatus, writeResults.get(attrId).status);
             return this;
         }

@@ -479,16 +479,51 @@ public final class DeviceModel {
     }
 
     /**
+     * Writes new values to one or more device attributes. When the operation completes successfully
+     * the new values have been confirmed by the physical device. It is possible for some of the
+     * attribute writes to succeed and others to fail.
      *
+     * <p>
+     * Example:
+     * <pre><code>
+     *     deviceModel.writeAttributes()
+     *         .put(powerAttrId, powerValue)
+     *         .put(modeAttrId, modeValue)
+     *         .commit()
+     *         .subscribe(new Observer&lt;AttributeWriter.Result&gt;() {
+     *              &#64;Override
+     *              public void onNext(AttributeWriter.Result result) {
+     *                  if (result.isSuccess()) {
+     *                      // the physical device confirmed the write
+     *                  } else {
+     *                      // the write for one of the attributes failed
+     *                  }
+     *              }
      *
-     * @return {@link WriteAttributeOperation} that can be used to write the values of multiple
-     * {@link DeviceProfile.Attribute}s.
+     *              &#64;Override
+     *              public void onError(Throwable t) {
+     *                   // call failed, log the error
+     *                   AfLog.e(t);
+     *              }
+     *
+     *              &#64;Override
+     *              public void onCompleted() {
+     *                  // write operation completed
+     *              }
+     *         });
+     * </code></pre>
+     * </p>
+     *
+     * @return {@link AttributeWriter} that is used to compose, initiate, and monitor the write operation.
+     * @see {@link AttributeWriter}
      */
-    public WriteAttributeOperation writeAttributes() {
-        return new WriteAttributeOperation(this, mAferoClient);
+    public AttributeWriter writeAttributes() {
+        return new AttributeWriter(this);
     }
 
     /**
+     * Gets the local cached attribute value last received from the Afero Cloud.
+     *
      * @param attribute {@link DeviceProfile.Attribute}
      * @return {@link AttributeValue} of the specified Attribute.
      */
@@ -498,6 +533,9 @@ public final class DeviceModel {
     }
 
     /**
+     * Gets the local cached attribute value that is in the process of being written to the physical
+     * device as a result of a call to {@link #writeAttributes()}.
+     *
      * @param attribute {@link DeviceProfile.Attribute}
      * @return {@link AttributeValue} of the specified Attribute.
      */
@@ -716,7 +754,7 @@ public final class DeviceModel {
         mUpdateSubject.onNext(this);
     }
 
-    void onWriteResult(WriteAttributeOperation.Result writeResult) {
+    void onWriteResult(AttributeWriter.Result writeResult) {
         // as results come in cancel the timers on corresponding attributes
         // or let existing logic in update handle it?
     }
@@ -749,6 +787,9 @@ public final class DeviceModel {
         return mAferoClient.postBatchAttributeWrite(this, reqArray, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED);
     }
 
+    Observable<RequestResponse[]> postBatchAttributeWrite(Collection<DeviceRequest> requests, int retryCount, int statusCode) {
+        return mAferoClient.postBatchAttributeWrite(this, requests.toArray(new DeviceRequest[requests.size()]), retryCount, statusCode);
+    }
 
     void update(DeviceSync deviceSync) {
 
