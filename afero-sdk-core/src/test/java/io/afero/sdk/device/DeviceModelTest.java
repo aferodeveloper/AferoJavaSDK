@@ -9,9 +9,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Collection;
 import java.util.TreeMap;
-import java.util.Vector;
 
 import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.AferoClient;
@@ -19,7 +17,6 @@ import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.conclave.models.DeviceSync;
-import rx.Observable;
 import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
@@ -43,7 +40,7 @@ public class DeviceModelTest extends AferoTest {
         DeviceProfile dp = loadDeviceProfile("resources/deviceModelTestProfile.json");
         DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
-        assertEquals(DeviceModel.State.NORMAL, dm.getState());
+        assertEquals(DeviceModel.UpdateState.NORMAL, dm.getState());
         assertFalse(dm.isOTAInProgress());
         assertEquals(0, dm.getOTAProgress());
         assertEquals(dp.getId().length(), dm.getName().length());
@@ -135,7 +132,7 @@ public class DeviceModelTest extends AferoTest {
         }
 
         WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
-            deviceModel.writeAttribute()
+            deviceModel.writeAttributes()
                 .put(attrId, new AttributeValue(value, type))
                 .commit()
                 .subscribe(new Action1<WriteAttributeOperation.Result>() {

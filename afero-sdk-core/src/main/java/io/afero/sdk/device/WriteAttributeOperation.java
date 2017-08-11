@@ -161,7 +161,7 @@ public final class WriteAttributeOperation {
                 .doOnNext(notifyDeviceOfResult());
     }
 
-    // tell device about this Result so it can update its Device.State
+    // tell device about this Result so it can update its Device.UpdateState
     private Action1<Result> notifyDeviceOfResult() {
         return new Action1<Result>() {
             @Override
@@ -174,7 +174,7 @@ public final class WriteAttributeOperation {
         };
     }
 
-    // tell device about this error so it can update its Device.State
+    // tell device about this error so it can update its Device.UpdateState
     private Action1<Throwable> notifyDeviceOfError() {
         return new Action1<Throwable>() {
             @Override

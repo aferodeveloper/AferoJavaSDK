@@ -610,6 +610,7 @@ public class AferoClientRetrofit2 implements AferoClient {
      * @param location Location to attach to the device
      * @return {@link Observable} that emits the attached Location in {@link rx.Observer#onNext}.
      */
+    @Override
     public Observable<Location> putDeviceLocation(String deviceId, Location location) {
         return mAferoService.putDeviceLocation(mActiveAccountId, deviceId, location)
                 .map(new RxUtils.Mapper<Void, Location>(location));

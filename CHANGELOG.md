@@ -9,14 +9,20 @@ Version 0.6.3 *(2017-08-??)*
    possibility of a version mismatch between the SDK and apps.
  * New: AfLog now support the notion of `FilterLevel` so the volume of logging output can
    be managed.
- * New: `DeviceModel.writeAttribute()` call replaces all variants of `writeModelValue()`,
+ * New: `DeviceModel.writeAttributes()` call replaces all variants of `writeModelValue()`,
    which have now been deprecated.
+ * `DeviceModel.setLocation(Location)` now performs the appropriate AferoClient call and
+   updates the DeviceModel's LocationState.
  * Fix: `DeviceWifiSetup` will no longer hang if the device was already connected, and wifi
    setup state doesn't change.
- * JavaDoc added for `DeviceModel`.
+ * New: `AferoClient.putDeviceLocation(String deviceId, Location location)` added to core.
+ * Added JavaDoc for `DeviceModel`.
  * Refactored parts of `ConclaveClient` and `DeviceWifiSetup` to remove deprecated RxJava calls.
  * `ConclaveDeviceEventSource.start` and `ConclaveDeviceEventSource.reconnect()` now return
     `Observable<ConclaveDeviceEventSource>`.
+ * Removed `ControlModel` interface.
+ * `DeviceModel.setProfile()` is now package-private.
+ * `DeviceModel.State` enum has been changed to `DeviceModel.UpdateState`.
 
 Version 0.6.2 *(2017-08-2)*
 ----------------------------
