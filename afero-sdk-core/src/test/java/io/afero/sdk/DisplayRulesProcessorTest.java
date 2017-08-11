@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Afero, Inc. All rights reserved.
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
 package io.afero.sdk;
