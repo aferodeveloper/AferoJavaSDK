@@ -18,7 +18,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 
-public class WriteAttributeOperationTest {
+public class AttributeWriterTest {
 
     @Test
     public void testAPIError() throws Exception {
@@ -28,7 +28,7 @@ public class WriteAttributeOperationTest {
                 .putAttribute(ATTR_ID, "1")
                 .commit()
                 .deviceUpdate(ATTR_ID, 1, "1")
-                .verifyResultStatus(ATTR_ID, WriteAttributeOperation.Result.Status.SUCCESS)
+                .verifyResultStatus(ATTR_ID, AttributeWriter.Result.Status.SUCCESS)
         ;
     }
 
@@ -47,7 +47,7 @@ public class WriteAttributeOperationTest {
                 .putAttribute(ATTR_ID, "1")
                 .commit()
                 .deviceUpdate(ATTR_ID, 1, "1")
-                .verifyResultStatus(ATTR_ID, WriteAttributeOperation.Result.Status.SUCCESS)
+                .verifyResultStatus(ATTR_ID, AttributeWriter.Result.Status.SUCCESS)
         ;
     }
 
@@ -67,9 +67,9 @@ public class WriteAttributeOperationTest {
                 .deviceUpdate(ATTR_ID_2, 2, "2")
                 .deviceUpdate(ATTR_ID_3, 3, "3")
 
-                .verifyResultStatus(ATTR_ID_1, WriteAttributeOperation.Result.Status.SUCCESS)
-                .verifyResultStatus(ATTR_ID_2, WriteAttributeOperation.Result.Status.SUCCESS)
-                .verifyResultStatus(ATTR_ID_3, WriteAttributeOperation.Result.Status.SUCCESS)
+                .verifyResultStatus(ATTR_ID_1, AttributeWriter.Result.Status.SUCCESS)
+                .verifyResultStatus(ATTR_ID_2, AttributeWriter.Result.Status.SUCCESS)
+                .verifyResultStatus(ATTR_ID_3, AttributeWriter.Result.Status.SUCCESS)
         ;
     }
 
@@ -88,9 +88,9 @@ public class WriteAttributeOperationTest {
 
                 .deviceUpdate(ATTR_ID_1, 1, "1")
 
-                .verifyResultStatus(ATTR_ID_1, WriteAttributeOperation.Result.Status.SUCCESS)
-                .verifyResultStatus(ATTR_ID_2, WriteAttributeOperation.Result.Status.FAILURE)
-                .verifyResultStatus(ATTR_ID_3, WriteAttributeOperation.Result.Status.FAILURE)
+                .verifyResultStatus(ATTR_ID_1, AttributeWriter.Result.Status.SUCCESS)
+                .verifyResultStatus(ATTR_ID_2, AttributeWriter.Result.Status.FAILURE)
+                .verifyResultStatus(ATTR_ID_3, AttributeWriter.Result.Status.FAILURE)
         ;
     }
 
@@ -110,9 +110,9 @@ public class WriteAttributeOperationTest {
                 .deviceError(2)
                 .deviceError(3)
 
-                .verifyResultStatus(ATTR_ID_1, WriteAttributeOperation.Result.Status.SUCCESS)
-                .verifyResultStatus(ATTR_ID_2, WriteAttributeOperation.Result.Status.FAILURE)
-                .verifyResultStatus(ATTR_ID_3, WriteAttributeOperation.Result.Status.FAILURE)
+                .verifyResultStatus(ATTR_ID_1, AttributeWriter.Result.Status.SUCCESS)
+                .verifyResultStatus(ATTR_ID_2, AttributeWriter.Result.Status.FAILURE)
+                .verifyResultStatus(ATTR_ID_3, AttributeWriter.Result.Status.FAILURE)
         ;
     }
 
@@ -126,10 +126,10 @@ public class WriteAttributeOperationTest {
         final ResourceLoader resourceLoader = new ResourceLoader("resources/writeAttributeOperation/");
         final DeviceProfile deviceProfile = resourceLoader.createObjectFromJSONResource("deviceProfile.json", DeviceProfile.class);
         final DeviceModel deviceModel = new DeviceModel("device-id", deviceProfile, false, aferoClient);
-        final WriteAttributeOperation wao = new WriteAttributeOperation(deviceModel, aferoClient);
-        final Observer<WriteAttributeOperation.Result> waoObserver = new WAOTestObserver();
+        final AttributeWriter wao = new AttributeWriter(deviceModel);
+        final Observer<AttributeWriter.Result> waoObserver = new WAOTestObserver();
 
-        HashMap<Integer, WriteAttributeOperation.Result> writeResults = new HashMap<>();
+        HashMap<Integer, AttributeWriter.Result> writeResults = new HashMap<>();
         Throwable error;
         boolean isCompleted;
 
@@ -171,7 +171,7 @@ public class WriteAttributeOperationTest {
             return this;
         }
 
-        Tester verifyResultStatus(int attrId, WriteAttributeOperation.Result.Status status) {
+        Tester verifyResultStatus(int attrId, AttributeWriter.Result.Status status) {
             assertEquals(status, writeResults.get(attrId).status);
             return this;
         }
@@ -208,7 +208,7 @@ public class WriteAttributeOperationTest {
             return this;
         }
 
-        private class WAOTestObserver implements Observer<WriteAttributeOperation.Result> {
+        private class WAOTestObserver implements Observer<AttributeWriter.Result> {
 
             @Override
             public void onCompleted() {
@@ -221,7 +221,7 @@ public class WriteAttributeOperationTest {
             }
 
             @Override
-            public void onNext(WriteAttributeOperation.Result result) {
+            public void onNext(AttributeWriter.Result result) {
                 writeResults.put(result.attributeId, result);
             }
         }
