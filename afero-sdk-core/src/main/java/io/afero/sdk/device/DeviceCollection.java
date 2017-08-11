@@ -505,7 +505,7 @@ public class DeviceCollection {
                                     updateDeviceProfile(deviceModel, profileId);
                                     break;
                                 case "location":
-                                    deviceModel.updateLocation();
+                                    deviceModel.invalidateLocationState();
                                     break;
                             }
                         } catch (Exception e) {
