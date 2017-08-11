@@ -19,10 +19,14 @@ Version 0.6.3 *(2017-08-??)*
  * Added JavaDoc for `DeviceModel`.
  * Refactored parts of `ConclaveClient` and `DeviceWifiSetup` to remove deprecated RxJava calls.
  * `ConclaveDeviceEventSource.start` and `ConclaveDeviceEventSource.reconnect()` now return
-    `Observable<ConclaveDeviceEventSource>`.
+   `Observable<ConclaveDeviceEventSource>`.
  * Removed `ControlModel` interface.
  * `DeviceModel.setProfile()` is now package-private.
  * `DeviceModel.State` enum has been changed to `DeviceModel.UpdateState`.
+ * `DeviceModel.getLocationState` now returns an `rx.Observable`. If the `DeviceModel`
+   contains a valid location, it is returned immediately, otherwise the location is
+   fetched from the Afero Cloud.
+ * `DeviceModel.setAvailable(boolean)` has been removed.
 
 Version 0.6.2 *(2017-08-2)*
 ----------------------------
