@@ -145,8 +145,8 @@ public final class WriteAttributeOperation {
                         .timeout(TIMEOUT_ROUND_TRIP, TimeUnit.SECONDS);
                 }
             })
-            .doOnSubscribe(subscribeToDeviceUpdates())
-            .doOnTerminate(unsubscribeFromDeviceUpdates())
+            .doOnSubscribe(onSubscribeAction())
+            .doOnTerminate(onUnsubscribeAction())
             .doOnError(notifyDeviceOfError());
     }
 
@@ -196,7 +196,7 @@ public final class WriteAttributeOperation {
         };
     }
 
-    private Action0 subscribeToDeviceUpdates() {
+    private Action0 onSubscribeAction() {
         return new Action0() {
             @Override
             public void call() {
@@ -204,6 +204,8 @@ public final class WriteAttributeOperation {
                 if (deviceModel == null) {
                     return;
                 }
+
+                deviceModel.onWriteStart(mWriteRequests.values());
 
                 mDeviceSyncSubscription = deviceModel.getDeviceSyncPostUpdateObservable()
                     .subscribe(new Action1<DeviceSync>() {
@@ -229,7 +231,7 @@ public final class WriteAttributeOperation {
         };
     }
 
-    private Action0 unsubscribeFromDeviceUpdates() {
+    private Action0 onUnsubscribeAction() {
         return new Action0() {
             @Override
             public void call() {
