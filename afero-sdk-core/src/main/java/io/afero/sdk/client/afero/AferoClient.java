@@ -30,6 +30,8 @@ public interface AferoClient {
 
     Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId);
 
+    Observable<Location> putDeviceLocation(String deviceId, Location location);
+
     Observable<Location> getDeviceLocation(DeviceModel deviceModel);
 
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified);

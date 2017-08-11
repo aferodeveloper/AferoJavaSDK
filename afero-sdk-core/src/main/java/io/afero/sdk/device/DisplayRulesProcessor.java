@@ -23,7 +23,7 @@ public class DisplayRulesProcessor<T> {
     private static final Pattern sBitwiseAndExpressionPattern = Pattern.compile("^\\&(0x\\d+|[-]?\\d+[.]?\\d*)$");
     private static final Pattern sBitwiseXorExpressionPattern = Pattern.compile("^\\^(0x\\d+|[-]?\\d+[.]?\\d*)$");
 
-    public static class RuleMatcher {
+    private static class RuleMatcher {
 
         static abstract class Operator {
             abstract boolean test(AttributeValue value);
@@ -343,14 +343,14 @@ public class DisplayRulesProcessor<T> {
         }
     }
 
-    private Rule[] mRules;
+    private Rule<T>[] mRules;
 
-    public DisplayRulesProcessor(Rule[] rules) {
+    public DisplayRulesProcessor(Rule<T>[] rules) {
         mRules = rules;
     }
 
     public void process(ApplyParams result, T model) {
-        for (Rule rule : mRules) {
+        for (Rule<T> rule : mRules) {
             rule.matchAndApply(result, model);
         }
     }
