@@ -42,7 +42,12 @@ public class DeviceModelTest extends AferoTest {
 
         assertEquals(DeviceModel.UpdateState.NORMAL, dm.getState());
         assertFalse(dm.isOTAInProgress());
-        assertEquals(0, dm.getOTAProgress());
+        dm.getOTAProgress().isEmpty().subscribe(new Action1<Boolean>() {
+            @Override
+            public void call(Boolean isEmpty) {
+                assertTrue(isEmpty);
+            }
+        });
         assertEquals(dp.getId().length(), dm.getName().length());
     }
 
