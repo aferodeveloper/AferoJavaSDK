@@ -14,9 +14,9 @@ import java.util.TimeZone;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.conclave.models.DeviceSync;
+import io.afero.sdk.device.AttributeWriter;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
-import io.afero.sdk.device.WriteAttributeOperation;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
@@ -153,7 +153,7 @@ public class OfflineScheduler {
     }
 
     public synchronized void writeToDevice() {
-        WriteAttributeOperation writer = mDeviceModel.writeAttributes();
+        AttributeWriter writer = mDeviceModel.writeAttributes();
 
         for (int i = 0; i < mEventMaxCount; ++i) {
             final int onAttrId = getEventIdAtIndex(i);
@@ -184,7 +184,7 @@ public class OfflineScheduler {
             mDeviceModel.writeAttributes()
                 .put(attribute.getId(), newValue)
                 .commit()
-                .subscribe(new RxUtils.IgnoreResponseObserver<WriteAttributeOperation.Result>());
+                .subscribe(new RxUtils.IgnoreResponseObserver<AttributeWriter.Result>());
         }
     }
 
@@ -329,7 +329,7 @@ public class OfflineScheduler {
             mDeviceModel.writeAttributes()
                 .put(attribute.getId(), newValue)
                 .commit()
-                .subscribe(new RxUtils.IgnoreResponseObserver<WriteAttributeOperation.Result>());
+                .subscribe(new RxUtils.IgnoreResponseObserver<AttributeWriter.Result>());
             return true;
         }
 

@@ -9,11 +9,40 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OTAInfo {
 
+    public enum OtaState {
+        START(0),
+        ONGOING(1),
+        STOP(2);
+
+        private final int mValue;
+
+        OtaState(int value) {
+            mValue = value;
+        }
+
+        public int getValue() {
+            return mValue;
+        }
+
+        static OtaState fromInt(int s) {
+            switch (s) {
+                case 0:
+                    return OtaState.START;
+                case 1:
+                    return OtaState.ONGOING;
+                case 2:
+                    return OtaState.STOP;
+            }
+
+            return OtaState.STOP;
+        }
+    }
+
     public OTAInfo() {
 
     }
 
-    public OTAInfo(int s, String deviceId, int o, int t) {
+    public OTAInfo(OtaState s, String deviceId, int o, int t) {
         state = s;
         id = deviceId;
         offset = o;
@@ -43,7 +72,16 @@ public class OTAInfo {
                 " }";
     }
 
-    public int state;
+    public void setState(int s) {
+        state = OtaState.fromInt(s);
+    }
+
+    public OtaState getState() {
+        return state;
+    }
+
+    private OtaState state;
+
     public String id;
     public int offset;
     public int total;

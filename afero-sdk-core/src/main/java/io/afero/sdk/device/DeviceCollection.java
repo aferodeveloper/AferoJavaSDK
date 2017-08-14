@@ -519,7 +519,7 @@ public class DeviceCollection {
             public void call(OTAInfo otaInfo) {
                 DeviceModel deviceModel = getDevice(otaInfo.id);
                 if (deviceModel != null) {
-                    AfLog.d("mDeviceEventSource.observeOTA state="+otaInfo.state);
+                    AfLog.d("mDeviceEventSource.observeOTA state="+otaInfo.getState());
                     deviceModel.onOTA(otaInfo);
                 }
             }

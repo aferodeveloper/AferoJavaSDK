@@ -72,7 +72,6 @@ public final class DeviceModel {
     }
 
     private static final long WRITE_TIMEOUT_INTERVAL = 30000;
-    private static final long OTA_WATCHDOG_DELAY = 30L * 1000L;
     private static final int WRITE_ATTRIBUTE_RETRY_COUNT = 4;
 
     @SuppressWarnings("WeakerAccess")
@@ -89,9 +88,9 @@ public final class DeviceModel {
     }
 
     private static final int HTTP_LOCKED = 423; // https://tools.ietf.org/html/rfc4918#section-11.3
+    private static final long OTA_WATCHDOG_TIMEOUT_SECONDS = 30L;
 
     private Subscription mPendingWriteSubscription;
-    private Subscription mOTAWatchdogSubscription;
 
     private final String mId;
     private final AferoClient mAferoClient;
@@ -112,9 +111,8 @@ public final class DeviceModel {
     private final PublishSubject<DeviceModel> mUpdateSubject = PublishSubject.create();
     private final Observable<DeviceModel> mUpdateObservable;
 
-    private boolean mOTAInProgress;
-    private int mOTAState;
-    private int mOTAProgress;
+    private OTAWatcher mOTAWatcher;
+    private Subscription mOTASubscription;
 
     private int mRSSI;
     private boolean mIsLinked;
@@ -429,33 +427,14 @@ public final class DeviceModel {
      * @return true if this {@link DeviceModel} is currently receiving an OTA update; false otherwise.
      */
     public boolean isOTAInProgress() {
-        return mOTAInProgress;
+        return mOTAWatcher != null;
     }
 
     /**
-     * @return Integer indicating the state of any OTA update in progress.
-     * @see OTAInfo
+     * @return {@link Observable} that emits the percentage of completion of any OTA in progress.
      */
-    public int getOTAState() {
-        return mOTAState;
-    }
-
-    /**
-     * @return Integer representing the percentage of completion of any in progress OTA update.
-     */
-    public int getOTAProgress() {
-        return mOTAProgress;
-    }
-
-    @Deprecated
-    public void onOTAStop() {
-        cancelOTAWatchdog();
-
-        mOTAInProgress = false;
-        mOTAState = 0;
-        mOTAProgress = 0;
-
-        mUpdateSubject.onNext(this);
+    public Observable<Integer> getOTAProgress() {
+        return mOTAWatcher != null ? mOTAWatcher.getProgressObservable() : Observable.<Integer>empty();
     }
 
     /**
@@ -479,16 +458,51 @@ public final class DeviceModel {
     }
 
     /**
+     * Writes new values to one or more device attributes. When the operation completes successfully
+     * the new values have been confirmed by the physical device. It is possible for some of the
+     * attribute writes to succeed and others to fail.
      *
+     * <p>
+     * Example:
+     * <pre><code>
+     *     deviceModel.writeAttributes()
+     *         .put(powerAttrId, powerValue)
+     *         .put(modeAttrId, modeValue)
+     *         .commit()
+     *         .subscribe(new Observer&lt;AttributeWriter.Result&gt;() {
+     *              &#64;Override
+     *              public void onNext(AttributeWriter.Result result) {
+     *                  if (result.isSuccess()) {
+     *                      // the physical device confirmed the write
+     *                  } else {
+     *                      // the write for one of the attributes failed
+     *                  }
+     *              }
      *
-     * @return {@link WriteAttributeOperation} that can be used to write the values of multiple
-     * {@link DeviceProfile.Attribute}s.
+     *              &#64;Override
+     *              public void onError(Throwable t) {
+     *                   // call failed, log the error
+     *                   AfLog.e(t);
+     *              }
+     *
+     *              &#64;Override
+     *              public void onCompleted() {
+     *                  // write operation completed
+     *              }
+     *         });
+     * </code></pre>
+     * </p>
+     *
+     * @return {@link AttributeWriter} that is used to compose, initiate, and monitor the write operation.
+     * @see {@link AttributeWriter}
      */
-    public WriteAttributeOperation writeAttributes() {
-        return new WriteAttributeOperation(this, mAferoClient);
+    public AttributeWriter writeAttributes() {
+        return new AttributeWriter(this);
     }
 
     /**
+     * Gets the local cached attribute value last received from the Afero Cloud.
+     *
      * @param attribute {@link DeviceProfile.Attribute}
      * @return {@link AttributeValue} of the specified Attribute.
      */
@@ -498,6 +512,9 @@ public final class DeviceModel {
     }
 
     /**
+     * Gets the local cached attribute value that is in the process of being written to the physical
+     * device as a result of a call to {@link #writeAttributes()}.
+     *
      * @param attribute {@link DeviceProfile.Attribute}
      * @return {@link AttributeValue} of the specified Attribute.
      */
@@ -716,7 +733,7 @@ public final class DeviceModel {
         mUpdateSubject.onNext(this);
     }
 
-    void onWriteResult(WriteAttributeOperation.Result writeResult) {
+    void onWriteResult(AttributeWriter.Result writeResult) {
         // as results come in cancel the timers on corresponding attributes
         // or let existing logic in update handle it?
     }
@@ -749,6 +766,9 @@ public final class DeviceModel {
         return mAferoClient.postBatchAttributeWrite(this, reqArray, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED);
     }
 
+    Observable<RequestResponse[]> postBatchAttributeWrite(Collection<DeviceRequest> requests, int retryCount, int statusCode) {
+        return mAferoClient.postBatchAttributeWrite(this, requests.toArray(new DeviceRequest[requests.size()]), retryCount, statusCode);
+    }
 
     void update(DeviceSync deviceSync) {
 
@@ -831,19 +851,40 @@ public final class DeviceModel {
         mErrorSubject.onNext(deviceMute);
     }
 
-    void onOTA(OTAInfo otaInfo) {
-        AfLog.d("DeviceModel.onOTA" + otaInfo);
-
-        mOTAState = otaInfo.state;
-        mOTAInProgress = true;
-        mOTAProgress = otaInfo.getProgress();
-
-        resetOTAWatchdog();
-        mUpdateSubject.onNext(this);
-    }
-
     void invalidateLocationState() {
         setLocationState(new LocationState(LocationState.State.INVALID));
+    }
+
+    void onOTA(OTAInfo otaInfo) {
+        AfLog.d("DeviceModel.onOTA: " + otaInfo);
+
+        if (mOTAWatcher == null && otaInfo.getState() != OTAInfo.OtaState.STOP) {
+            mOTAWatcher = new OTAWatcher(OTA_WATCHDOG_TIMEOUT_SECONDS);
+            mOTASubscription = mOTAWatcher.getProgressObservable()
+                    .doOnCompleted(new Action0() {
+                        @Override
+                        public void call() {
+                            onOTAStop();
+                        }
+                    })
+                    .subscribe();
+            mUpdateSubject.onNext(this);
+        }
+
+        if (mOTAWatcher != null) {
+            mOTAWatcher.onOTA(otaInfo);
+        }
+    }
+
+    private void onOTAStop() {
+        AfLog.d("DeviceModel.onOTAStop");
+
+        mOTASubscription = RxUtils.safeUnSubscribe(mOTASubscription);
+
+        if (mOTAWatcher != null) {
+            mOTAWatcher = null;
+            mUpdateSubject.onNext(this);
+        }
     }
 
     private void setLocationState(LocationState locationState) {
@@ -935,28 +976,6 @@ public final class DeviceModel {
         return hasChanged;
     }
 
-    private void resetOTAWatchdog() {
-        cancelOTAWatchdog();
-
-        mOTAWatchdogSubscription = Observable.just(mOTAProgress)
-                .delay(OTA_WATCHDOG_DELAY, TimeUnit.MILLISECONDS)
-                .subscribe(new OTAWatchdogAction(this));
-    }
-
-    private void cancelOTAWatchdog() {
-        mOTAWatchdogSubscription = RxUtils.safeUnSubscribe(mOTAWatchdogSubscription);
-    }
-
-    private void onOTAWatchdogFired(int oldProgress) {
-        AfLog.d("DeviceModel.onOTAWatchdogFired");
-
-        mOTAWatchdogSubscription = RxUtils.safeUnSubscribe(mOTAWatchdogSubscription);
-
-        if (oldProgress == mOTAProgress) {
-            onOTAStop();
-        }
-    }
-
     private static class ActionObserver extends RxUtils.WeakObserver<ActionResponse, DeviceModel> {
 
         long timestamp;
@@ -1046,18 +1065,6 @@ public final class DeviceModel {
         @Override
         public void call(DeviceModel deviceModel, DeviceModel nextDeviceModel) {
             nextDeviceModel.onUpdateTimeout();
-        }
-    }
-
-    private static class OTAWatchdogAction extends RxUtils.WeakAction1<Integer, DeviceModel> {
-
-        OTAWatchdogAction(DeviceModel strongRef) {
-            super(strongRef);
-        }
-
-        @Override
-        public void call(DeviceModel deviceModel, Integer progress) {
-            deviceModel.onOTAWatchdogFired(progress);
         }
     }
 }

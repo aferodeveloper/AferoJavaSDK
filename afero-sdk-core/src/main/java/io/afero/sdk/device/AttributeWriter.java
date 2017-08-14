@@ -1,10 +1,13 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
 package io.afero.sdk.device;
 
 import java.lang.ref.WeakReference;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
-import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AferoError;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.DeviceRequest;
@@ -21,16 +24,17 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 
 /**
- * The WriteAttributeOperation class provides a simple interface to writing {@link DeviceModel} attributes.
+ * The AttributeWriter class provides an interface for writing {@link DeviceModel} attributes.
+ *
+ * @see {@link DeviceModel#writeAttributes()}
  */
-public final class WriteAttributeOperation {
+public final class AttributeWriter {
 
     private static final int WRITE_ATTRIBUTE_RETRY_COUNT = 4;
     private static final long TIMEOUT_ROUND_TRIP = 30;
     private static final int HTTP_LOCKED = 423; // https://tools.ietf.org/html/rfc4918#section-11.3
 
     private final WeakReference<DeviceModel> mDeviceModelRef;
-    private final AferoClient mAferoClient;
     private final TreeMap<Integer, DeviceRequest> mWriteRequests = new TreeMap<>();
     private final TreeMap<Integer, DeviceRequestResponsePair> mPendingResponses = new TreeMap<>();
 
@@ -61,16 +65,13 @@ public final class WriteAttributeOperation {
 
     /**
      * @param deviceModel {@link DeviceModel} on which attributes will be written
-     * @param aferoClient {@link AferoClient} to use for cloud API calls
      */
-    WriteAttributeOperation(DeviceModel deviceModel, AferoClient aferoClient) {
+    AttributeWriter(DeviceModel deviceModel) {
         mDeviceModelRef = new WeakReference<>(deviceModel);
-        mAferoClient = aferoClient;
     }
 
-    private WriteAttributeOperation() {
+    private AttributeWriter() {
         mDeviceModelRef = null;
-        mAferoClient = null;
     }
 
     /**
@@ -78,15 +79,15 @@ public final class WriteAttributeOperation {
      *
      * @param attrId Id of the attribute
      * @param value {@link AttributeValue} to write to the specified attribute
-     * @return this WriteAttributeOperation instance
+     * @return this AttributeWriter instance
      */
-    public WriteAttributeOperation put(int attrId, AttributeValue value) {
+    public AttributeWriter put(int attrId, AttributeValue value) {
         mWriteRequests.put(attrId, new DeviceRequest(attrId, value.toString()));
         return this;
     }
 
     /**
-     * @return {@code true} if this WriteAttributeOperation contains no attributes; false otherwise.
+     * @return {@code true} if this AttributeWriter contains no attributes; false otherwise.
      */
     public boolean isEmpty() {
         return mWriteRequests.isEmpty();
@@ -111,8 +112,7 @@ public final class WriteAttributeOperation {
         }
 
         // see http://wiki.afero.io/display/CD/Batch+Attribute+Requests
-        DeviceRequest[] reqArray = mWriteRequests.values().toArray(new DeviceRequest[mWriteRequests.size()]);
-        return mAferoClient.postBatchAttributeWrite(deviceModel, reqArray, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
+        return deviceModel.postBatchAttributeWrite(mWriteRequests.values(), WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
             .flatMap(new Func1<RequestResponse[], Observable<Result>>() {
                 @Override
                 public Observable<Result> call(RequestResponse[] requestResponses) {
