@@ -392,6 +392,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      * @see <a href="https://developer.afero.io/docs/en/?target=Publish.html">Profile Editor: Publish Your Project</a>
      */
+    @JsonIgnore
     public rx.Observable<DeviceModel> getProfileObservable() {
         return mProfileUpdateSubject;
     }
@@ -433,6 +434,7 @@ public final class DeviceModel {
     /**
      * @return {@link Observable} that emits the percentage of completion of any OTA in progress.
      */
+    @JsonIgnore
     public Observable<Integer> getOTAProgress() {
         return mOTAWatcher != null ? mOTAWatcher.getProgressObservable() : Observable.<Integer>empty();
     }
