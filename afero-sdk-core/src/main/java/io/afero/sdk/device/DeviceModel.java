@@ -112,6 +112,7 @@ public final class DeviceModel {
     private final Observable<DeviceModel> mUpdateObservable;
 
     private OTAWatcher mOTAWatcher;
+    private Subscription mOTASubscription;
 
     private int mRSSI;
     private boolean mIsLinked;
@@ -850,11 +851,23 @@ public final class DeviceModel {
         mErrorSubject.onNext(deviceMute);
     }
 
+    void invalidateLocationState() {
+        setLocationState(new LocationState(LocationState.State.INVALID));
+    }
+
     void onOTA(OTAInfo otaInfo) {
         AfLog.d("DeviceModel.onOTA: " + otaInfo);
 
         if (mOTAWatcher == null && otaInfo.getState() != OTAInfo.OtaState.STOP) {
-            mOTAWatcher = new OTAWatcher(this, OTA_WATCHDOG_TIMEOUT_SECONDS);
+            mOTAWatcher = new OTAWatcher(OTA_WATCHDOG_TIMEOUT_SECONDS);
+            mOTASubscription = mOTAWatcher.getProgressObservable()
+                    .doOnCompleted(new Action0() {
+                        @Override
+                        public void call() {
+                            onOTAStop();
+                        }
+                    })
+                    .subscribe();
             mUpdateSubject.onNext(this);
         }
 
@@ -863,17 +876,15 @@ public final class DeviceModel {
         }
     }
 
-    void onOTAStop() {
+    private void onOTAStop() {
         AfLog.d("DeviceModel.onOTAStop");
+
+        mOTASubscription = RxUtils.safeUnSubscribe(mOTASubscription);
 
         if (mOTAWatcher != null) {
             mOTAWatcher = null;
             mUpdateSubject.onNext(this);
         }
-    }
-
-    void invalidateLocationState() {
-        setLocationState(new LocationState(LocationState.State.INVALID));
     }
 
     private void setLocationState(LocationState locationState) {
