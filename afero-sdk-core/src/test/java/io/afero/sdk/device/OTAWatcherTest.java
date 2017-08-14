@@ -9,13 +9,13 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import io.afero.sdk.client.mock.MockAferoClient;
-import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.conclave.models.OTAInfo;
 import rx.Observer;
 import rx.schedulers.Schedulers;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class OTAWatcherTest {
 
@@ -56,7 +56,6 @@ public class OTAWatcherTest {
     public void testOTATimeout() throws Exception {
         makeTester()
                 .otaStart()
-                .otaObserve()
                 .waitForOTATimeout()
                 .verifyOTATimeout()
         ;
@@ -69,17 +68,13 @@ public class OTAWatcherTest {
 
     private class Tester {
         private static final long OTA_TIMEOUT_SECONDS = 2;
-        private static final int OTA_TOTAL = 100;
+        private static final int OTA_TOTAL = 200;
 
-        final MockAferoClient aferoClient = new MockAferoClient();
-        final ResourceLoader resourceLoader = new ResourceLoader("resources/writeAttributeOperation/");
-        final DeviceProfile deviceProfile = resourceLoader.createObjectFromJSONResource("deviceProfile.json", DeviceProfile.class);
-        final DeviceModel deviceModel = new DeviceModel("device-id", deviceProfile, false, aferoClient);
-        final OTAWatcher otaWatcher = new OTAWatcher(deviceModel, OTA_TIMEOUT_SECONDS);
+        private final OTAWatcher otaWatcher = new OTAWatcher(OTA_TIMEOUT_SECONDS);
         private final Object otaTimeoutLock = new Object();
 
         private boolean otaCompleted;
-        private int otaProgress;
+        private Integer otaProgress;
         private Throwable otaError;
 
 
@@ -88,12 +83,12 @@ public class OTAWatcherTest {
 
         Tester otaStart() {
             OTAInfo ota = new OTAInfo(OTAInfo.OtaState.START, "device-id", 0, OTA_TOTAL);
-            deviceModel.onOTA(ota);
+            otaWatcher.onOTA(ota);
             return this;
         }
 
         Tester otaObserve() {
-            deviceModel.getOTAProgress()
+            otaWatcher.getProgressObservable()
                     .subscribe(new Observer<Integer>() {
                         @Override
                         public void onCompleted() {
@@ -116,19 +111,19 @@ public class OTAWatcherTest {
 
         Tester otaOngoing(int p) {
             OTAInfo ota = new OTAInfo(OTAInfo.OtaState.ONGOING, "device-id", p, OTA_TOTAL);
-            deviceModel.onOTA(ota);
+            otaWatcher.onOTA(ota);
             return this;
         }
 
         Tester otaStop() {
             OTAInfo ota = new OTAInfo(OTAInfo.OtaState.STOP, "device-id", OTA_TOTAL, OTA_TOTAL);
-            deviceModel.onOTA(ota);
+            otaWatcher.onOTA(ota);
             return this;
         }
 
         Tester waitForOTATimeout() throws InterruptedException {
 
-            deviceModel.getOTAProgress()
+            otaWatcher.getProgressObservable()
                 .subscribeOn(Schedulers.computation())
                 .timeout(OTA_TIMEOUT_SECONDS + 1, TimeUnit.SECONDS)
                 .subscribe(new Observer<Integer>() {
@@ -155,19 +150,19 @@ public class OTAWatcherTest {
                 });
 
             synchronized (otaTimeoutLock) {
-                otaTimeoutLock.wait(500);
+                otaTimeoutLock.wait(TimeUnit.SECONDS.toMillis(OTA_TIMEOUT_SECONDS + 2));
             }
 
             return this;
         }
 
         Tester verifyOTAInProgress(boolean expected) {
-            assertEquals(expected, deviceModel.isOTAInProgress());
+            assertEquals(expected, otaProgress != null);
             return this;
         }
 
         Tester verifyOTAProgress(int expected) {
-            assertEquals(expected, otaProgress);
+            assertEquals(expected, (int)otaProgress);
             return this;
         }
 

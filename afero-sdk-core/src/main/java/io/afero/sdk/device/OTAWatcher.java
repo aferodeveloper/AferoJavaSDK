@@ -15,21 +15,21 @@ import rx.subjects.BehaviorSubject;
 
 class OTAWatcher {
 
-    private final DeviceModel mDeviceModel;
     private final long mOTATimeoutSeconds;
     private OTAInfo.OtaState mOTAState;
     private int mOTAProgress;
     private Subscription mOTAWatchdogSubscription;
-    private BehaviorSubject<Integer> mProgressSubject = BehaviorSubject.create();
+    private final BehaviorSubject<Integer> mProgressSubject = BehaviorSubject.create();
 
-    OTAWatcher(DeviceModel deviceModel, long otaTimeoutSeconds) {
-        mDeviceModel = deviceModel;
+    OTAWatcher(long otaTimeoutSeconds) {
         mOTATimeoutSeconds = otaTimeoutSeconds;
     }
 
     void onOTA(OTAInfo ota) {
         mOTAState = ota.getState();
         mOTAProgress = ota.getProgress();
+
+        mProgressSubject.onNext(mOTAProgress);
 
         if (mOTAState == OTAInfo.OtaState.STOP) {
             onOTAStop();
@@ -49,8 +49,6 @@ class OTAWatcher {
         mOTAProgress = 0;
 
         mProgressSubject.onCompleted();
-
-        mDeviceModel.onOTAStop();
     }
 
     private void resetOTAWatchdog() {
