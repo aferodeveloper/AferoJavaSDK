@@ -51,15 +51,10 @@ public class OTAInfo {
 
     public int getProgress() {
         float realTotal = total / 2.0f;
-        float progress;
+        float realOffset = offset < realTotal ? offset : offset - realTotal;
+        float progress = realOffset / (realTotal - 1);
 
-        if (offset <= realTotal) {
-            progress = offset / realTotal;
-        } else {
-            progress = (offset - realTotal) / realTotal;
-        }
-
-        return (int)(100f * progress);
+        return (int)Math.min(100f * progress, 100);
     }
 
     @Override
