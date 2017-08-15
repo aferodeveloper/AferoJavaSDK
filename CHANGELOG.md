@@ -7,16 +7,17 @@ Version 0.6.3 *(2017-08-??)*
  * Changed `afero-sdk-softhub` build to embed hubby library within the softhub .aar. This
    means apps no longer need to reference hubby in their dependencies and eliminates any
    possibility of a version mismatch between the SDK and apps.
- * New: AfLog now support the notion of `FilterLevel` so the volume of logging output can
-   be managed.
+ * New: JavaDoc for `DeviceModel`.
  * New: `DeviceModel.writeAttributes()` call replaces all variants of `writeModelValue()`,
    which have now been deprecated.
+ * New: `DeviceModel.getOTAProgress()` has been refactored to return on `rx.Observable`
+   that emits OTA progress.
  * `DeviceModel.setLocation(Location)` now performs the appropriate AferoClient call and
    updates the DeviceModel's LocationState.
- * Fix: `DeviceWifiSetup` will no longer hang if the device was already connected, and wifi
-   setup state doesn't change.
  * New: `AferoClient.putDeviceLocation(String deviceId, Location location)` added to core.
- * Added JavaDoc for `DeviceModel`.
+ * New: `DeviceRules` model class.
+ * Fix: `DeviceWifiSetup` sending credentials will no longer fail to complete if the device
+   was already connected, and wifi setup state doesn't change.
  * Refactored parts of `ConclaveClient` and `DeviceWifiSetup` to remove deprecated RxJava calls.
  * `ConclaveDeviceEventSource.start` and `ConclaveDeviceEventSource.reconnect()` now return
    `Observable<ConclaveDeviceEventSource>`.
