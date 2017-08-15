@@ -12,6 +12,9 @@ import org.robolectric.annotation.Config;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import io.afero.hubby.Hubby;
+import io.afero.hubby.SetupWifiCallback;
+import io.afero.hubby.WifiSSIDEntry;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.MockDeviceEventSource;
@@ -19,9 +22,6 @@ import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
-import io.kiban.hubby.Hubby;
-import io.kiban.hubby.SetupWifiCallback;
-import io.kiban.hubby.WifiSSIDEntry;
 import rx.Observer;
 import rx.functions.Action1;
 

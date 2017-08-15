@@ -16,10 +16,10 @@ import org.robolectric.annotation.Config;
 
 import java.util.HashMap;
 
+import io.afero.hubby.Hubby;
+import io.afero.hubby.NotificationCallback;
+import io.afero.hubby.OtaCallback;
 import io.afero.sdk.client.mock.MockAferoClient;
-import io.kiban.hubby.Hubby;
-import io.kiban.hubby.NotificationCallback;
-import io.kiban.hubby.OtaCallback;
 import rx.Observer;
 import rx.functions.Action1;
 
