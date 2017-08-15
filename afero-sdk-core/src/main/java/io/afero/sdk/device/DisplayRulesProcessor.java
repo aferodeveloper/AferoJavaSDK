@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
 
-public class DisplayRulesProcessor {
+public class DisplayRulesProcessor<T> {
 
     private static final Pattern sSubExpressionPattern = Pattern.compile("^\\((.*)\\)(\\|\\||\\&\\&|\\^)\\((.*)\\)$");
     private static final Pattern sEqualPattern = Pattern.compile("^(0x\\d+|[-]?\\d+[.]?\\d*)$");
@@ -23,7 +23,7 @@ public class DisplayRulesProcessor {
     private static final Pattern sBitwiseAndExpressionPattern = Pattern.compile("^\\&(0x\\d+|[-]?\\d+[.]?\\d*)$");
     private static final Pattern sBitwiseXorExpressionPattern = Pattern.compile("^\\^(0x\\d+|[-]?\\d+[.]?\\d*)$");
 
-    public static class RuleMatcher {
+    private static class RuleMatcher {
 
         static abstract class Operator {
             abstract boolean test(AttributeValue value);
@@ -291,24 +291,24 @@ public class DisplayRulesProcessor {
         }
     }
 
-    public interface Value {
-        AttributeValue get(ControlModel model);
+    public interface Value<T> {
+        AttributeValue get(T model);
     }
 
-    public static class Rule {
+    public static class Rule<T> {
 
-        private final Value mValue;
+        private final Value<T> mValue;
         private final ApplyParams mApply;
         private final String mMatchString;
         private RuleMatcher mMatcher;
 
-        public Rule(Value value, String match, ApplyParams apply) {
+        public Rule(Value<T> value, String match, ApplyParams apply) {
             mValue = value;
             mMatchString = match;
             mApply = apply;
         }
 
-        void matchAndApply(ApplyParams result, ControlModel model) {
+        void matchAndApply(ApplyParams result, T model) {
 
             if (mMatcher == null) {
                 AttributeValue av = mValue.get(model);
@@ -343,14 +343,14 @@ public class DisplayRulesProcessor {
         }
     }
 
-    private Rule[] mRules;
+    private Rule<T>[] mRules;
 
-    public DisplayRulesProcessor(Rule[] rules) {
+    public DisplayRulesProcessor(Rule<T>[] rules) {
         mRules = rules;
     }
 
-    public void process(ApplyParams result, ControlModel model) {
-        for (Rule rule : mRules) {
+    public void process(ApplyParams result, T model) {
+        for (Rule<T> rule : mRules) {
             rule.matchAndApply(result, model);
         }
     }

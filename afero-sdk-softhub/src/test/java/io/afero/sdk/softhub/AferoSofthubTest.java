@@ -15,23 +15,11 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.HashMap;
-import java.util.TimeZone;
 
-import io.afero.sdk.client.afero.AferoClient;
-import io.afero.sdk.client.afero.models.ActionResponse;
-import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceRequest;
-import io.afero.sdk.client.afero.models.Location;
-import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.hubby.Hubby;
+import io.afero.hubby.NotificationCallback;
+import io.afero.hubby.OtaCallback;
 import io.afero.sdk.client.mock.MockAferoClient;
-import io.afero.sdk.device.DeviceModel;
-import io.afero.sdk.device.DeviceProfile;
-import io.kiban.hubby.Hubby;
-import io.kiban.hubby.NotificationCallback;
-import io.kiban.hubby.OtaCallback;
-import rx.Observable;
 import rx.Observer;
 import rx.functions.Action1;
 

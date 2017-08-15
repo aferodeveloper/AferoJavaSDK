@@ -16,13 +16,13 @@ import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import io.afero.hubby.Hubby;
+import io.afero.hubby.NotificationCallback;
+import io.afero.hubby.OtaCallback;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
-import io.kiban.hubby.Hubby;
-import io.kiban.hubby.NotificationCallback;
-import io.kiban.hubby.OtaCallback;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;

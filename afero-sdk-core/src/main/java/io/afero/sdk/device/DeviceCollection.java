@@ -6,6 +6,7 @@ package io.afero.sdk.device;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -498,13 +499,13 @@ public class DeviceCollection {
                                 return;
                             }
 
-                            switch (im.kind.toLowerCase()) {
+                            switch (im.kind.toLowerCase(Locale.ROOT)) {
                                 case "profiles":
                                     String profileId = im.json.get("profileId").asText();
                                     updateDeviceProfile(deviceModel, profileId);
                                     break;
                                 case "location":
-                                    deviceModel.updateLocation();
+                                    deviceModel.invalidateLocationState();
                                     break;
                             }
                         } catch (Exception e) {
@@ -518,7 +519,7 @@ public class DeviceCollection {
             public void call(OTAInfo otaInfo) {
                 DeviceModel deviceModel = getDevice(otaInfo.id);
                 if (deviceModel != null) {
-                    AfLog.d("mDeviceEventSource.observeOTA state="+otaInfo.state);
+                    AfLog.d("mDeviceEventSource.observeOTA state="+otaInfo.getState());
                     deviceModel.onOTA(otaInfo);
                 }
             }

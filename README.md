@@ -1,8 +1,8 @@
 ---
 author: Tony Myles
 title: "AferoJavaSDK"
-date: 2017-Jul-27
-status: 0.6.1
+date: 2017-Aug-15
+status: 0.6.3
 ---
 
 # AferoJavaSDK
@@ -18,7 +18,6 @@ The SDK binaries are hosted privately on [JFrog](https://www.jfrog.com/artifacto
     repositories {
         maven {
             url "https://afero.jfrog.io/afero/afero-java-sdk"
-            artifactUrls "https://afero.jfrog.io/afero/hubby-android"
             credentials {
                 username myAferoArtifactoryUserName
                 password myAferoArtifactoryPassword
@@ -27,32 +26,31 @@ The SDK binaries are hosted privately on [JFrog](https://www.jfrog.com/artifacto
     }
 ```
 
-Replace `myAferoArtifactoryUserName` and `myAferoArtifactoryPassword` with the artifactory credentials provided by Afero.
+Replace `myAferoArtifactoryUserName` and `myAferoArtifactoryPassword` with the credentials provided by Afero.
 
 ### Specifying the Modules
 
 The SDK is composed of four separate modules.
 
-The `afero-sdk-core` module is required for base functionality.
+The `afero-sdk-core` module is required for base functionality such as interacting with the Afero Cloud and manipulating devices.
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-core:0.6.1'
+    compile 'io.afero.sdk:afero-sdk-core:0.6.3'
 ```
 
 The `afero-sdk-client-retrofit2` module provides an optional implementation of the AferoClient REST API interface using [Retrofit2](http://square.github.io/retrofit/) and [okhttp3](http://square.github.io/okhttp/). If you choose not to include this module in your project, you will need to develop your own implementation of AferoClient using your preferred http client library.
 
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-client-retrofit2:0.6.1'
+    compile 'io.afero.sdk:afero-sdk-client-retrofit2:0.6.3'
 ```
 
 The `afero-sdk-android` module is required for Android development.
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-android:0.6.1'
+    compile 'io.afero.sdk:afero-sdk-android:0.6.3'
 ```
 
-The `afero-sdk-softhub` module and `hubby` binary are required for Afero soft hub functionality.
+The `afero-sdk-softhub` module is required for soft hub functionality on Android.
 ```Gradle
-    compile 'io.afero.sdk:afero-sdk-softhub:0.6.1'
-    compile 'io.afero.sdk:hubby:1.0.494@aar'
+    compile 'io.afero.sdk:afero-sdk-softhub:0.6.3'
 ```
 
 ## LICENSE

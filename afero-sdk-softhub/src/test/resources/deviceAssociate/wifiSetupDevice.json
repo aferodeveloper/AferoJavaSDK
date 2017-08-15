@@ -23,6 +23,30 @@
                         "dataType": "sint8",
                         "semanticType": "byte",
                         "operations": ["read","write"]
+                    },
+                    {
+                        "id": 65007,
+                        "dataType": "sint8",
+                        "semanticType": "byte",
+                        "operations": ["read","write"]
+                    },
+                    {
+                        "id": 65006,
+                        "dataType": "sint8",
+                        "semanticType": "byte",
+                        "operations": ["read","write"]
+                    },
+                    {
+                        "id": 65005,
+                        "dataType": "sint8",
+                        "semanticType": "byte",
+                        "operations": ["read","write"]
+                    },
+                    {
+                        "id": 65004,
+                        "dataType": "utf8s",
+                        "semanticType": "byte",
+                        "operations": ["read","write"]
                     }
                 ]
             }

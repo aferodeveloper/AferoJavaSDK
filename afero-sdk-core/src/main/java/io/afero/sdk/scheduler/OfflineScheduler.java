@@ -14,6 +14,7 @@ import java.util.TimeZone;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.conclave.models.DeviceSync;
+import io.afero.sdk.device.AttributeWriter;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.log.AfLog;
@@ -59,7 +60,7 @@ public class OfflineScheduler {
         mEventMaxCount = mDeviceModel.getProfile().getScheduleAttributeCount();
 
         mDeviceSyncSubscription = RxUtils.safeUnSubscribe(mDeviceSyncSubscription);
-        mDeviceSyncSubscription = mDeviceModel.getDeviceSyncObservable()
+        mDeviceSyncSubscription = mDeviceModel.getDeviceSyncPreUpdateObservable()
             .filter(new Func1<DeviceSync, Boolean>() {
                 @Override
                 public Boolean call(DeviceSync deviceSync) {
@@ -152,7 +153,7 @@ public class OfflineScheduler {
     }
 
     public synchronized void writeToDevice() {
-        ArrayList<DeviceRequest> req = new ArrayList<>();
+        AttributeWriter writer = mDeviceModel.writeAttributes();
 
         for (int i = 0; i < mEventMaxCount; ++i) {
             final int onAttrId = getEventIdAtIndex(i);
@@ -164,14 +165,15 @@ public class OfflineScheduler {
                 AttributeValue onValue = onEvent != null ? makeAttributeValue(onEvent) : null;
 
                 if (hasAttributeChanged(onAttribute, onValue)) {
-                    req.add(new DeviceRequest(onAttrId, onValue != null ? onValue.toString() : OfflineScheduleEvent.ZERO_DATA));
+                    writer.put(onAttrId, new AttributeValue(
+                            onValue != null ? onValue.toString() : OfflineScheduleEvent.ZERO_DATA,
+                            onAttribute.getDataType()));
                 }
             }
         }
 
-        if (!req.isEmpty()) {
-            mDeviceModel.writeModelValues(req)
-                .subscribe(new RxUtils.IgnoreResponseObserver<>());
+        if (!writer.isEmpty()) {
+            writer.commit().subscribe(new RxUtils.IgnoreResponseObserver<>());
         }
     }
 
@@ -179,7 +181,10 @@ public class OfflineScheduler {
         DeviceProfile.Attribute attribute = mDeviceModel.getAttributeById(DeviceProfile.SCHEDULE_FLAGS_ATTRIBUTE_ID);
         if (attribute != null) {
             AttributeValue newValue = new AttributeValue(isOn ? "1" : "0", attribute.getDataType());
-            mDeviceModel.writeAttribute(attribute, newValue);
+            mDeviceModel.writeAttributes()
+                .put(attribute.getId(), newValue)
+                .commit()
+                .subscribe(new RxUtils.IgnoreResponseObserver<AttributeWriter.Result>());
         }
     }
 
@@ -321,7 +326,10 @@ public class OfflineScheduler {
             if (isNewValueEmpty) {
                 newValue = mNullValue;
             }
-            mDeviceModel.writeAttribute(attribute, newValue);
+            mDeviceModel.writeAttributes()
+                .put(attribute.getId(), newValue)
+                .commit()
+                .subscribe(new RxUtils.IgnoreResponseObserver<AttributeWriter.Result>());
             return true;
         }
 

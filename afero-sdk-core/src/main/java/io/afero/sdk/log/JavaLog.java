@@ -21,12 +21,17 @@ public class JavaLog implements AfLog.Impl {
     }
 
     @Override
-    public void i(String s) {
+    public void v(String s) {
         System.out.println(s);
     }
 
     @Override
     public void d(String s) {
+        System.out.println(s);
+    }
+
+    @Override
+    public void i(String s) {
         System.out.println(s);
     }
 

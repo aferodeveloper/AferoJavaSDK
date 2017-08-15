@@ -9,11 +9,15 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.TreeMap;
 
 import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AttributeValue;
+import io.afero.sdk.client.mock.MockAferoClient;
+import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.conclave.models.DeviceSync;
+import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DeviceModelTest extends AferoTest {
 
-    private static final String DEVICE_ID = "device-model-id";
+    private static final String DEVICE_ID = "deviceModel-model-id";
 
     public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) throws IOException {
         return new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
@@ -36,9 +40,14 @@ public class DeviceModelTest extends AferoTest {
         DeviceProfile dp = loadDeviceProfile("resources/deviceModelTestProfile.json");
         DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
-        assertEquals(DeviceModel.State.NORMAL, dm.getState());
+        assertEquals(DeviceModel.UpdateState.NORMAL, dm.getState());
         assertFalse(dm.isOTAInProgress());
-        assertEquals(0, dm.getOTAProgress());
+        dm.getOTAProgress().isEmpty().subscribe(new Action1<Boolean>() {
+            @Override
+            public void call(Boolean isEmpty) {
+                assertTrue(isEmpty);
+            }
+        });
         assertEquals(dp.getId().length(), dm.getName().length());
     }
 
@@ -50,7 +59,7 @@ public class DeviceModelTest extends AferoTest {
 
         dm.update(ds);
 
-        assertEquals("device-model-id", dm.getId());
+        assertEquals("deviceModel-model-id", dm.getId());
         assertEquals("device-profile-id", dm.getProfileID());
         assertEquals("device-name", dm.getName());
 
@@ -93,4 +102,68 @@ public class DeviceModelTest extends AferoTest {
         String actual = av != null ? av.toString() : null;;
         assertEquals(expected, actual);
     }
+
+    @Test
+    public void testWriteAttribute() throws IOException {
+        final int ATTRIBUTE_ID = 100;
+        final String ATTRIBUTE_VALUE = "32";
+
+        makeWriteAttributeTester()
+                .deviceModelWriteAttribute(ATTRIBUTE_ID, ATTRIBUTE_VALUE, AttributeValue.DataType.SINT8)
+                .deviceModelUpdate(1, ATTRIBUTE_ID, ATTRIBUTE_VALUE)
+
+                .verifyWriteResultStatus(ATTRIBUTE_ID, AttributeWriter.Result.Status.SUCCESS)
+                ;
+    }
+
+    private WriteAttributeTester makeWriteAttributeTester() throws IOException {
+        return new WriteAttributeTester();
+    }
+
+    private class WriteAttributeTester {
+        final ResourceLoader resourceLoader = new ResourceLoader("resources/");
+        final DeviceProfile deviceProfile;
+        final MockAferoClient aferoClient = new MockAferoClient();
+        final DeviceModel deviceModel;
+        TreeMap<Integer, AttributeWriter.Result> writeResults = new TreeMap<>();
+
+        WriteAttributeTester() throws IOException {
+            deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
+            deviceModel = new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
+        }
+
+        DeviceProfile loadDeviceProfile(String path) throws IOException {
+            return resourceLoader.createObjectFromJSONResource(path, DeviceProfile.class);
+        }
+
+        WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
+            deviceModel.writeAttributes()
+                .put(attrId, new AttributeValue(value, type))
+                .commit()
+                .subscribe(new Action1<AttributeWriter.Result>() {
+                    @Override
+                    public void call(AttributeWriter.Result wr) {
+                        writeResults.put(wr.attributeId, wr);
+                    }
+                });
+
+            return this;
+        }
+
+        WriteAttributeTester deviceModelUpdate(int reqId, int attrId, String value) {
+            DeviceSync ds = new DeviceSync();
+            ds.requestId = reqId;
+            ds.attribute = new DeviceSync.AttributeEntry(attrId, value);
+            ds.setDeviceId(deviceModel.getId());
+            deviceModel.update(ds);
+
+            return this;
+        }
+
+        WriteAttributeTester verifyWriteResultStatus(int attrId, AttributeWriter.Result.Status resultStatus) {
+            assertEquals(resultStatus, writeResults.get(attrId).status);
+            return this;
+        }
+    }
+
 }

@@ -7,51 +7,51 @@ package io.afero.sdk.client.afero.models;
 public class LocationState {
 
     public enum State {
-        Invalid,
-        None,
-        Valid
+        INVALID,
+        NONE,
+        VALID
     }
 
-    State state;
-    Location location;
+    private State state;
+    private Location location;
 
     public LocationState(Location location) {
         if (location == null) {
-            this.state = State.None;
+            this.state = State.NONE;
             return;
         }
 
-        if (location.latitude == null ||
-                location.longitude == null
-                // || location.formattedAddressLines == null
-                ) {
-            this.state = State.Invalid;
+        if (location.latitude == null || location.longitude == null) {
+            this.state = State.INVALID;
             return;
         }
 
-        this.state = State.Valid;
+        this.state = State.VALID;
         this.location = location;
     }
 
-    public LocationState(State state) {
-        if (state.equals(State.Valid)) {
+    public LocationState(State newState) {
+        if (newState.equals(State.VALID)) {
             throw new IllegalArgumentException("Valid LocationState must use LocationState(Location)");
         }
-        this.state = state;
+
+        state = newState;
     }
 
     public State getState() {
         return state;
     }
+
     public Location getLocation() {
-        if (state.equals(State.Valid)) {
+        if (state.equals(State.VALID)) {
             return location;
         }
+
         return null;
     }
 
     public String getAddress() {
-        if (state.equals(State.Valid) && location.formattedAddressLines != null) {
+        if (state.equals(State.VALID) && location.formattedAddressLines != null) {
             final StringBuilder sb = new StringBuilder();
             final String delim = System.getProperty("line.separator");
             int i = 0, n = location.formattedAddressLines.length;

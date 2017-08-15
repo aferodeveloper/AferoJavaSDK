@@ -7,6 +7,7 @@ package io.afero.sdk.device;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Locale;
 import java.util.Map;
 
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
@@ -94,7 +95,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         return mConclaveClient.statusObservable();
     }
 
-    public rx.Observable<Object> start(String accountId, String userId, String type) {
+    public rx.Observable<ConclaveDeviceEventSource> start(String accountId, String userId, String type) {
         mAccountId = accountId;
         mUserId = userId;
         mType = type;
@@ -147,7 +148,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         mConclaveClient.close();
     }
 
-    public rx.Observable<Object> reconnect() {
+    public rx.Observable<ConclaveDeviceEventSource> reconnect() {
 
         if (mConclaveSubscription != null) {
             mConclaveSubscription.unsubscribe();
@@ -156,13 +157,13 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         mConclaveSubscription = mConclaveClient.messageObservable()
             .subscribe(mConclaveObserver);
 
-        rx.Observable<Object> connectObservable;
+        rx.Observable<ConclaveDeviceEventSource> connectObservable;
 
         if (mConclaveAccessDetails == null) {
             connectObservable = mConclaveAccessManager.getAccess(mClientId)
-                .flatMap(new Func1<ConclaveAccessDetails, Observable<Object>>() {
+                .flatMap(new Func1<ConclaveAccessDetails, Observable<ConclaveDeviceEventSource>>() {
                     @Override
-                    public Observable<Object> call(ConclaveAccessDetails conclaveAccessDetails) {
+                    public Observable<ConclaveDeviceEventSource> call(ConclaveAccessDetails conclaveAccessDetails) {
                         mToken = null;
 
                         setConclaveAccessDetails(conclaveAccessDetails);
@@ -173,11 +174,13 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
 
                         AfLog.i("ConclaveDeviceEventSource.reconnect: mAccountId = " + mAccountId);
 
-                        return mConclaveClient.connect(conclaveAccessDetails);
+                        return mConclaveClient.connect(conclaveAccessDetails)
+                            .map(new RxUtils.Mapper<ConclaveClient, ConclaveDeviceEventSource>(ConclaveDeviceEventSource.this));
                     }
                 });
         } else {
-            connectObservable = mConclaveClient.connect(mConclaveAccessDetails);
+            connectObservable = mConclaveClient.connect(mConclaveAccessDetails)
+                .map(new RxUtils.Mapper<ConclaveClient, ConclaveDeviceEventSource>(this));
         }
 
         return connectObservable;
@@ -224,7 +227,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
 
     private void onNextConclave(JsonNode node) {
         Map.Entry<String,JsonNode> entry = node.fields().next();
-        String key = entry.getKey().toLowerCase();
+        String key = entry.getKey().toLowerCase(Locale.ROOT);
 
         if (key.equals("public") || key.equals("private")) {
             onMessage(entry.getValue());
@@ -267,7 +270,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
 
     private void onMessage(JsonNode node) {
         try {
-            String event = node.get(KEY_EVENT).asText().toLowerCase();
+            String event = node.get(KEY_EVENT).asText().toLowerCase(Locale.ROOT);
             JsonNode data = node.get(KEY_DATA);
             final ObjectMapper mapper = JSONUtils.getObjectMapper();
 
