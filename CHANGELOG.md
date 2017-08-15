@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-Version 0.6.3 *(2017-08-??)*
+Version 0.6.3 *(2017-08-15)*
 ----------------------------
 
  * Changed `afero-sdk-softhub` build to embed hubby library within the softhub .aar. This
