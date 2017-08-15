@@ -43,7 +43,25 @@ public class OTAWatcherTest {
                 .otaOngoing(75)
                 .verifyOTAProgress(75)
 
+                .otaOngoing(99)
+                .verifyOTAProgress(100)
+
                 .otaOngoing(100)
+                .verifyOTAProgress(0)
+
+                .otaOngoing(125)
+                .verifyOTAProgress(25)
+
+                .otaOngoing(150)
+                .verifyOTAProgress(50)
+
+                .otaOngoing(175)
+                .verifyOTAProgress(75)
+
+                .otaOngoing(199)
+                .verifyOTAProgress(100)
+
+                .otaOngoing(200)
                 .verifyOTAProgress(100)
 
                 .otaStop()
@@ -67,8 +85,9 @@ public class OTAWatcherTest {
     }
 
     private class Tester {
+        static final int OTA_TOTAL = 200;
+
         private static final long OTA_TIMEOUT_SECONDS = 2;
-        private static final int OTA_TOTAL = 200;
 
         private final OTAWatcher otaWatcher = new OTAWatcher(OTA_TIMEOUT_SECONDS);
         private final Object otaTimeoutLock = new Object();
