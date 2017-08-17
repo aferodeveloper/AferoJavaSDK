@@ -56,3 +56,9 @@ publishing {
         }
     }
 }
+
+javadoc {
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.links("https://square.github.io/okhttp/3.x/okhttp/")
+    options.links("https://square.github.io/retrofit/2.x/retrofit/")
+}

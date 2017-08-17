@@ -496,7 +496,7 @@ public final class DeviceModel {
      * </p>
      *
      * @return {@link AttributeWriter} that is used to compose, initiate, and monitor the write operation.
-     * @see {@link AttributeWriter}
+     * @see AttributeWriter
      */
     public AttributeWriter writeAttributes() {
         return new AttributeWriter(this);
