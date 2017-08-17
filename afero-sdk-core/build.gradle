@@ -52,3 +52,7 @@ publishing {
     }
 }
 
+javadoc {
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.links("http://reactivex.io/RxJava/1.x/javadoc/")
+}
