@@ -22,7 +22,7 @@ allprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.0'
+    gradleVersion = '3.3'
 }
 
 task clean(type: Delete) {
@@ -124,8 +124,8 @@ gradle.projectsEvaluated {
         group = JavaBasePlugin.DOCUMENTATION_GROUP
         dependsOn javaSubprojects.javadoc, androidSubprojects.generateReleaseJavadoc
 
-        title rootProject.name
-        options.windowTitle rootProject.name
+        title 'Afero Java SDK'
+        options.windowTitle title
 
         source javaSubprojects.javadoc.source, androidSubprojects.generateReleaseJavadoc.source
         destinationDir rootProject.file("$rootProject.buildDir/docs/javadoc")
@@ -145,10 +145,10 @@ gradle.projectsEvaluated {
         def linksOffline = new HashMap<String, ArrayList<String>>();
         androidSubprojects.generateReleaseJavadoc.options.linksOffline.each { lo ->
             lo.each { l ->
-                linksOffline.put(l.getExtDocUrl(), [l.getExtDocUrl(), l.getPackagelistLoc()])
+                linksOffline.put(l.getExtDocUrl(), [l.getExtDocUrl(), l.getPackagelistLoc()].join("' '"))
             }
         }
-        options.addMultilineMultiValueOption('linkoffline').setValue(linksOffline.values().toList())
+        options.addMultilineStringsOption('linkoffline').setValue(linksOffline.values().toList())
     }
 }
 
