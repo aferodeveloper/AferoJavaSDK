@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 0.7.0 *(2017-08-18)*
+----------------------------
+
+ * New: Generated JavaDoc
+ * Fix: Minor change to OTAInfo.getProgress() logic to return 0% at offset 0 of partition 2
+   instead of 100%, and to be consistent with iOS/Swift.
+
 Version 0.6.3 *(2017-08-15)*
 ----------------------------
 
