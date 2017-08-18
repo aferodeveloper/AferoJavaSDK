@@ -55,4 +55,7 @@ publishing {
 javadoc {
     options.addStringOption('Xdoclint:none', '-quiet')
     options.links("http://reactivex.io/RxJava/1.x/javadoc/")
+    options.links("http://fasterxml.github.io/jackson-annotations/javadoc/2.8/")
+    options.links("http://fasterxml.github.io/jackson-core/javadoc/2.8/")
+    options.links("http://fasterxml.github.io/jackson-databind/javadoc/2.8/")
 }
