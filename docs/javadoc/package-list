@@ -1,0 +1,15 @@
+io.afero.sdk.android.clock
+io.afero.sdk.android.log
+io.afero.sdk.client.afero
+io.afero.sdk.client.afero.models
+io.afero.sdk.client.mock
+io.afero.sdk.client.retrofit2
+io.afero.sdk.client.retrofit2.api
+io.afero.sdk.client.retrofit2.models
+io.afero.sdk.conclave
+io.afero.sdk.conclave.models
+io.afero.sdk.device
+io.afero.sdk.log
+io.afero.sdk.scheduler
+io.afero.sdk.softhub
+io.afero.sdk.utils
