@@ -22,7 +22,7 @@ allprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.1'
+    gradleVersion = '4.0'
 }
 
 task clean(type: Delete) {
@@ -114,3 +114,41 @@ artifactoryPublish {
         return true
     }
 }
+
+gradle.projectsEvaluated {
+    Set<Project> javaSubprojects = subprojects.findAll { subproject -> subproject.plugins.hasPlugin(JavaPlugin) }
+    Set<Project> androidSubprojects = rootProject.subprojects.findAll { subproject -> subproject.plugins.findPlugin("com.android.library") }
+
+    rootProject.task('aggregateJavadocs', type: Javadoc) {
+        description = 'Aggregates Javadoc API documentation of all subprojects.'
+        group = JavaBasePlugin.DOCUMENTATION_GROUP
+        dependsOn javaSubprojects.javadoc, androidSubprojects.generateReleaseJavadoc
+
+        title rootProject.name
+        options.windowTitle rootProject.name
+
+        source javaSubprojects.javadoc.source, androidSubprojects.generateReleaseJavadoc.source
+        destinationDir rootProject.file("$rootProject.buildDir/docs/javadoc")
+        classpath = rootProject.files(javaSubprojects.javadoc.classpath, androidSubprojects.generateReleaseJavadoc.classpath)
+
+        // allow html tags
+        options.addStringOption('Xdoclint:none', '-quiet')
+
+        // collect all the -link options from subprojects
+        def links = new HashSet<String>();
+        links.add("http://docs.oracle.com/javase/7/docs/api/")
+        links.addAll(javaSubprojects.javadoc.options.links.collectMany { it })
+        links.addAll(androidSubprojects.generateReleaseJavadoc.options.links.collectMany { it })
+        options.addMultilineStringsOption('link').setValue(links.toList())
+
+        // collect all the -linksoffline options from subprojects
+        def linksOffline = new HashMap<String, ArrayList<String>>();
+        androidSubprojects.generateReleaseJavadoc.options.linksOffline.each { lo ->
+            lo.each { l ->
+                linksOffline.put(l.getExtDocUrl(), [l.getExtDocUrl(), l.getPackagelistLoc()])
+            }
+        }
+        options.addMultilineMultiValueOption('linkoffline').setValue(linksOffline.values().toList())
+    }
+}
+

@@ -54,6 +54,8 @@ import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
+import static okhttp3.OkHttpClient.*;
+
 /**
  * Concrete implementation of AferoClient that provides access to the Afero Cloud API.
  */
@@ -166,7 +168,7 @@ public class AferoClientRetrofit2 implements AferoClient {
          * Sets base host url for the Afero service. For Afero internal use only.
          *
          * @param url absolute URL specifying the Afero host to be passed to
-         *            {@link Retrofit.Builder#baseUrl}
+         *            {@link Retrofit.Builder#baseUrl(String)}
          * @return this ConfigBuilder instance
          */
         public ConfigBuilder baseUrl(String url) {
@@ -187,11 +189,11 @@ public class AferoClientRetrofit2 implements AferoClient {
         }
 
         /**
-         * Sets the timeout for use by {@link OkHttpClient.Builder#connectTimeout},
-         * {@link OkHttpClient.Builder#readTimeout}, and {@link OkHttpClient.Builder#writeTimeout}.
+         * Sets the timeout for use by {@link Builder#connectTimeout(long, TimeUnit)},
+         * {@link Builder#readTimeout(long, TimeUnit)}, and {@link Builder#writeTimeout(long, TimeUnit)}.
          *
          * @param timeoutSeconds number of seconds until timeout is triggered
-         * @return this ConfigBuilder instance
+         * @return this {@code ConfigBuilder} instance
          */
         public ConfigBuilder defaultTimeout(int timeoutSeconds) {
             config.defaultTimeout = timeoutSeconds;
@@ -444,7 +446,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
-     * <p><b>For internal use only. Use {@link DeviceCollection#removeDevice instead.</b></p>
+     * <p><b>For internal use only. Use {@link DeviceCollection#removeDevice} instead.</b></p>
      *
      * Afero Cloud API call to remove the specifed device from the owner account.
      *
@@ -502,7 +504,7 @@ public class AferoClientRetrofit2 implements AferoClient {
      * @param body Array of {@link DeviceRequest} containing the attribute values to be written
      * @param maxRetryCount maximum number of retry attempts
      * @param statusCode http status code that will trigger a retry
-     * @return {@link Observable} that emits {@link RequestResponse[]} in {@link rx.Observer#onNext}.
+     * @return {@link Observable} that emits {@link RequestResponse} array in {@link rx.Observer#onNext}.
      */
     @Override
     public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
@@ -514,7 +516,7 @@ public class AferoClientRetrofit2 implements AferoClient {
      * Afero Cloud API to fetch all {@link DeviceProfile} object for the devices associated with
      * the active account.
      *
-     * @return {@link Observable} that emits {@link DeviceProfile[]} in {@link rx.Observer#onNext}.
+     * @return {@link Observable} that emits {@link DeviceProfile} array in {@link rx.Observer#onNext}.
      */
     @Override
     public Observable<DeviceProfile[]> getAccountDeviceProfiles() {

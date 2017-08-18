@@ -26,7 +26,7 @@ import rx.functions.Func2;
 /**
  * The AttributeWriter class provides an interface for writing {@link DeviceModel} attributes.
  *
- * @see {@link DeviceModel#writeAttributes()}
+ * @see DeviceModel#writeAttributes
  */
 public final class AttributeWriter {
 

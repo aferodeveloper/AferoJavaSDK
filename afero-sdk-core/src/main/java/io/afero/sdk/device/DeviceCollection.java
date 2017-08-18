@@ -184,7 +184,7 @@ public class DeviceCollection {
      * @return {@link Observable} that returns the newly added {@link DeviceModel} or an error. If
      * TransferVerificationRequired error is returned, user should be prompted whether to take
      * ownership of device. If user answers affirmatively, addDevice should be called again with
-     * {@param isOwnershipVerified} set to true.
+     * {@code isOwnershipVerified} set to true.
      * @throws IllegalStateException if called before {@link DeviceCollection#start()}
      */
     public Observable<DeviceModel> addDevice(String associationId, boolean isOwnershipVerified) {
@@ -233,7 +233,7 @@ public class DeviceCollection {
 
     /**
      * @param deviceId Identifier of a {@link DeviceModel}.
-     * @return the {@link DeviceModel} with the specified {@code deviceId}, or {@null} if no such
+     * @return the {@link DeviceModel} with the specified {@code deviceId}, or {@code null} if no such
      * {@link DeviceModel} exists.
      */
     public DeviceModel getDevice(String deviceId) {
