@@ -119,7 +119,7 @@ gradle.projectsEvaluated {
     Set<Project> javaSubprojects = subprojects.findAll { subproject -> subproject.plugins.hasPlugin(JavaPlugin) }
     Set<Project> androidSubprojects = rootProject.subprojects.findAll { subproject -> subproject.plugins.findPlugin("com.android.library") }
 
-    rootProject.task('aggregateJavadocs', type: Javadoc) {
+    task aggregateJavadocs(type: Javadoc) {
         description = 'Aggregates Javadoc API documentation of all subprojects.'
         group = JavaBasePlugin.DOCUMENTATION_GROUP
         dependsOn javaSubprojects.javadoc, androidSubprojects.generateReleaseJavadoc
@@ -151,4 +151,3 @@ gradle.projectsEvaluated {
         options.addMultilineStringsOption('linkoffline').setValue(linksOffline.values().toList())
     }
 }
-
