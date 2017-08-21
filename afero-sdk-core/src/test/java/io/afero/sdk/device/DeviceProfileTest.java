@@ -28,6 +28,11 @@ public class DeviceProfileTest {
         assertNotNull(is);
 
         DeviceProfile profile = objectMapper.readValue(is, DeviceProfile.class);
+
+        assertEquals("device-type", profile.getDeviceType());
+
+        assertEquals("device-type-id", profile.getDeviceTypeId());
+
         assertEquals(1, profile.getServiceCount());
 
         DeviceProfile.Service service = profile.getServices()[0];
