@@ -143,6 +143,11 @@ gradle.projectsEvaluated {
 
         // collect all the -linksoffline options from subprojects
         def linksOffline = new HashMap<String, ArrayList<String>>();
+        javaSubprojects.javadoc.options.linksOffline.each { lo ->
+            lo.each { l ->
+                linksOffline.put(l.getExtDocUrl(), [l.getExtDocUrl(), l.getPackagelistLoc()].join("' '"))
+            }
+        }
         androidSubprojects.generateReleaseJavadoc.options.linksOffline.each { lo ->
             lo.each { l ->
                 linksOffline.put(l.getExtDocUrl(), [l.getExtDocUrl(), l.getPackagelistLoc()].join("' '"))
