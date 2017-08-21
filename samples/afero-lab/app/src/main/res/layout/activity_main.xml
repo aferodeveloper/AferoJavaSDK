@@ -144,5 +144,6 @@
 
     </LinearLayout>
 
+    <include layout="@layout/view_device_inspector" />
 
 </FrameLayout>

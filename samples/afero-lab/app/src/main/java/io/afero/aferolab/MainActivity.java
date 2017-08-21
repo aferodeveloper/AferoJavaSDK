@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Afero, Inc. All rights reserved.
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
 package io.afero.aferolab;
@@ -67,6 +67,9 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.device_list_view)
     DeviceListView mDeviceListView;
+
+    @BindView(R.id.device_inspector)
+    DeviceInspectorView mDeviceInspectorView;
 
     @BindView(R.id.edit_text_email)
     AferoEditText mEmailEditText;
@@ -197,6 +200,12 @@ public class MainActivity extends AppCompatActivity {
         onSignOut();
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+
+    }
+
     private void setupViews() {
         if (isSignedIn()) {
             mSignInGroup.setVisibility(View.GONE);
@@ -298,8 +307,10 @@ public class MainActivity extends AppCompatActivity {
         mAferoClient.setToken(null);
         mAferoClient.clearAccount();
 
-        mDeviceCollection.stop();
-        mDeviceCollection.reset();
+        if (mDeviceCollection.isStarted()) {
+            mDeviceCollection.stop();
+            mDeviceCollection.reset();
+        }
 
         setupViews();
     }

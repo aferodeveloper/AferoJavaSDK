@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Afero, Inc. All rights reserved.
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
 package io.afero.aferolab;
@@ -124,7 +124,7 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_device, parent, false);
+        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_device_list_item, parent, false);
         return new ViewHolder(view);
     }
 
@@ -146,7 +146,7 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
         }
 
         public void update(DeviceModel deviceModel) {
-            ((DeviceView)itemView).update(deviceModel);
+            ((DeviceListItemView)itemView).update(deviceModel);
         }
     }
 
