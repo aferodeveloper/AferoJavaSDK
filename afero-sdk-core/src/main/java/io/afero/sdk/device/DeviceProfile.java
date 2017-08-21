@@ -31,6 +31,7 @@ public class DeviceProfile {
     private Gauge mGauge;
 
     private String mDeviceType;
+    private String mDeviceTypeId;
 
     private Presentation mPresentation;
 
@@ -1006,6 +1007,14 @@ public class DeviceProfile {
 
     public String getDeviceType() {
         return mDeviceType;
+    }
+
+    public void setDeviceTypeId(String typeId) {
+        mDeviceTypeId = typeId;
+    }
+
+    public String getDeviceTypeId() {
+        return mDeviceTypeId;
     }
 
     @JsonProperty("uiGauge")
