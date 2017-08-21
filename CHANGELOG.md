@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 0.7.1 *(2017-08-X)*
+----------------------------
+
+ * New: Added DeviceProfile.setDeviceTypeId() and getDeviceTypeId()
+
 Version 0.7.0 *(2017-08-18)*
 ----------------------------
 
