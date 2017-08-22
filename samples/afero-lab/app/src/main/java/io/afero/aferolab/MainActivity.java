@@ -34,6 +34,7 @@ import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.ConclaveClient;
 import io.afero.sdk.device.ConclaveDeviceEventSource;
 import io.afero.sdk.device.DeviceCollection;
+import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.softhub.AferoSofthub;
 import io.afero.sdk.utils.RxUtils;
@@ -145,6 +146,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mDeviceListView.start(mDeviceCollection);
+        mDeviceListView.getDeviceOnClick()
+                .subscribe(new Action1<DeviceModel>() {
+                    @Override
+                    public void call(DeviceModel deviceModel) {
+                        mDeviceInspectorView.start(deviceModel);
+                    }
+                });
 
         setupViews();
 
@@ -202,8 +210,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
+        if (mDeviceInspectorView.isStarted()) {
+            mDeviceInspectorView.stop();
+            return;
+        }
 
+        super.onBackPressed();
     }
 
     private void setupViews() {

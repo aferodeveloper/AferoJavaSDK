@@ -1,5 +1,7 @@
 package io.afero.aferolab;
 
+import android.view.View;
+
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.utils.RxUtils;
 import rx.Subscription;
@@ -22,13 +24,28 @@ class DeviceInspectorController {
                         onDeviceUpdate(deviceModel);
                     }
                 });
+
+        onDeviceUpdate(deviceModel);
+
+        mView.setVisibility(View.VISIBLE);
     }
 
     void stop() {
         mDeviceUpdateSubscription = RxUtils.safeUnSubscribe(mDeviceUpdateSubscription);
+        mView.setVisibility(View.INVISIBLE);
     }
 
     private void onDeviceUpdate(DeviceModel deviceModel) {
+        mView.setDeviceNameText(deviceModel.getName());
 
+        int statusResId = R.string.device_status_offline;
+        if (deviceModel.isAvailable()) {
+            if (deviceModel.isRunning()) {
+                statusResId = R.string.device_status_active;
+            } else {
+                statusResId = R.string.device_status_idle;
+            }
+        }
+        mView.setDeviceStatusText(statusResId);
     }
 }
