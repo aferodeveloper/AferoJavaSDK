@@ -5,6 +5,7 @@ import android.view.View;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.utils.RxUtils;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 
 class DeviceInspectorController {
@@ -18,6 +19,7 @@ class DeviceInspectorController {
 
     void start(DeviceModel deviceModel) {
         mDeviceUpdateSubscription = deviceModel.getUpdateObservable()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<DeviceModel>() {
                     @Override
                     public void call(DeviceModel deviceModel) {
@@ -35,6 +37,15 @@ class DeviceInspectorController {
         mView.setVisibility(View.INVISIBLE);
     }
 
+    public boolean isStarted() {
+        return mDeviceUpdateSubscription != null;
+    }
+
+    /**
+     * Updates the DeviceInspectorView when DeviceModel state changes
+     *
+     * @param deviceModel
+     */
     private void onDeviceUpdate(DeviceModel deviceModel) {
         mView.setDeviceNameText(deviceModel.getName());
 

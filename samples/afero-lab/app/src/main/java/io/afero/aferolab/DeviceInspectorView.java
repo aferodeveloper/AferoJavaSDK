@@ -9,6 +9,8 @@ import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -25,7 +27,11 @@ public class DeviceInspectorView extends LinearLayout {
     @BindView(R.id.device_status_text)
     TextView mDeviceStatusText;
 
-    private DeviceInspectorController mController;
+    @BindView(R.id.device_attribute_recycler_view)
+    RecyclerView mAttributeListView;
+
+    private final DeviceInspectorController mController = new DeviceInspectorController(this);
+    private final AttributeAdapter mAdapter = new AttributeAdapter();
 
     public DeviceInspectorView(@NonNull Context context) {
         super(context);
@@ -43,22 +49,25 @@ public class DeviceInspectorView extends LinearLayout {
     protected void onFinishInflate() {
         super.onFinishInflate();
         ButterKnife.bind(this);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        mAttributeListView.setLayoutManager(layoutManager);
+
+        mAttributeListView.setAdapter(mAdapter);
     }
 
     public void start(DeviceModel deviceModel) {
-        mController = new DeviceInspectorController(this);
         mController.start(deviceModel);
+        mAdapter.start(deviceModel);
     }
 
     public void stop() {
-        if (mController != null) {
-            mController.stop();
-            mController = null;
-        }
+        mController.stop();
+        mAdapter.stop();
     }
 
     public boolean isStarted() {
-        return mController != null;
+        return mController.isStarted();
     }
 
     public void setDeviceNameText(String name) {

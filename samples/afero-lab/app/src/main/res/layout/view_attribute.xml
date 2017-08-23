@@ -3,21 +3,25 @@
   ~ Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
   -->
 
-<LinearLayout
+<io.afero.aferolab.AttributeEditorView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="50dp"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:paddingBottom="3dp"
+    android:paddingEnd="10dp"
+    android:paddingStart="10dp"
+    android:paddingTop="3dp">
 
     <TextView
-        android:id="@+id/attribute_label"
+        android:id="@+id/attribute_label_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|end"
         android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="1"
+        android:textSize="12sp"
         />
 
     <TextView
@@ -25,19 +29,21 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|start"
-        android:layout_weight="3"
+        android:layout_weight="2"
         android:ellipsize="end"
         android:maxLines="1"
+        android:textSize="12sp"
         />
 
     <io.afero.aferolab.AferoEditText
         android:id="@+id/attribute_value_editor"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="3"
+        android:layout_weight="2"
         android:ems="10"
         android:inputType="numberSigned"
+        android:maxLines="1"
         android:visibility="gone"
         />
 
-</LinearLayout>
+</io.afero.aferolab.AttributeEditorView>
