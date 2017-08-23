@@ -54,7 +54,7 @@ import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
-import static okhttp3.OkHttpClient.*;
+import static okhttp3.OkHttpClient.Builder;
 
 /**
  * Concrete implementation of AferoClient that provides access to the Afero Cloud API.

@@ -5,10 +5,8 @@
 package io.afero.sdk.conclave.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Arrays;
-import java.util.HashMap;
 
 import io.afero.sdk.client.afero.models.DeviceStatus;
 import io.afero.sdk.client.afero.models.DeviceTag;
