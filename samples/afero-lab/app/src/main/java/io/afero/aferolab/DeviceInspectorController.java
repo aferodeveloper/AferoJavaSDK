@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
 package io.afero.aferolab;
 
 import android.view.View;
@@ -34,7 +38,6 @@ class DeviceInspectorController {
 
     void stop() {
         mDeviceUpdateSubscription = RxUtils.safeUnSubscribe(mDeviceUpdateSubscription);
-        mView.setVisibility(View.INVISIBLE);
     }
 
     public boolean isStarted() {

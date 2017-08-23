@@ -1,8 +1,8 @@
-package io.afero.aferolab;
-
 /*
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
+
+package io.afero.aferolab;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -47,6 +47,7 @@ public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.View
 
         DeviceProfile deviceProfile = deviceModel.getProfile();
 
+        mAttributes.clear();
         for (DeviceProfile.Service service : deviceProfile.getServices()) {
             for (DeviceProfile.Attribute attribute : service.getAttributes()) {
                 mAttributes.add(attribute);
@@ -57,7 +58,11 @@ public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.View
     }
 
     public void stop() {
+        mDeviceModel = null;
         mDeviceUpdateSubscription = RxUtils.safeUnSubscribe(mDeviceUpdateSubscription);
+    }
+
+    public void clear() {
         mAttributes.clear();
         notifyDataSetChanged();
     }
@@ -73,7 +78,7 @@ public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.View
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_attribute, parent, false);
+        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_attribute_list_item, parent, false);
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

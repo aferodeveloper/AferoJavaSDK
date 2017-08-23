@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
 package io.afero.aferolab;
 
 import android.content.Context;
@@ -10,7 +14,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.afero.sdk.client.afero.models.AttributeValue;
 
-class AttributeEditorView extends LinearLayout {
+class AttributeListItemView extends LinearLayout {
 
     @BindView(R.id.attribute_label_text)
     TextView mLabelText;
@@ -18,15 +22,15 @@ class AttributeEditorView extends LinearLayout {
     @BindView(R.id.attribute_value_text)
     TextView mValueText;
 
-    public AttributeEditorView(Context context) {
+    public AttributeListItemView(Context context) {
         super(context);
     }
 
-    public AttributeEditorView(Context context, @Nullable AttributeSet attrs) {
+    public AttributeListItemView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public AttributeEditorView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public AttributeListItemView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
