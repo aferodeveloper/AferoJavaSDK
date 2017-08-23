@@ -12,14 +12,15 @@ import android.support.annotation.StringRes;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
-import android.widget.LinearLayout;
+import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.afero.sdk.device.DeviceModel;
 
-public class DeviceInspectorView extends LinearLayout {
+public class DeviceInspectorView extends FrameLayout {
 
     @BindView(R.id.device_name_text)
     TextView mDeviceNameText;
@@ -29,6 +30,17 @@ public class DeviceInspectorView extends LinearLayout {
 
     @BindView(R.id.device_attribute_recycler_view)
     RecyclerView mAttributeListView;
+
+    @BindView(R.id.device_info_card)
+    View mDeviceInfoCard;
+
+    @BindView(R.id.attributes_card)
+    View mAttributesCard;
+
+    @BindView(R.id.view_scrim)
+    View mScrimView;
+
+    private static final int TRANSITION_DURATION = 200;
 
     private final DeviceInspectorController mController = new DeviceInspectorController(this);
     private final AttributeAdapter mAdapter = new AttributeAdapter();
@@ -52,18 +64,21 @@ public class DeviceInspectorView extends LinearLayout {
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mAttributeListView.setLayoutManager(layoutManager);
-
         mAttributeListView.setAdapter(mAdapter);
     }
 
     public void start(DeviceModel deviceModel) {
         mController.start(deviceModel);
         mAdapter.start(deviceModel);
+
+        startEnterTransition();
     }
 
     public void stop() {
         mController.stop();
         mAdapter.stop();
+
+        startExitTransition();
     }
 
     public boolean isStarted() {
@@ -76,5 +91,27 @@ public class DeviceInspectorView extends LinearLayout {
 
     public void setDeviceStatusText(@StringRes int statusResId) {
         mDeviceStatusText.setText(statusResId);
+    }
+
+    private void startEnterTransition() {
+        mScrimView.setAlpha(0);
+        mScrimView.animate().alpha(1).setDuration(TRANSITION_DURATION);
+        mDeviceInfoCard.setTranslationX(getWidth());
+        mDeviceInfoCard.animate().translationX(0).setDuration(TRANSITION_DURATION);
+        mAttributesCard.setTranslationX(getWidth());
+        mAttributesCard.animate().translationX(0).setDuration(TRANSITION_DURATION);
+    }
+
+    private void startExitTransition() {
+        mScrimView.animate().alpha(0).setDuration(TRANSITION_DURATION);
+        mDeviceInfoCard.animate().translationX(getWidth()).setDuration(TRANSITION_DURATION);
+        mAttributesCard.animate().translationX(getWidth())
+                .setDuration(TRANSITION_DURATION)
+                .withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.clear();
+                    }
+                });
     }
 }
