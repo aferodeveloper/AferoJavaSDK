@@ -1,8 +1,8 @@
 ---
 author: Tony Myles
 title: "AferoJavaSDK"
-date: 2017-Aug-18
-status: 0.7.0
+date: 2017-Aug-25
+status: 0.7.1
 ---
 
 # AferoJavaSDK
