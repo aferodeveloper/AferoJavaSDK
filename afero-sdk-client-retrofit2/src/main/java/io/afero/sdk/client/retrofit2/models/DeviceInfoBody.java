@@ -45,13 +45,26 @@ public class DeviceInfoBody {
 
     public String pushId;
     public String mobileDeviceId;
-    public String platform;
+
+    public static final String PLATFORM_ANDROID = "ANDROID";
+
+    /**
+     * Platform identifier. Typically set to "ANDROID".
+     */
+    public String platform = PLATFORM_ANDROID;
+
+    /**
+     * Application Id to be used for notifications on Android
+     */
+    public String appId;
+
     public ExtendedData extendedData;
 
-    public DeviceInfoBody(String platform, String pId, String clientId) {
+    public DeviceInfoBody(String platform, String pId, String clientId, String appId) {
         extendedData = new ExtendedData();
         this.platform = platform;
         this.pushId = pId;
         this.mobileDeviceId = clientId;
+        this.appId = appId;
     }
 }
