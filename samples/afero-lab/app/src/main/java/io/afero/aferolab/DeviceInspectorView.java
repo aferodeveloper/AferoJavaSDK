@@ -19,6 +19,9 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.afero.sdk.device.DeviceModel;
+import io.afero.sdk.device.DeviceProfile;
+import rx.functions.Action1;
+
 
 public class DeviceInspectorView extends FrameLayout {
 
@@ -67,18 +70,34 @@ public class DeviceInspectorView extends FrameLayout {
         mAttributeListView.setAdapter(mAdapter);
     }
 
-    public void start(DeviceModel deviceModel) {
+    public void start(final DeviceModel deviceModel) {
+        if (isStarted()) {
+            return;
+        }
+
         mController.start(deviceModel);
         mAdapter.start(deviceModel);
+        mAdapter.getViewOnClick()
+                .subscribe(new Action1<View>() {
+                    @Override
+                    public void call(View view) {
+                        int pos = mAttributeListView.getChildAdapterPosition(view);
+                        if (pos != RecyclerView.NO_POSITION) {
+                            startAttributeEditor(deviceModel, mAdapter.getAttributeAt(pos));
+                        }
+                    }
+                });
 
         startEnterTransition();
     }
 
     public void stop() {
-        mController.stop();
-        mAdapter.stop();
+        if (isStarted()) {
+            mController.stop();
+            mAdapter.stop();
 
-        startExitTransition();
+            startExitTransition();
+        }
     }
 
     public boolean isStarted() {
@@ -94,6 +113,7 @@ public class DeviceInspectorView extends FrameLayout {
     }
 
     private void startEnterTransition() {
+        setVisibility(VISIBLE);
         mScrimView.setAlpha(0);
         mScrimView.animate().alpha(1).setDuration(TRANSITION_DURATION);
         mDeviceInfoCard.setTranslationX(getWidth());
@@ -111,7 +131,13 @@ public class DeviceInspectorView extends FrameLayout {
                     @Override
                     public void run() {
                         mAdapter.clear();
+                        setVisibility(INVISIBLE);
                     }
                 });
+    }
+
+    private void startAttributeEditor(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
+        AttributeEditorView view = ButterKnife.findById(getRootView(), R.id.attribute_editor);
+        view.start(deviceModel, attribute);
     }
 }

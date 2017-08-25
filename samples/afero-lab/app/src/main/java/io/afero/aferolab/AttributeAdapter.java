@@ -8,13 +8,9 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import java.util.Vector;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.utils.RxUtils;
@@ -41,7 +37,7 @@ public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.View
                 .subscribe(new Action1<DeviceModel>() {
                     @Override
                     public void call(DeviceModel deviceModel) {
-                        onDeviceUpdate(deviceModel);
+                        notifyDataSetChanged();
                     }
                 });
 
@@ -78,7 +74,8 @@ public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.View
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_attribute_list_item, parent, false);
+        final AttributeListItemView view = (AttributeListItemView)LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.view_attribute_list_item, parent, false);
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -103,38 +100,18 @@ public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.View
         return mAttributes.get(itemPosition);
     }
 
-    private void onDeviceUpdate(DeviceModel deviceModel) {
-        notifyDataSetChanged();
-    }
-
-    private static String getAttributeLabel(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
-        DeviceProfile.Presentation presentation = deviceModel.getPresentation();
-        DeviceProfile.AttributeOptions options = presentation.getAttributeOptionsById(attribute.getId());
-        String label = options != null ? options.getLabel() : null;
-        return label != null && !label.isEmpty() ? label : Integer.toString(attribute.getId());
-    }
-
     static class ViewHolder extends RecyclerView.ViewHolder {
 
-        @BindView(R.id.attribute_label_text)
-        TextView mLabelText;
+        AttributeListItemView mAttributeView;
 
-        @BindView(R.id.attribute_value_text)
-        TextView mValueText;
-
-        ViewHolder(View view) {
+        ViewHolder(AttributeListItemView view) {
             super(view);
-            ButterKnife.bind(this, view);
+            mAttributeView = view;
         }
 
         void update(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
-            String label = getAttributeLabel(deviceModel, attribute);
-            mLabelText.setText(label);
-
-            AttributeValue value = deviceModel.getAttributeCurrentValue(attribute);
-            mValueText.setText(value != null ? value.toString() : "<null>");
+            mAttributeView.update(deviceModel, attribute);
         }
 
     }
-
 }

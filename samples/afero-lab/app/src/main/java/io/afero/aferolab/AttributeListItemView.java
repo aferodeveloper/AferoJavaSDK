@@ -13,8 +13,13 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.afero.sdk.client.afero.models.AttributeValue;
+import io.afero.sdk.device.DeviceModel;
+import io.afero.sdk.device.DeviceProfile;
 
 class AttributeListItemView extends LinearLayout {
+
+    @BindView(R.id.attribute_id_text)
+    TextView mIdText;
 
     @BindView(R.id.attribute_label_text)
     TextView mLabelText;
@@ -40,8 +45,11 @@ class AttributeListItemView extends LinearLayout {
         ButterKnife.bind(this);
     }
 
-    public void setLabelAndValue(String label, AttributeValue value) {
-        mLabelText.setText(label);
+    public void update(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
+        mIdText.setText(Integer.toString(attribute.getId()));
+        mLabelText.setText(attribute.getSemanticType() != null ? attribute.getSemanticType() : "");
+
+        AttributeValue value = deviceModel.getAttributeCurrentValue(attribute);
         mValueText.setText(value != null ? value.toString() : "<null>");
     }
 }
