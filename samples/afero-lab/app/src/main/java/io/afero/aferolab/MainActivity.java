@@ -426,7 +426,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Observable<Response<Void>> callMapPushIdToDeviceInfo(String pushId) {
-        DeviceInfoBody deviceInfo = new DeviceInfoBody("ANDROID", pushId, ClientID.get(this));
+        DeviceInfoBody deviceInfo = new DeviceInfoBody(DeviceInfoBody.PLATFORM_ANDROID, pushId, ClientID.get(this), BuildConfig.APPLICATION_ID);
 
         deviceInfo.extendedData.app_version = BuildConfig.VERSION_NAME;
         deviceInfo.extendedData.app_build_number = BuildConfig.VERSION_CODE;

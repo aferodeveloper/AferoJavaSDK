@@ -1,10 +1,11 @@
 Change Log
 ==========
 
-Version 0.7.1 *(2017-08-X)*
+Version 0.7.1 *(2017-08-25)*
 ----------------------------
 
  * New: Added DeviceProfile.setDeviceTypeId() and getDeviceTypeId()
+ * New: Added DeviceInfoBody.appId to support specifying the Android application id for notifications.
 
 Version 0.7.0 *(2017-08-18)*
 ----------------------------
