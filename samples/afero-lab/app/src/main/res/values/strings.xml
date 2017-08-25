@@ -20,6 +20,7 @@
 
     <string name="attribute_value_label">Value:</string>
     <string name="attribute_data_type_label">Data Type:</string>
-    <string name="attribute_semantic_type_label">Semantic Type:</string>
     <string name="attribute_timestamp_label">Last Update:</string>
+    <string name="attribute_switch_text_on">True</string>
+    <string name="attribute_switch_text_off">False</string>
 </resources>

@@ -1,15 +1,15 @@
 package io.afero.aferolab;
 
 
-import android.text.InputType;
-
 import java.math.BigDecimal;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
+import io.afero.sdk.device.AttributeWriter;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.utils.RxUtils;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 
 class AttributeEditorController {
@@ -32,11 +32,7 @@ class AttributeEditorController {
         mView.setAttributeIdText(mAttribute.getId());
         mView.setAttributeLabelText(mAttribute.getSemanticType());
         mView.setAttributeDataTypeText(mAttribute.getDataType().toString());
-
-        mView.setAttributeValueEditEnabled(mAttribute.isWritable());
-        mView.setAttributeValueEditTextConfig(getAttributeValueInputType(), getAttributeValueAllowedDigits());
-
-        mView.setAttributeNumericEditEnabled(mAttribute.isNumericType());
+        mView.setAttributeValueEditorType(getAttributeValueEditorType());
 
         DeviceProfile.Presentation presentation = mDeviceModel.getPresentation();
         DeviceProfile.AttributeOptions options = presentation != null
@@ -49,6 +45,7 @@ class AttributeEditorController {
         }
 
         mDeviceUpdateSubscription = deviceModel.getUpdateObservable()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<DeviceModel>() {
                     @Override
                     public void call(DeviceModel deviceModel) {
@@ -67,25 +64,51 @@ class AttributeEditorController {
         return mDeviceUpdateSubscription != null;
     }
 
-    void onAttributeValueSliderChanged(double sliderProportion) {
-        BigDecimal value = null;
+    void onAttributeValueTextEditorChanged(String text) {
+        AttributeValue value = new AttributeValue(mAttribute.getDataType());
+        value.setValue(text);
+
+        updateDeviceModel(value);
+    }
+
+    void onAttributeValueNumberEditorChanged(double sliderProportion) {
+        BigDecimal numValue = null;
 
         if (mValueOptions != null) {
             try {
-                int index = (int)mRange.getIndexByProportion(sliderProportion);
-                value = new BigDecimal(mValueOptions[index].match);
+                int index = (int) mRange.getIndexByProportion(sliderProportion);
+                numValue = new BigDecimal(mValueOptions[index].match);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            value = mRange.getValueByProportion(sliderProportion);
+            numValue = mRange.getValueByProportion(sliderProportion);
         }
 
-        if (value == null) {
-            value = BigDecimal.ZERO;
+        if (numValue == null) {
+            numValue = BigDecimal.ZERO;
         }
 
+        AttributeValue value = new AttributeValue(mAttribute.getDataType());
+        value.setValue(numValue);
+
+        updateDeviceModel(value);
+    }
+
+    void onAttributeValueBooleanEditorChanged(boolean b) {
+        AttributeValue value = new AttributeValue(mAttribute.getDataType());
+        value.setValue(b);
+
+        updateDeviceModel(value);
+    }
+
+    private void updateDeviceModel(AttributeValue value) {
         mView.setAttributeValueText(value.toString());
+
+        mDeviceModel.writeAttributes()
+                .put(mAttribute.getId(), value)
+                .commit()
+                .subscribe(new RxUtils.IgnoreResponseObserver<AttributeWriter.Result>());
     }
 
     private void onDeviceUpdate() {
@@ -98,32 +121,28 @@ class AttributeEditorController {
         }
     }
 
-    private int getAttributeValueInputType() {
-        int inputType;
+    private AttributeEditorView.ValueEditorType getAttributeValueEditorType() {
+        AttributeEditorView.ValueEditorType editorType = AttributeEditorView.ValueEditorType.NONE;
 
-        if (mAttribute.isNumericType()) {
-            inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
-            if (mAttribute.isNumericDecimalType()) {
-                inputType |= InputType.TYPE_NUMBER_FLAG_DECIMAL;
+        if (mAttribute.isWritable()) {
+            if (mAttribute.isNumericType()) {
+                if (mAttribute.isNumericDecimalType()) {
+                    editorType = AttributeEditorView.ValueEditorType.NUMBER_DECIMAL;
+                } else {
+                    editorType = AttributeEditorView.ValueEditorType.NUMBER;
+                }
             }
-        } else {
-            inputType = InputType.TYPE_CLASS_TEXT;
-            switch (mAttribute.getDataType()) {
-                case UTF8S:
-                    inputType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
-                    break;
-
-                case BYTES:
-                    inputType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
-                    break;
+            else if (mAttribute.getDataType() == AttributeValue.DataType.BYTES) {
+                editorType = AttributeEditorView.ValueEditorType.BYTES;
+            }
+            else if (mAttribute.getDataType() == AttributeValue.DataType.BOOLEAN) {
+                editorType = AttributeEditorView.ValueEditorType.BOOLEAN;
+            } else {
+                editorType = AttributeEditorView.ValueEditorType.TEXT;
             }
         }
 
-        return inputType;
-    }
-
-    private String getAttributeValueAllowedDigits() {
-        return mAttribute.getDataType() == AttributeValue.DataType.BYTES ? "0123456789ABCDEF" : null;
+        return editorType;
     }
 
     private DeviceProfile.RangeOptions makeRangeFromValueOptions() {

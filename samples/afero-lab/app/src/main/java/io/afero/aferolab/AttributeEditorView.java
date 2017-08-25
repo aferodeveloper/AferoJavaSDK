@@ -1,25 +1,42 @@
 package io.afero.aferolab;
 
+import android.animation.TimeInterpolator;
 import android.content.Context;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.CardView;
-import android.text.method.DigitsKeyListener;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.text.Spanned;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnEditorAction;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 
 
 public class AttributeEditorView extends FrameLayout {
+
+    public enum ValueEditorType {
+        NONE,
+        TEXT,
+        NUMBER,
+        NUMBER_DECIMAL,
+        BOOLEAN,
+        BYTES,
+        ENUM
+    }
 
     @BindView(R.id.attribute_id_text)
     TextView mAttributeIdText;
@@ -36,6 +53,9 @@ public class AttributeEditorView extends FrameLayout {
     @BindView(R.id.attribute_value_seekbar)
     SeekBar mAttributeValueSeekBar;
 
+    @BindView(R.id.attribute_value_switch)
+    Switch mAttributeValueSwitch;
+
     @BindView(R.id.view_scrim)
     View mScrimView;
 
@@ -46,6 +66,10 @@ public class AttributeEditorView extends FrameLayout {
     private static final long EXIT_TRANSITION_DURATION = 100;
 
     private final AttributeEditorController mController = new AttributeEditorController(this);
+    private final TimeInterpolator mEnterTransitionInterpolator = new OvershootInterpolator();
+
+    private ValueEditorType mEditorType = ValueEditorType.NONE;
+
 
     public AttributeEditorView(@NonNull Context context) {
         super(context);
@@ -75,7 +99,7 @@ public class AttributeEditorView extends FrameLayout {
         mAttributeValueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                mController.onAttributeValueSliderChanged(getAttributeValueSliderProportion());
+                mController.onAttributeValueNumberEditorChanged(getAttributeValueSliderProportion());
             }
 
             @Override
@@ -86,6 +110,13 @@ public class AttributeEditorView extends FrameLayout {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
+            }
+        });
+
+        mAttributeValueSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                mController.onAttributeValueBooleanEditorChanged(b);
             }
         });
     }
@@ -121,10 +152,10 @@ public class AttributeEditorView extends FrameLayout {
         mAttributeDataTypeText.setText(s != null ? s : "-");
     }
 
-    public void setAttributeValueEditTextConfig(int inputType, String digits) {
+    public void setAttributeValueEditTextInputConfig(int inputType, String allowedCharacters) {
         mAttributeValueEditText.setInputType(inputType);
-        if (digits != null) {
-            mAttributeValueEditText.setKeyListener(DigitsKeyListener.getInstance(digits));
+        if (allowedCharacters != null) {
+            mAttributeValueEditText.setFilters(new InputFilter[]{new CharacterInputFilter(allowedCharacters)});
         }
     }
 
@@ -132,21 +163,67 @@ public class AttributeEditorView extends FrameLayout {
         mAttributeValueEditText.setText(valueText != null ? valueText : "");
     }
 
-    public void setAttributeValueEditEnabled(boolean enabled) {
-        mAttributeValueEditText.setEnabled(enabled);
-        mAttributeValueSeekBar.setVisibility(enabled ? View.VISIBLE : View.GONE);
-    }
+    public void setAttributeValueEditorType(ValueEditorType editorType) {
+        mEditorType = editorType;
 
-    public void setAttributeNumericEditEnabled(boolean enabled) {
-        mAttributeValueSeekBar.setVisibility(mAttributeValueEditText.isEnabled() && enabled ? View.VISIBLE : View.GONE);
+        mAttributeValueEditText.setEnabled(false);
+        mAttributeValueEditText.setVisibility(VISIBLE);
+        mAttributeValueSeekBar.setVisibility(View.GONE);
+        mAttributeValueSwitch.setVisibility(View.GONE);
+        mAttributeValueEditText.setFilters(new InputFilter[]{});
+        mAttributeValueEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+
+        int numberInputType = 0;
+
+        switch (mEditorType) {
+            case NONE:
+                break;
+
+            case TEXT:
+                mAttributeValueEditText.setEnabled(true);
+                break;
+
+            case NUMBER_DECIMAL:
+                numberInputType |= InputType.TYPE_NUMBER_FLAG_DECIMAL;
+            case NUMBER:
+                numberInputType |= InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
+                mAttributeValueEditText.setEnabled(true);
+                mAttributeValueEditText.setInputType(numberInputType);
+                mAttributeValueSeekBar.setVisibility(View.VISIBLE);
+                break;
+
+            case BOOLEAN:
+                mAttributeValueSwitch.setVisibility(VISIBLE);
+                break;
+
+            case BYTES:
+                mAttributeValueEditText.setEnabled(true);
+                mAttributeValueEditText.setFilters(new InputFilter[]{new CharacterInputFilter("0123456789ABCDEF")});
+                mAttributeValueEditText.setInputType(mAttributeValueEditText.getInputType() | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+                break;
+
+            case ENUM:
+                break;
+        }
     }
 
     public void setAttributeValueSliderProportion(double proportion) {
-        mAttributeValueSeekBar.setProgress((int)Math.round(proportion * (double)mAttributeValueSeekBar.getMax()));
+        mAttributeValueSeekBar.setProgress((int) Math.round(proportion * (double) mAttributeValueSeekBar.getMax()));
     }
 
     public double getAttributeValueSliderProportion() {
-        return (double)mAttributeValueSeekBar.getProgress() / (double)mAttributeValueSeekBar.getMax();
+        return (double) mAttributeValueSeekBar.getProgress() / (double) mAttributeValueSeekBar.getMax();
+    }
+
+    @OnEditorAction(R.id.attribute_value_text)
+    boolean onAttributeValueEditorAction(TextView textView, int actionId, KeyEvent event) {
+
+        if (AferoEditText.isDone(actionId, event)) {
+            mController.onAttributeValueTextEditorChanged(textView.getText().toString());
+            mAttributeValueEditText.hideKeyboard();
+        }
+
+        return true;
     }
 
     private void startEnterTransition() {
@@ -156,7 +233,7 @@ public class AttributeEditorView extends FrameLayout {
         mAttributeCard.setAlpha(0);
         mAttributeCard.setScaleY(.1f);
         mAttributeCard.animate().scaleY(1).alpha(1)
-                .setInterpolator(new OvershootInterpolator())
+                .setInterpolator(mEnterTransitionInterpolator)
                 .setDuration(ENTER_TRANSITION_DURATION);
     }
 
@@ -170,5 +247,23 @@ public class AttributeEditorView extends FrameLayout {
                         setVisibility(INVISIBLE);
                     }
                 });
+    }
+
+    private class CharacterInputFilter implements InputFilter {
+        private final String mAllowedCharacters;
+
+        CharacterInputFilter(String allowedCharacters) {
+            mAllowedCharacters = allowedCharacters;
+        }
+
+        @Override
+        public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+            for (int i = start; i < end; i++) {
+                if (mAllowedCharacters.indexOf(source.charAt(i)) == -1) {
+                    return "";
+                }
+            }
+            return null;
+        }
     }
 }
