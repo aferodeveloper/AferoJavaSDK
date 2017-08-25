@@ -160,11 +160,21 @@
                     android:textSize="12sp"
                     />
 
+                <Switch
+                    android:id="@+id/attribute_value_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textOff="@string/attribute_switch_text_off"
+                    android:textOn="@string/attribute_switch_text_on"
+                    android:visibility="gone"
+                    />
+
                 <io.afero.aferolab.AferoEditText
                     android:id="@+id/attribute_value_text"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
                     android:textSize="12sp"
                     />
 
