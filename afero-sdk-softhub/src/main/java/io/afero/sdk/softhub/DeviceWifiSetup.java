@@ -15,6 +15,7 @@ import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.log.AfLog;
@@ -26,7 +27,7 @@ import rx.Subscription;
 import rx.functions.Action1;
 import rx.functions.Cancellable;
 import rx.functions.Func1;
-import rx.subjects.BehaviorSubject;
+import rx.subjects.PublishSubject;
 
 public class DeviceWifiSetup {
 
@@ -51,6 +52,7 @@ public class DeviceWifiSetup {
         See http://wiki.afero.io/display/FIR/Device+Attribute+Registry
     */
 
+    public static final int ATTRIBUTE_WIFI_SETUP_STATE = Hubby.WIFI_SETUP_STATE_ATTRIBUTE;
     public static final int ATTRIBUTE_WIFI_STEADY_STATE = 65006;
     public static final int ATTRIBUTE_WIFI_CONNECTED_SSID = 65004;
     public static final int ATTRIBUTE_WIFI_RSSI = 65005;
@@ -79,8 +81,8 @@ public class DeviceWifiSetup {
     private WifiState mSetupState = WifiState.NOT_CONNECTED;
     private WifiState mSteadyState = WifiState.NOT_CONNECTED;
 
-    protected BehaviorSubject<WifiState> mSetupStateSubject = BehaviorSubject.create();
-    private BehaviorSubject<WifiState> mSteadyStateSubject = BehaviorSubject.create();
+    private PublishSubject<WifiState> mSetupStateSubject = PublishSubject.create();
+    private PublishSubject<WifiState> mSteadyStateSubject = PublishSubject.create();
 
     private DeviceProfile.Attribute mSetupStateAttribute;
     private DeviceProfile.Attribute mSteadyStateAttribute;
@@ -96,7 +98,7 @@ public class DeviceWifiSetup {
         mAferoClient = aferoClient;
         mWifiSetupImpl = impl;
 
-        mSetupStateAttribute = deviceModel.getAttributeById(Hubby.WIFI_SETUP_STATE_ATTRIBUTE);
+        mSetupStateAttribute = deviceModel.getAttributeById(ATTRIBUTE_WIFI_SETUP_STATE);
         mSteadyStateAttribute = deviceModel.getAttributeById(ATTRIBUTE_WIFI_STEADY_STATE);
 
         WifiState ws = getStateFromAttribute(mSetupStateAttribute);
@@ -111,12 +113,19 @@ public class DeviceWifiSetup {
     }
 
     public void start() {
-        mDeviceUpdateSubscription = mDeviceModel.getUpdateObservable()
-            .subscribe(new Action1<DeviceModel>() {
+        mDeviceUpdateSubscription = mDeviceModel.getDeviceSyncPostUpdateObservable()
+            .subscribe(new Action1<DeviceSync>() {
                 @Override
-                public void call(DeviceModel d) {
-                    updateSetupState();
-                    updateSteadyState();
+                public void call(DeviceSync d) {
+                    if (d.attribute != null) {
+                        if (d.attribute.id == ATTRIBUTE_WIFI_SETUP_STATE) {
+                            updateSetupState();
+                        }
+                        if (d.attribute.id == ATTRIBUTE_WIFI_STEADY_STATE) {
+                            updateSteadyState();
+                        }
+                    }
+
                 }
             });
 
@@ -207,7 +216,7 @@ public class DeviceWifiSetup {
 
     @SuppressWarnings("WeakerAccess")
     public static boolean isWifiSetupCapable(DeviceModel deviceModel) {
-        return deviceModel.getAttributeById(Hubby.WIFI_SETUP_STATE_ATTRIBUTE) != null;
+        return deviceModel.getAttributeById(ATTRIBUTE_WIFI_SETUP_STATE) != null;
     }
 
     private WifiState getStateFromAttribute(DeviceProfile.Attribute attr) {
@@ -224,6 +233,7 @@ public class DeviceWifiSetup {
     private void updateSetupState() {
         WifiState ws = getStateFromAttribute(mSetupStateAttribute);
         if (ws != null) {
+            AfLog.d("DeviceWifiSetup: wifiSetupState=" + ws.toString());
             mSetupState = ws;
             mSetupStateSubject.onNext(ws);
         }
@@ -280,9 +290,6 @@ public class DeviceWifiSetup {
                 case START:
                 case AVAILABLE:
                 case CONNECTED:
-                    emit(state);
-                    break;
-
                 case DONE:
                     emit(state);
                     break;
@@ -307,6 +314,8 @@ public class DeviceWifiSetup {
 
         public void onNext(SetupWifiState state) {
             mCurrentState = state;
+
+            AfLog.d("SetupWifiSubscriberCallback: state=" + state.toString());
 
             switch (state) {
                 case START:
