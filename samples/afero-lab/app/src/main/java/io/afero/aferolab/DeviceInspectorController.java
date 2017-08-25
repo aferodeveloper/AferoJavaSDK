@@ -54,11 +54,7 @@ class DeviceInspectorController {
 
         int statusResId = R.string.device_status_offline;
         if (deviceModel.isAvailable()) {
-            if (deviceModel.isRunning()) {
-                statusResId = R.string.device_status_active;
-            } else {
-                statusResId = R.string.device_status_idle;
-            }
+            statusResId = deviceModel.isRunning() ? R.string.device_status_active : R.string.device_status_idle;
         }
         mView.setDeviceStatusText(statusResId);
     }

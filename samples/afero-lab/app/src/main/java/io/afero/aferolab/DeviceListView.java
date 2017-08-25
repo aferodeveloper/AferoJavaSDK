@@ -75,10 +75,6 @@ public class DeviceListView extends FrameLayout {
         mAdapter.stop();
     }
 
-    public void setAdapter(RecyclerView.Adapter adapter) {
-        mDeviceCardsView.setAdapter(adapter);
-    }
-
     public Observable<DeviceModel> getDeviceOnClick() {
         return mOnClickDeviceSubject;
     }

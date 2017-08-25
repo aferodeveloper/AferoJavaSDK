@@ -72,6 +72,9 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.device_inspector)
     DeviceInspectorView mDeviceInspectorView;
 
+    @BindView(R.id.attribute_editor)
+    AttributeEditorView mAttributeEditorView;
+
     @BindView(R.id.edit_text_email)
     AferoEditText mEmailEditText;
 
@@ -89,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.text_network_status)
     TextView mNetworkStatus;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -210,6 +214,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        if (mAttributeEditorView.isStarted()) {
+            mAttributeEditorView.stop();
+            return;
+        }
+
         if (mDeviceInspectorView.isStarted()) {
             mDeviceInspectorView.stop();
             return;
@@ -308,6 +317,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onSignOut() {
+
+        mDeviceInspectorView.stop();
+        mAttributeEditorView.stop();
+
         mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
 
         Prefs.clearAccountPrefs(this);
