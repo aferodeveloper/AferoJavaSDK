@@ -70,6 +70,22 @@ public class AttributeEditorView extends FrameLayout {
 
     private ValueEditorType mEditorType = ValueEditorType.NONE;
 
+    private final SeekBar.OnSeekBarChangeListener mSeekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+            mController.onAttributeValueNumberEditorChanging(getAttributeValueSliderProportion());
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+            mController.onAttributeValueNumberEditorChangeComplete(getAttributeValueSliderProportion());
+        }
+    };
 
     public AttributeEditorView(@NonNull Context context) {
         super(context);
@@ -96,22 +112,7 @@ public class AttributeEditorView extends FrameLayout {
         });
 
         mAttributeValueSeekBar.setMax(Integer.MAX_VALUE);
-        mAttributeValueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                mController.onAttributeValueNumberEditorChanged(getAttributeValueSliderProportion());
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
+        mAttributeValueSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
 
         mAttributeValueSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -150,13 +151,6 @@ public class AttributeEditorView extends FrameLayout {
 
     public void setAttributeDataTypeText(@Nullable String s) {
         mAttributeDataTypeText.setText(s != null ? s : "-");
-    }
-
-    public void setAttributeValueEditTextInputConfig(int inputType, String allowedCharacters) {
-        mAttributeValueEditText.setInputType(inputType);
-        if (allowedCharacters != null) {
-            mAttributeValueEditText.setFilters(new InputFilter[]{new CharacterInputFilter(allowedCharacters)});
-        }
     }
 
     public void setAttributeValueText(String valueText) {
@@ -208,7 +202,9 @@ public class AttributeEditorView extends FrameLayout {
     }
 
     public void setAttributeValueSliderProportion(double proportion) {
+        mAttributeValueSeekBar.setOnSeekBarChangeListener(null);
         mAttributeValueSeekBar.setProgress((int) Math.round(proportion * (double) mAttributeValueSeekBar.getMax()));
+        mAttributeValueSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
     }
 
     public double getAttributeValueSliderProportion() {

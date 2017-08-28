@@ -71,24 +71,13 @@ class AttributeEditorController {
         updateDeviceModel(value);
     }
 
-    void onAttributeValueNumberEditorChanged(double sliderProportion) {
-        BigDecimal numValue = null;
+    void onAttributeValueNumberEditorChanging(double sliderProportion) {
+        BigDecimal numValue = getNumericValueFromProportion(sliderProportion);
+        mView.setAttributeValueText(numValue.toString());
+    }
 
-        if (mValueOptions != null) {
-            try {
-                int index = (int) mRange.getIndexByProportion(sliderProportion);
-                numValue = new BigDecimal(mValueOptions[index].match);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            numValue = mRange.getValueByProportion(sliderProportion);
-        }
-
-        if (numValue == null) {
-            numValue = BigDecimal.ZERO;
-        }
-
+    void onAttributeValueNumberEditorChangeComplete(double sliderProportion) {
+        BigDecimal numValue = getNumericValueFromProportion(sliderProportion);
         AttributeValue value = new AttributeValue(mAttribute.getDataType());
         value.setValue(numValue);
 
@@ -189,5 +178,26 @@ class AttributeEditorController {
         range.setStep(BigDecimal.ONE);
 
         return range;
+    }
+
+    private BigDecimal getNumericValueFromProportion(double proportion) {
+        BigDecimal numValue = null;
+
+        if (mValueOptions != null) {
+            try {
+                int index = (int) mRange.getIndexByProportion(proportion);
+                numValue = new BigDecimal(mValueOptions[index].match);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            numValue = mRange.getValueByProportion(proportion);
+        }
+
+        if (numValue == null) {
+            numValue = BigDecimal.ZERO;
+        }
+
+        return numValue;
     }
 }
