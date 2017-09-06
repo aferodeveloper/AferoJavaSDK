@@ -16,15 +16,16 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceRequest;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.api.AferoClientAPI;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
+import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceSync;
@@ -467,8 +468,30 @@ public class AferoClientRetrofit2 implements AferoClient {
      * @return {@link Observable} that initiates the call on subscribe
      */
     @Override
-    public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
+    public Observable<Void> putDeviceTimeZone(DeviceModel deviceModel, TimeZone tz) {
         return mAferoService.putDeviceTimezone(mActiveAccountId, deviceModel.getId(), new DeviceTimezone(tz.getID()));
+    }
+
+    /**
+     * Afero Cloud API call to fetch the device's {@link TimeZone}, if any. If the device has no TimeZone set
+     * the Observable will be empty and will simply complete with no error.
+     *
+     * @param deviceModel {@link DeviceModel}
+     * @return {@link Observable} that emits the device TimeZone.
+     * @see TimeZone#getTimeZone
+     */
+    @Override
+    public Observable<TimeZone> getDeviceTimeZone(DeviceModel deviceModel) {
+        return mAferoService.getDeviceTimezone(mActiveAccountId, deviceModel.getId())
+                .flatMap(new Func1<DeviceTimeZoneResponse, Observable<TimeZone>>() {
+                    @Override
+                    public Observable<TimeZone> call(DeviceTimeZoneResponse timeZoneResponse) {
+                        TimeZone tz = timeZoneResponse.timezone != null && !timeZoneResponse.timezone.isEmpty()
+                                ? TimeZone.getTimeZone(timeZoneResponse.timezone)
+                                : null;
+                        return tz != null ? Observable.just(tz) : Observable.<TimeZone>empty();
+                    }
+                });
     }
 
     /**
@@ -486,7 +509,7 @@ public class AferoClientRetrofit2 implements AferoClient {
      * <p><b>For internal use only. Use {@link DeviceModel#writeModelValue} instead.</b></p>
      *
      * @param deviceModel {@link DeviceModel} upon which attribute will be written
-     * @param body Array of {@link DeviceRequest} containing the attribute values to be written
+     * @param body Array of {@link WriteRequest} containing the attribute values to be written
      * @param maxRetryCount maximum number of retry attempts
      * @param statusCode http status code that will trigger a retry
      * @return {@link Observable} that emits {@link ActionResponse} in {@link rx.Observer#onNext}.
@@ -501,14 +524,14 @@ public class AferoClientRetrofit2 implements AferoClient {
      * <p><b>For internal use only. Use {@link DeviceModel#writeModelValues} instead.</b></p>
      *
      * @param deviceModel {@link DeviceModel} upon which attributes will be written
-     * @param body Array of {@link DeviceRequest} containing the attribute values to be written
+     * @param body Array of {@link WriteRequest} containing the attribute values to be written
      * @param maxRetryCount maximum number of retry attempts
      * @param statusCode http status code that will trigger a retry
-     * @return {@link Observable} that emits {@link RequestResponse} array in {@link rx.Observer#onNext}.
+     * @return {@link Observable} that emits {@link WriteResponse} array in {@link rx.Observer#onNext}.
      */
     @Override
-    public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
-        Observable<RequestResponse[]> observable = mAferoService.postDeviceRequest(mActiveAccountId, deviceModel.getId(), body);
+    public Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode) {
+        Observable<WriteResponse[]> observable = mAferoService.postDeviceRequest(mActiveAccountId, deviceModel.getId(), body);
         return maxRetryCount > 0 ? observable.retryWhen(new RetryOnError(maxRetryCount, statusCode)) : observable;
     }
 

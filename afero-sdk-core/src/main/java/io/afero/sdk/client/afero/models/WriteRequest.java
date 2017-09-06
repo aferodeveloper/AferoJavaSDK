@@ -12,12 +12,12 @@ package io.afero.sdk.client.afero.models;
     }
  */
 
-public class DeviceRequest {
+public class WriteRequest {
     public String type = "attribute_write";
     public int attrId;
     public String value;
 
-    public DeviceRequest(int id, String v) {
+    public WriteRequest(int id, String v) {
         attrId = id;
         value = v;
     }
