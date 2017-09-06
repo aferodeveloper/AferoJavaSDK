@@ -9,16 +9,16 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceRequest;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
+import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.models.DeviceSync;
-import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -28,7 +28,6 @@ import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
-import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
@@ -125,6 +124,12 @@ public interface AferoClientAPI {
             @Body DeviceTimezone body
     );
 
+    @GET(V1 + "accounts/{accountId}/devices/{deviceId}/timezone")
+    Observable<DeviceTimeZoneResponse> getDeviceTimezone(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId
+    );
+
     @POST(V1 + "accounts/{accountId}/devices/{deviceId}/actions")
     Observable<ActionResponse> postAction(
             @Path("accountId") String accountId,
@@ -155,10 +160,10 @@ public interface AferoClientAPI {
     );
 
     @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/requests")
-    Observable<RequestResponse[]> postDeviceRequest(
+    Observable<WriteResponse[]> postDeviceRequest(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
-            @Body DeviceRequest[] body
+            @Body WriteRequest[] body
     );
 
     @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes")
