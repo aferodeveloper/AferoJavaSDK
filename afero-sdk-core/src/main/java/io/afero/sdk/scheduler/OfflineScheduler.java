@@ -442,20 +442,31 @@ public class OfflineScheduler {
     }
 
     public static void migrateAllToDeviceTimeZone(DeviceModel deviceModel) {
-        final TimeZone timeZone = deviceModel.getTimeZone();
 
-        if (timeZone != null && OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
+        if (deviceModel.isTimeZoneSet() && OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
 
             final OfflineScheduler offlineScheduler = new OfflineScheduler();
             offlineScheduler.start(deviceModel);
             offlineScheduler.readFromDevice();
 
             if (offlineScheduler.hasNonLocalTimeEvents()) {
-                offlineScheduler.getScheduleEvents()
-                        .filter(new Func1<OfflineScheduleEvent, Boolean>() {
+                deviceModel.getTimeZone()
+                        .flatMap(new Func1<TimeZone, Observable<OfflineScheduleEvent>>() {
                             @Override
-                            public Boolean call(OfflineScheduleEvent offlineScheduleEvent) {
-                                return !offlineScheduleEvent.isInLocalTime();
+                            public Observable<OfflineScheduleEvent> call(final TimeZone timeZone) {
+                                return offlineScheduler.getScheduleEvents()
+                                        .filter(new Func1<OfflineScheduleEvent, Boolean>() {
+                                            @Override
+                                            public Boolean call(OfflineScheduleEvent offlineScheduleEvent) {
+                                                return !offlineScheduleEvent.isInLocalTime();
+                                            }
+                                        })
+                                        .doOnNext(new Action1<OfflineScheduleEvent>() {
+                                            @Override
+                                            public void call(OfflineScheduleEvent offlineScheduleEvent) {
+                                                offlineScheduleEvent.migrateToLocalTimeZone(timeZone);
+                                            }
+                                        });
                             }
                         })
                         .subscribe(new Observer<OfflineScheduleEvent>() {
@@ -471,7 +482,6 @@ public class OfflineScheduler {
 
                             @Override
                             public void onNext(OfflineScheduleEvent offlineScheduleEvent) {
-                                offlineScheduleEvent.migrateToLocalTimeZone(timeZone);
                             }
                         });
             }

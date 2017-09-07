@@ -122,7 +122,7 @@ public final class DeviceModel {
     private final boolean mIsDeveloperDevice;
 
     private LocationState mLocationState = new LocationState(LocationState.State.INVALID);
-    private TimeZone mTimeZone;
+    private final TimeZoneValue mTimeZoneValue = new TimeZoneValue();
 
     private AferoError mLastError;
 
@@ -297,8 +297,19 @@ public final class DeviceModel {
     /**
      * @return the {@link TimeZone} in which the device resides.
      */
-    public TimeZone getTimeZone() {
-        return mTimeZone;
+    public Observable<TimeZone> getTimeZone() {
+
+        if (mTimeZoneValue.getState().equals(TimeZoneValue.State.SET)) {
+            return Observable.just(mTimeZoneValue.getTimeZone());
+        }
+
+        return mAferoClient.getDeviceTimeZone(this)
+                .doOnNext(new Action1<TimeZone>() {
+                    @Override
+                    public void call(TimeZone timeZone) {
+                        mTimeZoneValue.setTimeZone(timeZone);
+                    }
+                });
     }
 
     /**
@@ -313,9 +324,14 @@ public final class DeviceModel {
                 .doOnNext(new Action1<TimeZone>() {
                     @Override
                     public void call(TimeZone timeZone) {
-                        mTimeZone = timeZone;
+                        mTimeZoneValue.setTimeZone(timeZone);
                     }
                 });
+    }
+
+    public boolean isTimeZoneSet() {
+        TimeZoneValue.State timeZoneState = mTimeZoneValue.getState();
+        return !timeZoneState.equals(TimeZoneValue.State.NOT_SET);
     }
 
     /**
@@ -847,7 +863,7 @@ public final class DeviceModel {
         }
 
         if (deviceSync.timezone != null && deviceSync.timezone.timezone != null) {
-            mTimeZone = TimeZone.getTimeZone(deviceSync.timezone.timezone);
+            mTimeZoneValue.setTimeZone(TimeZone.getTimeZone(deviceSync.timezone.timezone));
         }
 
         mDeviceSyncPostUpdateSubject.onNext(deviceSync);
@@ -888,7 +904,7 @@ public final class DeviceModel {
     }
 
     void invalidateTimeZone() {
-        mTimeZone = null;
+        mTimeZoneValue.invalidate();
     }
 
     void onOTA(OTAInfo otaInfo) {
