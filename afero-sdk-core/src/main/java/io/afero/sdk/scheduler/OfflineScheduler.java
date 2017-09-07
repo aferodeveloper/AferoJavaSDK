@@ -12,14 +12,15 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
-import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.AttributeWriter;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
+import rx.Emitter;
 import rx.Observable;
+import rx.Observer;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.functions.Func1;
@@ -39,6 +40,7 @@ public class OfflineScheduler {
     private Subscription mDeviceSyncSubscription;
     private final AttributeValue mNullValue = new AttributeValue(OfflineScheduleEvent.ZERO_DATA, AttributeValue.DataType.BYTES);
     private PublishSubject<OfflineScheduleEvent> mUpdateSubject = PublishSubject.create();
+    private boolean mHasNonLocalTimeEvents;
 
     public OfflineScheduler() {
     }
@@ -107,7 +109,7 @@ public class OfflineScheduler {
         int count = 0;
 
         for (OfflineScheduleEvent event : mScheduleItems.values()) {
-            if (event.getDayLocal() == day) {
+            if (event.getDay() == day) {
                 ++count;
                 if (count >= maxCountPerDay) {
                     return true;
@@ -122,7 +124,7 @@ public class OfflineScheduler {
         int count = 0;
 
         for (OfflineScheduleEvent event : mScheduleItems.values()) {
-            if (event.getDayLocal() == day) {
+            if (event.getDay() == day) {
                 ++count;
             }
         }
@@ -145,6 +147,7 @@ public class OfflineScheduler {
                 try {
                     OfflineScheduleEvent event = new OfflineScheduleEvent(attrId, value, deviceProfile);
                     mScheduleItems.put(attrId, event);
+                    mHasNonLocalTimeEvents = mHasNonLocalTimeEvents || !event.isInLocalTime();
                 } catch (Exception e) {
                     AfLog.e(e);
                 }
@@ -375,7 +378,7 @@ public class OfflineScheduler {
     public synchronized void clearAll() {
 
         mScheduleItems.clear();
-        ArrayList<DeviceRequest> req = new ArrayList<>();
+        AttributeWriter writer = mDeviceModel.writeAttributes();
 
         for (int i = 0; i < mEventMaxCount; ++i) {
             final int attrId = DeviceProfile.SCHEDULE_ATTRIBUTE_ID + i;
@@ -384,12 +387,12 @@ public class OfflineScheduler {
             AttributeValue av = attribute != null ? mDeviceModel.getAttributePendingValue(attribute) : null;
 
             if (!isValueNullOrEmpty(av)) {
-                req.add(new DeviceRequest(attribute.getId(), mNullValue.toString()));
+                writer.put(attribute.getId(), mNullValue);
             }
         }
 
-        if (!req.isEmpty()) {
-            mDeviceModel.writeModelValues(req);
+        if (!writer.isEmpty()) {
+            writer.commit().subscribe(new RxUtils.IgnoreResponseObserver<AttributeWriter.Result>());
         }
     }
 
@@ -410,13 +413,72 @@ public class OfflineScheduler {
 
     public synchronized OfflineScheduleEvent findEventAtTime(ArrayList<Integer> days, int hour, int minute) {
         for (OfflineScheduleEvent event : mScheduleItems.values()) {
-            if ((days == null || days.isEmpty() || days.contains(event.getDayGMT())) &&
-                    event.getHourGMT() == hour &&
-                    event.getMinuteGMT() == minute) {
+            if ((days == null || days.isEmpty() || days.contains(event.getDay())) &&
+                    event.getHour() == hour &&
+                    event.getMinute() == minute) {
                 return event;
             }
         }
 
         return null;
     }
+
+    public synchronized Observable<OfflineScheduleEvent> getScheduleEvents() {
+        return Observable.create(new Action1<Emitter<OfflineScheduleEvent>>() {
+            @Override
+            public void call(Emitter<OfflineScheduleEvent> emitter) {
+                synchronized (OfflineScheduler.this) {
+                    for (OfflineScheduleEvent event : mScheduleItems.values()) {
+                        emitter.onNext(event);
+                    }
+                }
+                emitter.onCompleted();
+            }
+        }, Emitter.BackpressureMode.ERROR);
+    }
+
+    private boolean hasNonLocalTimeEvents() {
+        return mHasNonLocalTimeEvents;
+    }
+
+    public static void migrateAllToDeviceTimeZone(DeviceModel deviceModel) {
+        final TimeZone timeZone = deviceModel.getTimeZone();
+
+        if (timeZone != null && OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
+
+            final OfflineScheduler offlineScheduler = new OfflineScheduler();
+            offlineScheduler.start(deviceModel);
+            offlineScheduler.readFromDevice();
+
+            if (offlineScheduler.hasNonLocalTimeEvents()) {
+                offlineScheduler.getScheduleEvents()
+                        .filter(new Func1<OfflineScheduleEvent, Boolean>() {
+                            @Override
+                            public Boolean call(OfflineScheduleEvent offlineScheduleEvent) {
+                                return !offlineScheduleEvent.isInLocalTime();
+                            }
+                        })
+                        .subscribe(new Observer<OfflineScheduleEvent>() {
+                            @Override
+                            public void onCompleted() {
+                                offlineScheduler.writeToDevice();
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                AfLog.e(e);
+                            }
+
+                            @Override
+                            public void onNext(OfflineScheduleEvent offlineScheduleEvent) {
+                                offlineScheduleEvent.migrateToLocalTimeZone(timeZone);
+                            }
+                        });
+            }
+
+            offlineScheduler.stop();
+        }
+
+    }
+
 }

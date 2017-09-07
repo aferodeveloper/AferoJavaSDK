@@ -82,7 +82,7 @@ public interface AferoClientAPI {
             @Body DeviceAssociateBody body
     );
 
-    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes")
+    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone")
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(
             @Path("accountId") String accountId,
             @Body DeviceAssociateBody body,
@@ -90,7 +90,7 @@ public interface AferoClientAPI {
             @Query("imageSize") String imageSize
     );
 
-    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes&verified=true")
+    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone&verified=true")
     Observable<DeviceAssociateResponse> deviceAssociateVerified(
             @Path("accountId") String accountId,
             @Body DeviceAssociateBody body,
@@ -166,7 +166,7 @@ public interface AferoClientAPI {
             @Body WriteRequest[] body
     );
 
-    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes")
+    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone")
     Observable<DeviceSync[]> getDevicesWithState(
             @Path("accountId") String accountId
     );

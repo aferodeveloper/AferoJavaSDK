@@ -10,6 +10,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.DeviceProfile;
@@ -32,6 +33,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     public static final String ZERO_DATA = "00";
 
     private static byte EVENT_FLAGS_REPEATS = 1;
+    private static byte EVENT_FLAGS_USES_DEVICE_TIMEZONE = 2;
 
     /*
         From http://wiki.afero.io/display/FIR/AfRac+Offline+Schedule+Design
@@ -51,22 +53,22 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
 
     private int mId;
 
-    private byte mFlags = EVENT_FLAGS_REPEATS;
-    private int mDayGMT;
-    private int mHourGMT;
-    private int mMinuteGMT;
+    private byte mFlags = (byte)(EVENT_FLAGS_REPEATS | EVENT_FLAGS_USES_DEVICE_TIMEZONE);
+    private int mDay;
+    private int mHour;
+    private int mMinute;
     private HashMap<Integer,AttributeValue> mAttributeValues = new HashMap<>();
 
 
     public OfflineScheduleEvent() {
     }
 
-    public OfflineScheduleEvent(int id, AttributeValue value, DeviceProfile dp) {
+    OfflineScheduleEvent(int id, AttributeValue value, DeviceProfile dp) {
         setId(id);
         read(value, dp);
     }
 
-    public OfflineScheduleEvent(int id, ByteBuffer bb, DeviceProfile dp) {
+    private OfflineScheduleEvent(int id, ByteBuffer bb, DeviceProfile dp) {
         setId(id);
         read(bb, dp);
     }
@@ -78,9 +80,10 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
 
     public void read(ByteBuffer bb, DeviceProfile dp) {
         mFlags = bb.get();
-        setDayGMT(bb.get());
-        setHourGMT(bb.get());
-        setMinuteGMT(bb.get());
+
+        setDay(bb.get());
+        setHour(bb.get());
+        setMinute(bb.get());
 
         byte[] b = new byte[4];
 
@@ -107,10 +110,6 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         }
     }
 
-    public static boolean isDataStringNullOrEmpty(String data) {
-        return data == null || data.isEmpty() || ZERO_DATA.equals(data);
-    }
-
     public void setId(int attrId) {
         mId = attrId;
     }
@@ -131,40 +130,76 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         return (mFlags & EVENT_FLAGS_REPEATS) != 0;
     }
 
+    @Deprecated
     public void setDayGMT(int dayGMT) {
-        mDayGMT = dayGMT;
+        mDay = dayGMT;
+        setIsInLocalTime(false);
     }
 
+    @Deprecated
     public int getDayGMT() {
-        return mDayGMT;
+        return mDay;
     }
 
+    @Deprecated
     public int getDayLocal() {
         return getLocalCalendar().get(OfflineScheduler.CALENDAR_DAY);
     }
 
+    @Deprecated
+    public void setHourGMT(int t) {
+        setIsInLocalTime(false);
+        mHour = t;
+    }
+
+    @Deprecated
+    public int getHourGMT() {
+        return mHour;
+    }
+
+    @Deprecated
+    public void setMinuteGMT(int t) {
+        setIsInLocalTime(false);
+        mMinute = t;
+    }
+
+    @Deprecated
+    public int getMinuteGMT() {
+        return mMinute;
+    }
+
+    public void setDay(int day) {
+        mDay = day;
+    }
+
+    public int getDay() {
+        return isInLocalTime() ? mDay : getLocalCalendar().get(OfflineScheduler.CALENDAR_DAY);
+    }
+
+    public void setHour(int t) {
+        mHour = t;
+    }
+
+    public int getHour() {
+        return isInLocalTime() ? mHour : getLocalCalendar().get(OfflineScheduler.CALENDAR_HOUR);
+    }
+
+    public void setMinute(int t) {
+        mMinute = t;
+    }
+
+    public int getMinute() {
+        return isInLocalTime() ? mMinute : getLocalCalendar().get(OfflineScheduler.CALENDAR_MINUTE);
+    }
+
+    @Deprecated
     public Calendar getLocalCalendar() {
         return OfflineScheduler.getLocalCalendarFromGMT(getDayGMT(), getHourGMT(), getMinuteGMT());
     }
 
+    @Deprecated
     public Calendar getGMTCalendar() {
         return OfflineScheduler.getCalendarGMT(getDayGMT(), getHourGMT(), getMinuteGMT());
-    }
-
-    public void setHourGMT(int t) {
-        mHourGMT = t;
-    }
-
-    public int getHourGMT() {
-        return mHourGMT;
-    }
-
-    public void setMinuteGMT(int t) {
-        mMinuteGMT = t;
-    }
-
-    public int getMinuteGMT() {
-        return mMinuteGMT;
     }
 
     public void addAttributeValue(int id, AttributeValue value) {
@@ -187,7 +222,24 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         mAttributeValues.clear();
     }
 
-    public static OfflineScheduleEvent fromAttributeValueString(int id, String s, DeviceProfile dp) {
+    @Override
+    public int compareTo(OfflineScheduleEvent another) {
+        if (this == another) return 0;
+
+        int result = Integer.compare(getDay(), another.getDay());
+
+        if (result == 0) {
+            result = Integer.compare(getHour(), another.getHour());
+        }
+
+        if (result == 0) {
+            result = Integer.compare(getMinute(), another.getMinute());
+        }
+
+        return result;
+    }
+
+    static OfflineScheduleEvent fromAttributeValueString(int id, String s, DeviceProfile dp) {
 
         try {
             ByteBuffer bb = HexUtils.hexDecode(s);
@@ -200,7 +252,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         return null;
     }
 
-    public String toAttributeValueString() {
+    String toAttributeValueString() {
 
         int byteCount = TIME_SPEC_BYTE_COUNT;
         for (AttributeValue av : mAttributeValues.values()) {
@@ -211,9 +263,9 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         ByteBuffer bb = ByteBuffer.allocate(byteCount).order(ByteOrder.LITTLE_ENDIAN);
 
         bb.put(mFlags);
-        bb.put((byte) mDayGMT);
-        bb.put((byte) mHourGMT);
-        bb.put((byte) mMinuteGMT);
+        bb.put((byte) mDay);
+        bb.put((byte) mHour);
+        bb.put((byte) mMinute);
 
         for (Map.Entry<Integer,AttributeValue> entry : mAttributeValues.entrySet()) {
             AttributeValue av = entry.getValue();
@@ -227,24 +279,30 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         return HexUtils.hexEncode(bb);
     }
 
-    @Override
-    public int compareTo(OfflineScheduleEvent another) {
-        if (this == another) return 0;
-
-        int result = Integer.compare(getDayGMT(), another.getDayGMT());
-
-        if (result == 0) {
-            result = Integer.compare(getHourGMT(), another.getHourGMT());
-        }
-
-        if (result == 0) {
-            result = Integer.compare(getMinuteGMT(), another.getMinuteGMT());
-        }
-
-        return result;
+    static boolean isDataStringNullOrEmpty(String data) {
+        return data == null || data.isEmpty() || ZERO_DATA.equals(data);
     }
 
-    public boolean isSaved() {
-        return mId != 0;
+    OfflineScheduleEvent migrateToLocalTimeZone(TimeZone tz) {
+        setIsInLocalTime(true);
+
+        Calendar cal = OfflineScheduler.getLocalCalendarFromGMT(mDay, mHour, mMinute, tz);
+        mDay = cal.get(OfflineScheduler.CALENDAR_DAY);
+        mHour = cal.get(OfflineScheduler.CALENDAR_HOUR);
+        mMinute = cal.get(OfflineScheduler.CALENDAR_MINUTE);
+
+        return this;
+    }
+
+    boolean isInLocalTime() {
+        return (mFlags & EVENT_FLAGS_USES_DEVICE_TIMEZONE) != 0;
+    }
+
+    void setIsInLocalTime(boolean b) {
+        if (b) {
+            mFlags |= EVENT_FLAGS_USES_DEVICE_TIMEZONE;
+        } else {
+            mFlags &= ~EVENT_FLAGS_USES_DEVICE_TIMEZONE;
+        }
     }
 }
