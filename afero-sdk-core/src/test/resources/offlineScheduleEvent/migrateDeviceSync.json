@@ -1,0 +1,14 @@
+{
+    "attributes": [
+        { "id": 59002, "value": "0302092D" },
+        { "id": 59003, "value": "01030A1D" },
+        { "id": 59004, "value": "01040B0D" }
+    ],
+    "status": {
+        "available": true,
+        "visible": true
+    },
+    "timezone": {
+        "timezone": "GMT-8:00"
+    }
+}

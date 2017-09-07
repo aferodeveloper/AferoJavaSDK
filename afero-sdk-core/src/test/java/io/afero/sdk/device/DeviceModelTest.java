@@ -27,8 +27,14 @@ public class DeviceModelTest extends AferoTest {
 
     private static final String DEVICE_ID = "deviceModel-model-id";
 
-    public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) throws IOException {
+    public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) {
         return new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
+    }
+
+    public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, MockAferoClient aferoClient, DeviceSync data) {
+        DeviceModel deviceModel = createDeviceModel(deviceProfile, aferoClient);
+        deviceModel.update(data);
+        return deviceModel;
     }
 
     @Before

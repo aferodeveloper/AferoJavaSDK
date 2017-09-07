@@ -295,12 +295,10 @@ public final class DeviceModel {
     }
 
     /**
-     * @return Observable that emits the device's TimeZone (if any) fetched from the Afero Cloud.
+     * @return the {@link TimeZone} in which the device resides.
      */
-    public Observable<TimeZone> getTimeZone() {
-        // We don't get an invalidate message if some other client sets the timezone,
-        // so we have to fetch it every time rather than caching it locally.
-        return mTimeZone != null ? Observable.just(mTimeZone) : mAferoClient.getDeviceTimeZone(this);
+    public TimeZone getTimeZone() {
+        return mTimeZone;
     }
 
     /**
@@ -321,7 +319,7 @@ public final class DeviceModel {
     }
 
     /**
-     * @return String contained the ID of the {@link DeviceProfile} associated with this device.
+     * @return String containing the ID of the {@link DeviceProfile} associated with this device.
      */
     @JsonProperty
     public String getProfileID() {
@@ -846,6 +844,10 @@ public final class DeviceModel {
             for (DeviceTag tag : deviceSync.tags) {
                 putTag(tag.deviceTagId, tag.value);
             }
+        }
+
+        if (deviceSync.timezone != null && deviceSync.timezone.timezone != null) {
+            mTimeZone = TimeZone.getTimeZone(deviceSync.timezone.timezone);
         }
 
         mDeviceSyncPostUpdateSubject.onNext(deviceSync);
