@@ -18,6 +18,8 @@ import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceModelTest;
 import io.afero.sdk.device.DeviceProfile;
+import io.afero.sdk.log.AfLog;
+import io.afero.sdk.log.JavaLog;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,6 +30,7 @@ public class OfflineSchedulerTest extends AferoTest {
 
     @Before
     public void setup() throws IOException {
+        AfLog.init(new JavaLog());
         deviceProfile = loadDeviceProfile("resources/offlineScheduleEvent/deviceProfile.json");
     }
 

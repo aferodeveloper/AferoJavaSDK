@@ -58,7 +58,7 @@ public class OfflineScheduleEventTest extends AferoTest {
     @Test
     public void fromAttributeValueStringEmptyEvent() throws Exception {
 
-        String hexData = "01010000";
+        String hexData = "03010000";
         OfflineScheduleEvent event = OfflineScheduleEvent.fromAttributeValueString(0, hexData, deviceProfile);
 
         verifyEvent(event, 0, hexData, null);
@@ -67,11 +67,12 @@ public class OfflineScheduleEventTest extends AferoTest {
     @Test
     public void fromAttributeValueStringTimeSpec() throws Exception {
 
-        String hexData = "00030C22";
+        String hexData = "03030C22";
         OfflineScheduleEvent event = OfflineScheduleEvent.fromAttributeValueString(0, hexData, deviceProfile);
 
         assertNotNull(event);
-        assertEquals(false, event.getRepeats());
+        assertEquals(true, event.getRepeats());
+        assertEquals(true, event.isInLocalTime());
         assertEquals(OfflineScheduleEvent.TUESDAY, event.getDay());
         assertEquals(12, event.getHour());
         assertEquals(34, event.getMinute());
@@ -131,7 +132,7 @@ public class OfflineScheduleEventTest extends AferoTest {
         bb.get(bytes);
         bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
 
-        final String hexData = "01010000" + HexUtils.hexEncode(bb);
+        final String hexData = "03010000" + HexUtils.hexEncode(bb);
         OfflineScheduleEvent event = OfflineScheduleEvent.fromAttributeValueString(59002, hexData, deviceProfile);
 
         assertNotNull(event);

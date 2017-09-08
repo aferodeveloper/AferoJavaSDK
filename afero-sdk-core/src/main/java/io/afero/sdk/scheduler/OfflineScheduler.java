@@ -450,6 +450,8 @@ public class OfflineScheduler {
             offlineScheduler.readFromDevice();
 
             if (offlineScheduler.hasNonLocalTimeEvents()) {
+                AfLog.w("OfflineScheduler: detected non-local time events - starting migration");
+
                 deviceModel.getTimeZone()
                         .flatMap(new Func1<TimeZone, Observable<OfflineScheduleEvent>>() {
                             @Override
@@ -464,7 +466,19 @@ public class OfflineScheduler {
                                         .doOnNext(new Action1<OfflineScheduleEvent>() {
                                             @Override
                                             public void call(OfflineScheduleEvent offlineScheduleEvent) {
+
+                                                String oldTime = offlineScheduleEvent.getDay() + ":" +
+                                                        offlineScheduleEvent.getHour() + ":" +
+                                                        offlineScheduleEvent.getMinute();
+
                                                 offlineScheduleEvent.migrateToLocalTimeZone(timeZone);
+
+                                                String newTime = offlineScheduleEvent.getDay() + ":" +
+                                                        offlineScheduleEvent.getHour() + ":" +
+                                                        offlineScheduleEvent.getMinute();
+
+                                                AfLog.w("OfflineScheduler: migrated event " + offlineScheduleEvent.getId() +
+                                                        " from " + oldTime + " to " + newTime + " " + timeZone.getID());
                                             }
                                         });
                             }
@@ -473,10 +487,13 @@ public class OfflineScheduler {
                             @Override
                             public void onCompleted() {
                                 offlineScheduler.writeToDevice();
+
+                                AfLog.w("OfflineScheduler: migration complete");
                             }
 
                             @Override
                             public void onError(Throwable e) {
+                                AfLog.w("OfflineScheduler: migration error");
                                 AfLog.e(e);
                             }
 

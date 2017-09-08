@@ -101,7 +101,6 @@ public final class DeviceModel {
 
     private String mProfileId;
     private DeviceProfile mProfile;
-    private int mPendingUpdateCount;
 
     private AvailableState mAvailableState = AvailableState.NONE;
 
@@ -868,11 +867,6 @@ public final class DeviceModel {
 
         mDeviceSyncPostUpdateSubject.onNext(deviceSync);
 
-        if (mPendingUpdateCount > 0) {
-            mPendingUpdateCount--;
-            hasChanged = true;
-        }
-
         if (hasChanged) {
             mUpdateSubject.onNext(this);
         }
@@ -905,6 +899,7 @@ public final class DeviceModel {
 
     void invalidateTimeZone() {
         mTimeZoneValue.invalidate();
+        mUpdateSubject.onNext(this);
     }
 
     void onOTA(OTAInfo otaInfo) {
