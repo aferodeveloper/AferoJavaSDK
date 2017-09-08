@@ -48,6 +48,8 @@ public class DeviceCollection {
     private final AferoClient mAferoClient;
     private final TreeMap<String,DeviceModel> mModelMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
+    private final DeviceDataMigrator mDeviceDataMigrator = new DeviceDataMigrator(this);
+
     private PublishSubject<DeviceModel> mModelCreateSubject = PublishSubject.create();
     private PublishSubject<DeviceModel> mModelUpdateSubject = PublishSubject.create();
     private PublishSubject<DeviceCollection> mModelSnapshotSubject = PublishSubject.create();
@@ -104,6 +106,7 @@ public class DeviceCollection {
      * @return {@link Observable} that returns this DeviceCollection instance.
      */
     public Observable<DeviceCollection> start() {
+
         // Startup sequence:
         // 1. Fetch account profiles
         // 2. Fetch devices and add them to the collection
@@ -152,6 +155,8 @@ public class DeviceCollection {
                     @Override
                     public void call() {
                         mIsStarted = true;
+
+                        mDeviceDataMigrator.start();
                     }
                 });
     }
@@ -164,6 +169,8 @@ public class DeviceCollection {
      */
     public void stop() {
         throwIfNotStarted();
+
+        mDeviceDataMigrator.stop();
 
         unsubscribeFromDeviceEventSource();
         mIsStarted = false;

@@ -102,13 +102,13 @@ public class DeviceModelTest extends AferoTest {
     }
 
     private void testAttribute(DeviceModel dm, DeviceProfile.Attribute attribute, BigDecimal expected) {
-        AttributeValue av = dm.readPendingValue(attribute);
+        AttributeValue av = dm.getAttributePendingValue(attribute);
         BigDecimal actual = av != null ? av.numericValue() : null;;
         assertTrue(actual.compareTo(expected) == 0);
     }
 
     private void testAttribute(DeviceModel dm, DeviceProfile.Attribute attribute, String expected) {
-        AttributeValue av = dm.readPendingValue(attribute);
+        AttributeValue av = dm.getAttributePendingValue(attribute);
         String actual = av != null ? av.toString() : null;;
         assertEquals(expected, actual);
     }

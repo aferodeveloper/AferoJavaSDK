@@ -110,6 +110,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         }
     }
 
+
     public void setId(int attrId) {
         mId = attrId;
     }
@@ -169,6 +170,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     }
 
     public void setDay(int day) {
+        setIsInLocalTime(true);
         mDay = day;
     }
 
@@ -177,6 +179,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     }
 
     public void setHour(int t) {
+        setIsInLocalTime(true);
         mHour = t;
     }
 
@@ -185,6 +188,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     }
 
     public void setMinute(int t) {
+        setIsInLocalTime(true);
         mMinute = t;
     }
 
@@ -220,6 +224,10 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
 
     public void clearAttributes() {
         mAttributeValues.clear();
+    }
+
+    public boolean isSaved() {
+        return mId != 0;
     }
 
     @Override
