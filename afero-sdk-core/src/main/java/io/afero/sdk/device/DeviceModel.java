@@ -114,6 +114,8 @@ public final class DeviceModel {
     private OTAWatcher mOTAWatcher;
     private Subscription mOTASubscription;
 
+    private DeviceDataMigrator mDataMigrator = new DeviceDataMigrator(this);
+
     private int mRSSI;
     private boolean mIsLinked;
     private boolean mDirect;
@@ -811,11 +813,15 @@ public final class DeviceModel {
         if (hasChanged) {
             mUpdateSubject.onNext(this);
         }
+
+        runDataMigrations();
     }
 
     void update(DeviceStatus deviceStatus) {
         if (updateStatus(deviceStatus)) {
             mUpdateSubject.onNext(this);
+
+            runDataMigrations();
         }
     }
 
@@ -872,6 +878,15 @@ public final class DeviceModel {
         if (mOTAWatcher != null) {
             mOTAWatcher = null;
             mUpdateSubject.onNext(this);
+        }
+    }
+
+    private void runDataMigrations() {
+        synchronized (this) {
+            if (isAvailable() && mDataMigrator != null) {
+                mDataMigrator.runMigrations();
+                mDataMigrator = null;
+            }
         }
     }
 
