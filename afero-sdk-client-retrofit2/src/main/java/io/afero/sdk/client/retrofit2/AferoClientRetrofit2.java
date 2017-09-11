@@ -222,26 +222,6 @@ public class AferoClientRetrofit2 implements AferoClient {
         public Config build() {
             return config.validate();
         }
-
-        /**
-         * @deprecated Use the slightly more clearly named {@link ConfigBuilder#oauthClientId} instead.
-         * Will be removed in the next minor release.
-         */
-        @Deprecated
-        public ConfigBuilder clientId(String id) {
-            config.oauthClientId = id;
-            return this;
-        }
-
-        /**
-         * @deprecated Use the slightly more clearly named {@link ConfigBuilder#oauthClientSecret} instead.
-         * Will be removed in the next minor release.
-         */
-        @Deprecated
-        public ConfigBuilder clientSecret(String secret) {
-            config.oauthClientSecret = secret;
-            return this;
-        }
     }
 
     /**
@@ -375,24 +355,6 @@ public class AferoClientRetrofit2 implements AferoClient {
      */
     public Observable<AccessToken> getAccessToken(String user, String password) {
         return mAferoService.getAccessToken(AferoClientRetrofit2.GRANT_TYPE_PASSWORD, user, password, mOAuthAuthorizationBase64);
-    }
-
-    /**
-     * @deprecated Signature simplified - use {@link #getAccessToken(String, String)} instead.
-     * Will be removed in the next minor release.
-     */
-    @Deprecated
-    public Observable<AccessToken> getAccessToken(String user, String password, String grantType) {
-        return mAferoService.getAccessToken(grantType, user, password, mOAuthAuthorizationBase64);
-    }
-
-    /**
-     * @deprecated For internal use only.
-     * Will be removed in the next minor release.
-     */
-    @Deprecated
-    public AccessToken refreshAccessToken(String refreshToken, String grantType) throws IOException {
-        return internalRefreshAccessToken(refreshToken, grantType);
     }
 
     /**
