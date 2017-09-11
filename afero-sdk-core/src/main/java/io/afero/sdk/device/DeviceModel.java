@@ -566,90 +566,6 @@ public final class DeviceModel {
         return ad != null ? ad.mPendingValue : null;
     }
 
-    /**
-     * Deprecated. Use {@link #writeAttributes()} instead.
-     */
-    @Deprecated
-    public void writeAttribute(DeviceProfile.Attribute attribute, AttributeValue value) {
-
-        if (mAferoClient == null) return; // for unit tests
-
-        final int attrId = attribute.getId();
-        PostActionBody body = new PostActionBody(attrId, value.toString());
-        mAferoClient.postAttributeWrite(this, body, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
-                .subscribe(new ActionObserver(this, Clock.getElapsedMillis()));
-
-        AttributeData data = mAttributes.get(attrId);
-        if (data != null) {
-            data.mPendingValue = value;
-            data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
-
-            startWaitingForUpdate();
-        }
-
-        mLastError = null;
-
-        mUpdateSubject.onNext(this);
-    }
-
-    /**
-     * Deprecated. Use {@link #writeAttributes()} instead.
-     */
-    @Deprecated
-    public void writeModelValue(DeviceProfile.Attribute attribute, BigDecimal newValue) {
-        AttributeValue value = getAttributePendingValue(attribute);
-        if (value != null) {
-            try {
-                value.setValue(newValue);
-                writeAttribute(attribute, value);
-            } catch (Exception e) {
-                AfLog.e(e);
-            }
-        }
-    }
-
-    /**
-     * Deprecated. Use {@link #writeAttributes()} instead.
-     */
-    @Deprecated
-    public Observable<WriteResponse> writeModelValues(ArrayList<WriteRequest> req) {
-        return postAttributeWriteRequests(req)
-            .flatMap(new Func1<WriteResponse[], Observable<WriteResponse>>() {
-                @Override
-                public Observable<WriteResponse> call(WriteResponse[] writeResponses) {
-                    return Observable.from(writeResponses);
-                }
-            });
-    }
-
-    /**
-     * Deprecated. Use {@link #writeAttributes()} instead.
-     */
-    @Deprecated
-    public void writeModelValue(DeviceProfile.Attribute attribute, AttributeValue value) {
-        try {
-            writeAttribute(attribute, value);
-        } catch (Exception e) {
-            AfLog.e(e);
-        }
-    }
-
-    /**
-     * Deprecated. Use {@link #getAttributePendingValue(DeviceProfile.Attribute)} instead.
-     */
-    @Deprecated
-    public AttributeValue readPendingValue(DeviceProfile.Attribute attribute) {
-        return getAttributePendingValue(attribute);
-    }
-
-    /**
-     * Deprecated. Use {@link #getAttributeCurrentValue(DeviceProfile.Attribute)} instead.
-     */
-    @Deprecated
-    public AttributeValue readCurrentValue(DeviceProfile.Attribute attribute) {
-        return getAttributeCurrentValue(attribute);
-    }
-
     @Deprecated
     public boolean isRunning() {
         DeviceProfile.Presentation presentation = getPresentation();
@@ -811,6 +727,31 @@ public final class DeviceModel {
 
     Observable<WriteResponse[]> postBatchAttributeWrite(Collection<WriteRequest> requests, int retryCount, int statusCode) {
         return mAferoClient.postBatchAttributeWrite(this, requests.toArray(new WriteRequest[requests.size()]), retryCount, statusCode);
+    }
+
+    /**
+     * Used for testing.
+     */
+    void writeAttribute(DeviceProfile.Attribute attribute, AttributeValue value) {
+
+        if (mAferoClient == null) return;
+
+        final int attrId = attribute.getId();
+        PostActionBody body = new PostActionBody(attrId, value.toString());
+        mAferoClient.postAttributeWrite(this, body, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
+                .subscribe(new ActionObserver(this, Clock.getElapsedMillis()));
+
+        AttributeData data = mAttributes.get(attrId);
+        if (data != null) {
+            data.mPendingValue = value;
+            data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
+
+            startWaitingForUpdate();
+        }
+
+        mLastError = null;
+
+        mUpdateSubject.onNext(this);
     }
 
     void update(DeviceSync deviceSync) {
