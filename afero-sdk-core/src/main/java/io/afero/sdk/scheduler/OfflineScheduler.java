@@ -441,11 +441,10 @@ public class OfflineScheduler {
         return mHasNonLocalTimeEvents;
     }
 
-    public static void migrateAllToDeviceTimeZone(DeviceModel deviceModel) {
-        AfLog.i("OfflineScheduler: migrateAllToDeviceTimeZone");
+    public static void migrateToDeviceTimeZone(DeviceModel deviceModel) {
 
         if (deviceModel.isTimeZoneSet() && OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
-            AfLog.i("OfflineScheduler: isTimeSet && hasOfflineScheduleCapability");
+            AfLog.i("OfflineScheduler: isTimeZoneSet && hasOfflineScheduleCapability");
 
             final OfflineScheduler offlineScheduler = new OfflineScheduler();
             offlineScheduler.start(deviceModel);

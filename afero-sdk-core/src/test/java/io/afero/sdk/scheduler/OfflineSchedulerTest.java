@@ -147,7 +147,7 @@ public class OfflineSchedulerTest extends AferoTest {
         DeviceProfile.Attribute attr2 = deviceModel.getAttributeById(59003);
         DeviceProfile.Attribute attr3 = deviceModel.getAttributeById(59004);
 
-        OfflineScheduler.migrateAllToDeviceTimeZone(deviceModel);
+        OfflineScheduler.migrateToDeviceTimeZone(deviceModel);
 
         AttributeValue av = deviceModel.getAttributePendingValue(attr1);
         assertEquals("0302092D", av.toString());
