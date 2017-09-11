@@ -81,9 +81,9 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     public void read(ByteBuffer bb, DeviceProfile dp) {
         mFlags = bb.get();
 
-        setDay(bb.get());
-        setHour(bb.get());
-        setMinute(bb.get());
+        mDay = bb.get();
+        mHour = bb.get();
+        mMinute = bb.get();
 
         byte[] b = new byte[4];
 
