@@ -66,7 +66,7 @@ public class OfflineSchedulerTest extends AferoTest {
 
         DeviceProfile.Attribute attribute = deviceProfile.getAttributeById(59002);
         AttributeValue av = new AttributeValue("00", AttributeValue.DataType.BYTES);
-        dm.writeAttribute(attribute, av);
+        dm.writeAttributes().put(attribute.getId(), av).commit().subscribe();
 
         os.readFromDevice();
 
