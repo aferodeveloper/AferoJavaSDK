@@ -468,9 +468,9 @@ public class OfflineScheduler {
                                             @Override
                                             public void call(OfflineScheduleEvent offlineScheduleEvent) {
 
-                                                String oldTime = offlineScheduleEvent.getDay() + ":" +
-                                                        offlineScheduleEvent.getHour() + ":" +
-                                                        offlineScheduleEvent.getMinute();
+                                                String oldTime = offlineScheduleEvent.getDayGMT() + ":" +
+                                                        offlineScheduleEvent.getHourGMT() + ":" +
+                                                        offlineScheduleEvent.getMinuteGMT();
 
                                                 offlineScheduleEvent.migrateToLocalTimeZone(timeZone);
 
