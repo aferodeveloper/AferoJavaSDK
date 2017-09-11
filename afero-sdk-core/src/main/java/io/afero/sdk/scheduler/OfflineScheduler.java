@@ -442,8 +442,10 @@ public class OfflineScheduler {
     }
 
     public static void migrateAllToDeviceTimeZone(DeviceModel deviceModel) {
+        AfLog.i("OfflineScheduler: migrateAllToDeviceTimeZone");
 
         if (deviceModel.isTimeZoneSet() && OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
+            AfLog.i("OfflineScheduler: isTimeSet && hasOfflineScheduleCapability");
 
             final OfflineScheduler offlineScheduler = new OfflineScheduler();
             offlineScheduler.start(deviceModel);
