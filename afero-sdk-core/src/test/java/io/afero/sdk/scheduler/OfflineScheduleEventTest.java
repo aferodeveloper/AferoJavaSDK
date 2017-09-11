@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Calendar;
 
 import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.models.AttributeValue;
@@ -57,7 +58,7 @@ public class OfflineScheduleEventTest extends AferoTest {
     @Test
     public void fromAttributeValueStringEmptyEvent() throws Exception {
 
-        String hexData = "01010000";
+        String hexData = "03010000";
         OfflineScheduleEvent event = OfflineScheduleEvent.fromAttributeValueString(0, hexData, deviceProfile);
 
         verifyEvent(event, 0, hexData, null);
@@ -66,14 +67,15 @@ public class OfflineScheduleEventTest extends AferoTest {
     @Test
     public void fromAttributeValueStringTimeSpec() throws Exception {
 
-        String hexData = "00030C22";
+        String hexData = "03030C22";
         OfflineScheduleEvent event = OfflineScheduleEvent.fromAttributeValueString(0, hexData, deviceProfile);
 
         assertNotNull(event);
-        assertEquals(false, event.getRepeats());
-        assertEquals(OfflineScheduleEvent.TUESDAY, event.getDayGMT());
-        assertEquals(12, event.getHourGMT());
-        assertEquals(34, event.getMinuteGMT());
+        assertEquals(true, event.getRepeats());
+        assertEquals(true, event.isInLocalTime());
+        assertEquals(OfflineScheduleEvent.TUESDAY, event.getDay());
+        assertEquals(12, event.getHour());
+        assertEquals(34, event.getMinute());
         assertEquals(0, event.getAttributeValueCount());
         assertEquals(hexData, event.toAttributeValueString());
     }
@@ -130,14 +132,14 @@ public class OfflineScheduleEventTest extends AferoTest {
         bb.get(bytes);
         bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
 
-        final String hexData = "01010000" + HexUtils.hexEncode(bb);
+        final String hexData = "03010000" + HexUtils.hexEncode(bb);
         OfflineScheduleEvent event = OfflineScheduleEvent.fromAttributeValueString(59002, hexData, deviceProfile);
 
         assertNotNull(event);
         assertEquals(true, event.getRepeats());
-        assertEquals(OfflineScheduleEvent.SUNDAY, event.getDayGMT());
-        assertEquals(0, event.getHourGMT());
-        assertEquals(0, event.getMinuteGMT());
+        assertEquals(OfflineScheduleEvent.SUNDAY, event.getDay());
+        assertEquals(0, event.getHour());
+        assertEquals(0, event.getMinute());
 
         // FIXME: rewrite to test this in a more sensible way
 //        assertEquals(hexData, event.toAttributeValueString());
@@ -191,9 +193,9 @@ public class OfflineScheduleEventTest extends AferoTest {
     private void verifyEvent(OfflineScheduleEvent event, int attributeId, String hexData, BigDecimal value) {
         assertNotNull(event);
         assertEquals(true, event.getRepeats());
-        assertEquals(OfflineScheduleEvent.SUNDAY, event.getDayGMT());
-        assertEquals(0, event.getHourGMT());
-        assertEquals(0, event.getMinuteGMT());
+        assertEquals(OfflineScheduleEvent.SUNDAY, event.getDay());
+        assertEquals(0, event.getHour());
+        assertEquals(0, event.getMinute());
 
         assertEquals(hexData, event.toAttributeValueString());
 
@@ -208,9 +210,28 @@ public class OfflineScheduleEventTest extends AferoTest {
     public void toAttributeValueStringWithEmptyEvent() throws Exception {
         OfflineScheduleEvent event = new OfflineScheduleEvent();
 
-        String expected = "01000000";
+        String expected = "03000000";
         String s = event.toAttributeValueString();
         assertEquals(expected, s);
+    }
+
+    @Test
+    public void migrateToLocalTimeZone() throws Exception {
+        OfflineScheduleEvent event = new OfflineScheduleEvent();
+        Calendar gmtCalendar = OfflineScheduler.getCalendarGMT();
+        Calendar localCalendar = Calendar.getInstance();
+
+        event.setDay(gmtCalendar.get(OfflineScheduler.CALENDAR_DAY));
+        event.setHour(gmtCalendar.get(OfflineScheduler.CALENDAR_HOUR));
+        event.setMinute(gmtCalendar.get(OfflineScheduler.CALENDAR_MINUTE));
+        event.setIsInLocalTime(false);
+
+        event.migrateToLocalTimeZone(localCalendar.getTimeZone());
+
+        assertEquals(localCalendar.get(OfflineScheduler.CALENDAR_DAY), event.getDay());
+        assertEquals(localCalendar.get(OfflineScheduler.CALENDAR_HOUR), event.getHour());
+        assertEquals(localCalendar.get(OfflineScheduler.CALENDAR_MINUTE), event.getMinute());
+        assertTrue(event.isInLocalTime());
     }
 
 }
