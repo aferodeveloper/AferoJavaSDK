@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 
 @JsonIgnoreProperties(ignoreUnknown=true)
-public class RequestResponse {
+public class WriteResponse {
 
     public static final String STATUS_SUCCESS = "SUCCESS";
     public static final String STATUS_FAILURE = "FAILURE";

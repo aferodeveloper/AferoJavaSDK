@@ -68,7 +68,22 @@
                     "operations": ["read","write"]
                 },
                 {
+                    "id": 59001,
+                    "dataType": "BYTES",
+                    "operations": ["read","write"]
+                },
+                {
                     "id": 59002,
+                    "dataType": "BYTES",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 59003,
+                    "dataType": "BYTES",
+                    "operations": ["read","write"]
+                },
+                {
+                    "id": 59004,
                     "dataType": "BYTES",
                     "operations": ["read","write"]
                 }

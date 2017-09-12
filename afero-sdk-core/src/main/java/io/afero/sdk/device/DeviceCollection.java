@@ -104,6 +104,7 @@ public class DeviceCollection {
      * @return {@link Observable} that returns this DeviceCollection instance.
      */
     public Observable<DeviceCollection> start() {
+
         // Startup sequence:
         // 1. Fetch account profiles
         // 2. Fetch devices and add them to the collection
@@ -504,8 +505,13 @@ public class DeviceCollection {
                                     String profileId = im.json.get("profileId").asText();
                                     updateDeviceProfile(deviceModel, profileId);
                                     break;
+
                                 case "location":
                                     deviceModel.invalidateLocationState();
+                                    break;
+
+                                case "timezone":
+                                    deviceModel.invalidateTimeZone();
                                     break;
                             }
                         } catch (Exception e) {
@@ -667,8 +673,8 @@ public class DeviceCollection {
             DeviceModel deviceModel = addOrUpdate(response.deviceId, response.deviceState, response.profile);
 
             if (deviceModel != null) {
-                mAferoClient.putDeviceTimezone(deviceModel, TimeZone.getDefault())
-                    .subscribe(new RxUtils.IgnoreResponseObserver<Void>());
+                deviceModel.setTimeZone(TimeZone.getDefault())
+                    .subscribe(new RxUtils.IgnoreResponseObserver<TimeZone>());
             }
 
             return deviceModel;

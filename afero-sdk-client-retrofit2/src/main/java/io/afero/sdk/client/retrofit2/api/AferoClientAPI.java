@@ -9,13 +9,14 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceRequest;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
+import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceProfile;
@@ -81,7 +82,7 @@ public interface AferoClientAPI {
             @Body DeviceAssociateBody body
     );
 
-    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes")
+    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone")
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(
             @Path("accountId") String accountId,
             @Body DeviceAssociateBody body,
@@ -89,7 +90,7 @@ public interface AferoClientAPI {
             @Query("imageSize") String imageSize
     );
 
-    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes&verified=true")
+    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone&verified=true")
     Observable<DeviceAssociateResponse> deviceAssociateVerified(
             @Path("accountId") String accountId,
             @Body DeviceAssociateBody body,
@@ -123,6 +124,12 @@ public interface AferoClientAPI {
             @Body DeviceTimezone body
     );
 
+    @GET(V1 + "accounts/{accountId}/devices/{deviceId}/timezone")
+    Observable<DeviceTimeZoneResponse> getDeviceTimezone(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId
+    );
+
     @POST(V1 + "accounts/{accountId}/devices/{deviceId}/actions")
     Observable<ActionResponse> postAction(
             @Path("accountId") String accountId,
@@ -153,13 +160,13 @@ public interface AferoClientAPI {
     );
 
     @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/requests")
-    Observable<RequestResponse[]> postDeviceRequest(
+    Observable<WriteResponse[]> postDeviceRequest(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
-            @Body DeviceRequest[] body
+            @Body WriteRequest[] body
     );
 
-    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes")
+    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone")
     Observable<DeviceSync[]> getDevicesWithState(
             @Path("accountId") String accountId
     );

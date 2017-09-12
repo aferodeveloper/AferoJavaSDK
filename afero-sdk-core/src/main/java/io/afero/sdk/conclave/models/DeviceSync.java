@@ -59,7 +59,7 @@ public class DeviceSync {
     public String deviceId;
     public String profileId;
     public int seq;
-    public long createdTimeStamp;
+    public long createdTimestamp;
     public DeviceTag[] tags;
     public boolean virtual;
     public AttributeEntry[] attributes;
@@ -68,6 +68,7 @@ public class DeviceSync {
     public String friendlyName;
     public Integer requestId;
     public Integer state;
+    public DeviceTimeZone timezone;
 
     public boolean hasValidAttributeValues() {
         // See https://kibanlabs.atlassian.net/browse/ANDROID-606
@@ -115,7 +116,7 @@ public class DeviceSync {
                 "deviceId='" + deviceId + '\'' +
                 ", profileId='" + profileId + '\'' +
                 ", seq=" + seq +
-                ", createdTimeStamp=" + createdTimeStamp +
+                ", createdTimeStamp=" + createdTimestamp +
                 ", tags=" + Arrays.toString(tags) +
                 ", virtual=" + virtual +
                 ", attributes=" + Arrays.toString(attributes) +
@@ -125,5 +126,11 @@ public class DeviceSync {
                 ", requestId=" + requestId +
                 ", state=" + state +
                 " }";
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public class DeviceTimeZone {
+        public Boolean userOverride;
+        public String timezone;
     }
 }
