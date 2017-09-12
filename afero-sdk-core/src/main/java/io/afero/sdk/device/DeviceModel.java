@@ -882,8 +882,10 @@ public final class DeviceModel {
     private void runDataMigrations() {
         synchronized (this) {
             if (isAvailable() && mDataMigrator != null) {
-                mDataMigrator.runMigrations();
+                DeviceDataMigrator ddm = mDataMigrator;
                 mDataMigrator = null;
+
+                ddm.runMigrations();
             }
         }
     }
