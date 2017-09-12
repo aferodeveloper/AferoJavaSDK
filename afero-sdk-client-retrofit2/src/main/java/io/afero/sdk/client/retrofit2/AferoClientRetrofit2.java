@@ -468,7 +468,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
-     * <p><b>For internal use only. Use {@link DeviceModel#writeModelValue} instead.</b></p>
+     * <p><b>For internal use only. Use {@link DeviceModel#writeAttributes()} instead.</b></p>
      *
      * @param deviceModel {@link DeviceModel} upon which attribute will be written
      * @param body Array of {@link WriteRequest} containing the attribute values to be written
@@ -483,7 +483,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
-     * <p><b>For internal use only. Use {@link DeviceModel#writeModelValues} instead.</b></p>
+     * <p><b>For internal use only. Use {@link DeviceModel#writeAttributes()} instead.</b></p>
      *
      * @param deviceModel {@link DeviceModel} upon which attributes will be written
      * @param body Array of {@link WriteRequest} containing the attribute values to be written
