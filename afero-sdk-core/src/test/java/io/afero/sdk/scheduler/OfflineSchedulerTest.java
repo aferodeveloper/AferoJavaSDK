@@ -20,8 +20,12 @@ import io.afero.sdk.device.DeviceModelTest;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.log.JavaLog;
+import rx.Observable;
+import rx.Observer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class OfflineSchedulerTest extends AferoTest {
@@ -147,7 +151,28 @@ public class OfflineSchedulerTest extends AferoTest {
         DeviceProfile.Attribute attr2 = deviceModel.getAttributeById(59003);
         DeviceProfile.Attribute attr3 = deviceModel.getAttributeById(59004);
 
-        OfflineScheduler.migrateToDeviceTimeZone(deviceModel);
+        Observable<OfflineScheduleEvent> offlineScheduleMigration = OfflineScheduler.migrateToDeviceTimeZone(deviceModel);
+        assertNotNull(offlineScheduleMigration);
+
+        offlineScheduleMigration.toBlocking()
+            .subscribe(new Observer<OfflineScheduleEvent>() {
+                @Override
+                public void onCompleted() {
+
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    e.printStackTrace();
+                    assertTrue(false);
+                }
+
+                @Override
+                public void onNext(OfflineScheduleEvent offlineScheduleEvent) {
+                    assertTrue(offlineScheduleEvent.isInLocalTime());
+                }
+            }
+        );
 
         AttributeValue av = deviceModel.getAttributePendingValue(attr1);
         assertEquals("0302092D", av.toString());

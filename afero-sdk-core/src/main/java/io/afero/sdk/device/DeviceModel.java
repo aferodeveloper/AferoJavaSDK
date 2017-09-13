@@ -113,6 +113,7 @@ public final class DeviceModel {
     private Subscription mOTASubscription;
 
     private DeviceDataMigrator mDataMigrator = new DeviceDataMigrator(this);
+    private Subscription mMigrationSubscription;
 
     private int mRSSI;
     private boolean mIsLinked;
@@ -881,11 +882,33 @@ public final class DeviceModel {
 
     private void runDataMigrations() {
         synchronized (this) {
-            if (isAvailable() && mDataMigrator != null) {
-                DeviceDataMigrator ddm = mDataMigrator;
-                mDataMigrator = null;
+            if (isAvailable() && mDataMigrator != null && mMigrationSubscription == null) {
 
-                ddm.runMigrations();
+                Observable<DeviceDataMigrator> migratorObservable = mDataMigrator.runMigrations();
+                if (migratorObservable == null) {
+                    mDataMigrator = null;
+                    return;
+                }
+
+                mMigrationSubscription = migratorObservable
+                    .subscribe(new Observer<DeviceDataMigrator>() {
+                        @Override
+                        public void onCompleted() {
+                            AfLog.i("DeviceModel.runDataMigrations: onCompleted");
+                            mMigrationSubscription = null;
+                            mDataMigrator = null;
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            mMigrationSubscription = null;
+                            AfLog.i("DeviceModel.runDataMigrations: onError " + e);
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onNext(DeviceDataMigrator ddm) {}
+                    });
             }
         }
     }
