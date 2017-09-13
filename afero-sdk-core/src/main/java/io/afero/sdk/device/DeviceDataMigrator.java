@@ -4,33 +4,36 @@
 
 package io.afero.sdk.device;
 
-import java.util.ArrayList;
-
+import io.afero.sdk.scheduler.OfflineScheduleEvent;
 import io.afero.sdk.scheduler.OfflineScheduler;
-import rx.functions.Action1;
+import rx.Observable;
+import rx.functions.Action2;
+import rx.functions.Func0;
 
 class DeviceDataMigrator {
 
     private final DeviceModel mDeviceModel;
-    private ArrayList<Action1<DeviceModel>> mMigrationActions = new ArrayList<>(1);
-
 
     DeviceDataMigrator(DeviceModel deviceModel) {
         mDeviceModel = deviceModel;
-
-        mMigrationActions.add(new OfflineScheduleMigration());
     }
 
-    void runMigrations() {
-        for (Action1<DeviceModel> migration : mMigrationActions) {
-            migration.call(mDeviceModel);
-        }
-    }
+    Observable<DeviceDataMigrator> runMigrations() {
+        Observable<OfflineScheduleEvent> o = OfflineScheduler.migrateToDeviceTimeZone(mDeviceModel);
 
-    private class OfflineScheduleMigration implements Action1<DeviceModel> {
-        @Override
-        public void call(DeviceModel deviceModel) {
-            OfflineScheduler.migrateToDeviceTimeZone(deviceModel);
+        if (o != null) {
+            return o.collect(new Func0<DeviceDataMigrator>() {
+                @Override
+                public DeviceDataMigrator call() {
+                    return DeviceDataMigrator.this;
+                }
+            }, new Action2<DeviceDataMigrator, OfflineScheduleEvent>() {
+                @Override
+                public void call(DeviceDataMigrator ddm, OfflineScheduleEvent offlineScheduleEvent) {
+                }
+            });
         }
+
+        return null;
     }
 }
