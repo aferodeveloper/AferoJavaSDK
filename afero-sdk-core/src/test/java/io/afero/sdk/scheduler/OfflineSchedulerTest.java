@@ -184,4 +184,33 @@ public class OfflineSchedulerTest extends AferoTest {
         assertEquals("0304030D", av.toString());
     }
 
+    @Test
+    public void migrateAllToDeviceTimeZoneWithNoTimeZoneSet() throws Exception {
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceSync data = loadDeviceSync("resources/offlineScheduleEvent/migrateDeviceSyncNoTimeZone.json");
+        DeviceModel deviceModel = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient, data);
+
+        Observable<OfflineScheduleEvent> offlineScheduleMigration = OfflineScheduler.migrateToDeviceTimeZone(deviceModel);
+        assertNotNull(offlineScheduleMigration);
+
+        offlineScheduleMigration.toBlocking()
+            .subscribe(new Observer<OfflineScheduleEvent>() {
+                @Override
+                public void onCompleted() {
+                    assertTrue(false);
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    // we are expecting to get an error here.
+                }
+
+                @Override
+                public void onNext(OfflineScheduleEvent offlineScheduleEvent) {
+                    assertTrue(false);
+                }
+            }
+        );
+   }
+
 }

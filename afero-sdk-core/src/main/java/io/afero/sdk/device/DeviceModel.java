@@ -902,8 +902,7 @@ public final class DeviceModel {
                         @Override
                         public void onError(Throwable e) {
                             mMigrationSubscription = null;
-                            AfLog.i("DeviceModel.runDataMigrations: onError " + e);
-                            e.printStackTrace();
+                            AfLog.e("DeviceModel.runDataMigrations.onError: " + e.getMessage());
                         }
 
                         @Override
