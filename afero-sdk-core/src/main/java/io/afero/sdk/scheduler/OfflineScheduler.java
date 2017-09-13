@@ -444,11 +444,11 @@ public class OfflineScheduler {
 
     public static Observable<OfflineScheduleEvent> migrateToDeviceTimeZone(DeviceModel deviceModel) {
 
-        if (!(deviceModel.isTimeZoneSet() && OfflineScheduler.hasOfflineScheduleCapability(deviceModel))) {
+        if (!OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
             return null;
         }
 
-        AfLog.i("OfflineScheduler: isTimeZoneSet && hasOfflineScheduleCapability");
+        AfLog.i("OfflineScheduler.migrateToDeviceTimeZone: Device hasOfflineScheduleCapability " + deviceModel.getId());
 
         OfflineScheduler os = new OfflineScheduler();
 
@@ -465,8 +465,14 @@ public class OfflineScheduler {
 
                 @Override
                 public OfflineScheduler call() throws Exception {
+
+                    if (!deviceModel.isTimeZoneSet()) {
+                        throw new IllegalArgumentException("timeZone not set");
+                    }
+
                     offlineScheduler.start(deviceModel);
                     offlineScheduler.readFromDevice();
+
                     return offlineScheduler;
                 }
             }.init(os, deviceModel))
@@ -493,14 +499,17 @@ public class OfflineScheduler {
                             }
 
                             @Override
-                            public Observable<OfflineScheduleEvent> call(final TimeZone timeZone) {
+                            public Observable<OfflineScheduleEvent> call(TimeZone timeZone) {
+
                                 return offlineScheduler.getScheduleEvents()
+
                                     .filter(new Func1<OfflineScheduleEvent, Boolean>() {
                                         @Override
                                         public Boolean call(OfflineScheduleEvent offlineScheduleEvent) {
                                             return !offlineScheduleEvent.isInLocalTime();
                                         }
                                     })
+
                                     .map(new Func1<OfflineScheduleEvent, OfflineScheduleEvent>() {
 
                                         TimeZone timeZone;
@@ -528,6 +537,7 @@ public class OfflineScheduler {
                                             return offlineScheduleEvent;
                                         }
                                     }.init(timeZone))
+
                                     .doOnCompleted(new Action0() {
                                         OfflineScheduler offlineScheduler;
 
