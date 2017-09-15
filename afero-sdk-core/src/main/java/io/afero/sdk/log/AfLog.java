@@ -6,7 +6,7 @@ package io.afero.sdk.log;
 
 public class AfLog {
 
-    private static Impl mImpl = new JavaLog();
+    private static Impl mImpl;
     private static String mTag = "";
     private static FilterLevel mFilterLevel = FilterLevel.VERBOSE;
 
@@ -44,50 +44,50 @@ public class AfLog {
     }
 
     public static void setUserEmail(String email) {
-        mImpl.setUserEmail(email);
+        getImpl().setUserEmail(email);
     }
 
     public static void setUserId(String id) {
-        mImpl.setUserId(id);
+        getImpl().setUserId(id);
     }
 
     public static void setString(String key, String value) {
-        mImpl.setString(key, value);
+        getImpl().setString(key, value);
     }
 
     public static void v(String s) {
         if (passesFilter(FilterLevel.VERBOSE)) {
-            mImpl.v(s);
+            getImpl().v(s);
         }
     }
 
     public static void d(String s) {
         if (passesFilter(FilterLevel.DEBUG)) {
-            mImpl.d(s);
+            getImpl().d(s);
         }
     }
 
     public static void i(String s) {
         if (passesFilter(FilterLevel.INFO)) {
-            mImpl.i(s);
+            getImpl().i(s);
         }
     }
 
     public static void w(String s) {
         if (passesFilter(FilterLevel.WARNING)) {
-            mImpl.w(s);
+            getImpl().w(s);
         }
     }
 
     public static void e(String s) {
         if (passesFilter(FilterLevel.ERROR)) {
-            mImpl.e(s);
+            getImpl().e(s);
         }
     }
 
     public static void e(Throwable t) {
         if (passesFilter(FilterLevel.ERROR)) {
-            mImpl.e(t);
+            getImpl().e(t);
         }
     }
 
@@ -96,18 +96,21 @@ public class AfLog {
     }
 
     public static void content(String type) {
-        mImpl.content(type);
+        getImpl().content(type);
     }
 
     public static void content(String type, String id) {
-        mImpl.content(type, id);
+        getImpl().content(type, id);
     }
 
     public static void content(String type, String id, String name) {
-        mImpl.content(type, id, name);
+        getImpl().content(type, id, name);
     }
 
     static Impl getImpl() {
+        if (mImpl == null) {
+            mImpl = new JavaLog();
+        }
         return mImpl;
     }
 
