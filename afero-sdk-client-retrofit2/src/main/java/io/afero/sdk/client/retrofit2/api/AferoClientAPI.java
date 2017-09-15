@@ -9,14 +9,14 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
-import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
+import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceProfile;
@@ -64,12 +64,28 @@ public interface AferoClientAPI {
     @GET(V1 + "users/me")
     Observable<UserDetails> usersMe();
 
+    @POST(V1 + "accounts/{accountId}/conclaveAccess")
+    Observable<ConclaveAccessDetails> postConclaveAccess(
+            @Path("accountId") String accountId,
+            @Body ConclaveAccessBody body
+    );
+
+    @Deprecated
+    @POST(V1 + "accounts/{accountId}/mobileDevices/{mobileDeviceId}/conclaveAccess")
+    Observable<ConclaveAccessDetails> postConclaveAccess(
+            @Path("accountId") String accountId,
+            @Path("mobileDeviceId") String mobileClientId,
+            @Body ConclaveAccessBody body
+    );
+
+    @Deprecated
     @POST(V1 + "users/{userId}/mobileDevices")
     Observable<Response<Void>> postDeviceInfo(
             @Path("userId") String userId,
             @Body DeviceInfoBody body
     );
 
+    @Deprecated
     @DELETE(V1 + "users/{userId}/mobileDevices/{mobileDeviceId}")
     Observable<Void> deleteDeviceInfo(
             @Path("userId") String userId,
@@ -150,13 +166,6 @@ public interface AferoClientAPI {
             @Path("profileId") String profileId,
             @Query("locale") String locale,
             @Query("imageSize") String imageSize
-    );
-
-    @POST(V1 + "accounts/{accountId}/mobileDevices/{mobileDeviceId}/conclaveAccess")
-    Observable<ConclaveAccessDetails> postConclaveAccess(
-            @Path("accountId") String accountId,
-            @Path("mobileDeviceId") String mobileClientId,
-            @Body ConclaveAccessBody body
     );
 
     @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/requests")

@@ -85,7 +85,12 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
+    public Observable<ConclaveAccessDetails> postConclaveAccess() {
+        return null;
+    }
+
+    @Override
+    public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileDeviceId) {
         return null;
     }
 
