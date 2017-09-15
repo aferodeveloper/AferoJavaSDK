@@ -87,11 +87,10 @@ public class DeviceCollection {
      *
      * @param aferoClient The {@link AferoClient} used by the {@code DeviceCollection} to associate
      *                    and disassociate devices with the active account
-     * @param clientId Unique identifier (uuid) for the calling client app
      */
-    public DeviceCollection(AferoClient aferoClient, String clientId) {
+    public DeviceCollection(AferoClient aferoClient) {
         ConclaveAccessManager conclaveAccessManager = new ConclaveAccessManager(aferoClient);
-        mDeviceEventSource = new ConclaveDeviceEventSource(conclaveAccessManager, clientId);
+        mDeviceEventSource = new ConclaveDeviceEventSource(conclaveAccessManager);
         mDeviceProfileCollection = new DeviceProfileCollection(aferoClient);
         mAferoClient = aferoClient;
     }

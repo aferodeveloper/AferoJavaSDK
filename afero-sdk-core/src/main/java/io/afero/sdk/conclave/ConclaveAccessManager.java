@@ -31,16 +31,16 @@ public class ConclaveAccessManager {
         mConclaveAccessDetails = null;
     }
 
-    public Observable<ConclaveAccessDetails> getAccess(String clientId) {
+    public Observable<ConclaveAccessDetails> getAccess() {
         if (mConclaveAccessDetails == null) {
-            return mAferoClient.postConclaveAccess(clientId)
+            return mAferoClient.postConclaveAccess()
                     .doOnNext(new ConclaveAccessAction(this));
         }
         return rx.Observable.just(mConclaveAccessDetails);
     }
 
-    public void updateAccess(String clientId) {
-        mAferoClient.postConclaveAccess(clientId)
+    public void updateAccess() {
+        mAferoClient.postConclaveAccess()
                 .subscribe(mObserver);
     }
 

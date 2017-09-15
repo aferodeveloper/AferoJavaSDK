@@ -45,7 +45,6 @@ public class AferoSofthub {
 
     private final WeakReference<Context> mContextRef;
     private final AferoClient mAferoClient;
-    private final String mClientId;
     private final String mSetupPath;
     private final String mOTAPath;
     private final NotificationCallback mNotificationCallback;
@@ -78,10 +77,9 @@ public class AferoSofthub {
         }
     };
 
-    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String clientId) {
+    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient) {
         mContextRef = new WeakReference<>(context);
         mAferoClient = aferoClient;
-        mClientId = clientId;
 
         mNotificationCallback = new HubbyNotificationCallback(this);
 
@@ -89,9 +87,9 @@ public class AferoSofthub {
         mSetupPath = context.getFilesDir().getAbsolutePath();
     }
 
-    public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String clientId) {
+    public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient) {
         if (sInstance == null) {
-            sInstance = new AferoSofthub(context, aferoClient, clientId);
+            sInstance = new AferoSofthub(context, aferoClient);
         }
 
         return sInstance;
@@ -208,8 +206,7 @@ public class AferoSofthub {
 
         final String hwInfo = "os:android,manufacturer:" + Build.MANUFACTURER +
                 ",model:" + Build.MODEL +
-                ",version:" + Build.VERSION.RELEASE +
-                (mClientId != null ? ",clientId:" + mClientId : "")
+                ",version:" + Build.VERSION.RELEASE
                 ;
         final String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
 

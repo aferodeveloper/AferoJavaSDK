@@ -53,7 +53,6 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
     private boolean mSessionTrace;
 
     private ConclaveAccessDetails mConclaveAccessDetails;
-    private final String mClientId;
 
     private long mGeneration;
     private int mSequenceNum;
@@ -84,9 +83,8 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         }
     };
 
-    public ConclaveDeviceEventSource(ConclaveAccessManager cam, String clientId) {
+    public ConclaveDeviceEventSource(ConclaveAccessManager cam) {
         mConclaveAccessManager = cam;
-        mClientId = clientId;
 
         cam.getObservable().subscribe(mConclaveAccessObserver);
     }
@@ -160,7 +158,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         rx.Observable<ConclaveDeviceEventSource> connectObservable;
 
         if (mConclaveAccessDetails == null) {
-            connectObservable = mConclaveAccessManager.getAccess(mClientId)
+            connectObservable = mConclaveAccessManager.getAccess()
                 .flatMap(new Func1<ConclaveAccessDetails, Observable<ConclaveDeviceEventSource>>() {
                     @Override
                     public Observable<ConclaveDeviceEventSource> call(ConclaveAccessDetails conclaveAccessDetails) {
@@ -233,7 +231,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
             onMessage(entry.getValue());
         }
         else if (key.equals("hello")) {
-            mConclaveClient.login(mAccountId, mUserId, mToken, mType, mClientId, mSessionTrace);
+            mConclaveClient.login(mAccountId, mUserId, mToken, mType, mSessionTrace);
         }
         else if (key.equals("welcome")) {
             long generation = mGeneration;
@@ -262,7 +260,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
             if (errNode != null) {
                 int err = errNode.asInt();
                 if (err == ConclaveClient.ERROR_CODE_INVALID_TOKEN) {
-                    mConclaveAccessManager.updateAccess(mClientId);
+                    mConclaveAccessManager.updateAccess();
                 }
             }
         }
@@ -328,7 +326,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         for (ConclaveAccessDetails.ConclaveAccess ca : cad.tokens) {
             if (ca.client != null) {
                 String type = ca.client.get("type");
-                if (type != null && type.equalsIgnoreCase("application")) {
+                if (type != null && type.equalsIgnoreCase("user")) {
                     mToken = ca.token;
                 }
             }
