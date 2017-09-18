@@ -78,14 +78,12 @@ public interface AferoClientAPI {
             @Body ConclaveAccessBody body
     );
 
-    @Deprecated
     @POST(V1 + "users/{userId}/mobileDevices")
     Observable<Response<Void>> postDeviceInfo(
             @Path("userId") String userId,
             @Body DeviceInfoBody body
     );
 
-    @Deprecated
     @DELETE(V1 + "users/{userId}/mobileDevices/{mobileDeviceId}")
     Observable<Void> deleteDeviceInfo(
             @Path("userId") String userId,
