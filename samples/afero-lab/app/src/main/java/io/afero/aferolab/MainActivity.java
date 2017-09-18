@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
 
     private Subscription mTokenRefreshSubscription;
     private Subscription mConclaveStatusSubscription;
-    private Subscription mSignInSubscription;
     private Subscription mDeviceEventStreamSubscription;
 
     private DeviceEventSourceConnectObserver mDeviceEventSourceConnectObserver;
@@ -143,6 +142,11 @@ public class MainActivity extends AppCompatActivity {
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
         if (mAferoClient.getToken() != null) {
+            // listen for token refresh failures
+            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
+
             startDeviceStream();
         }
 
@@ -166,8 +170,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
-        mConclaveStatusSubscription = RxUtils.safeUnSubscribe(mConclaveStatusSubscription);
         mDeviceEventStreamSubscription = RxUtils.safeUnSubscribe(mDeviceEventStreamSubscription);
 
         try {
@@ -187,11 +189,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        // listen for token refresh failures
-        mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new TokenObserver(this));
-
         if (mConnectivityReceiver == null) {
             mConnectivityReceiver = new ConnectivityReceiver(this);
         }
@@ -204,24 +201,13 @@ public class MainActivity extends AppCompatActivity {
         mAferoSofthub.onResume();
     }
 
+    /**
+     * This will cause to {@link AferoClientRetrofit2#tokenRefreshObservable()} to emit onCompleted,
+     * which will call {@link #onSignOut()}
+     */
     @OnClick(R.id.button_sign_out)
     void onClickSignOut() {
-        onSignOut();
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (mAttributeEditorView.isStarted()) {
-            mAttributeEditorView.stop();
-            return;
-        }
-
-        if (mDeviceInspectorView.isStarted()) {
-            mDeviceInspectorView.stop();
-            return;
-        }
-
-        super.onBackPressed();
+        mAferoClient.signOut(null, null);
     }
 
     private void setupViews() {
@@ -273,13 +259,21 @@ public class MainActivity extends AppCompatActivity {
 
         showConclaveStatus(ConclaveClient.Status.CONNECTING);
 
-        mSignInSubscription = mAferoClient.getAccessToken(email, password)
+        mAferoClient.getAccessToken(email, password)
                 .concatMap(new MapAccessTokenToUserDetails())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new SignInObserver(this));
     }
 
     private void onSignIn(UserDetails userDetails) {
+
+        mPasswordEditText.setText("");
+
+        // listen for token refresh failures
+        mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new TokenObserver(this));
+
         mUserId = userDetails.userId;
         String accountId = null;
         String accountName = null;
@@ -310,6 +304,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onSignInError(Throwable e) {
         mNetworkStatus.setText(e.getMessage());
+        mPasswordEditText.setText("");
         onSignOut();
     }
 
@@ -320,6 +315,7 @@ public class MainActivity extends AppCompatActivity {
 
         mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
 
+        mUserId = null;
         Prefs.clearAccountPrefs(this);
 
         mAferoSofthub.stop();
