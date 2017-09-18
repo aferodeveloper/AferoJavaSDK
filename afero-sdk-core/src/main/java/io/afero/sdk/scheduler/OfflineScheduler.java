@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.conclave.models.DeviceSync;
@@ -20,8 +21,8 @@ import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import rx.Emitter;
 import rx.Observable;
-import rx.Observer;
 import rx.Subscription;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
@@ -441,72 +442,135 @@ public class OfflineScheduler {
         return mHasNonLocalTimeEvents;
     }
 
-    public static void migrateToDeviceTimeZone(DeviceModel deviceModel) {
+    public static Observable<OfflineScheduleEvent> migrateToDeviceTimeZone(DeviceModel deviceModel) {
 
-        if (deviceModel.isTimeZoneSet() && OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
-            AfLog.i("OfflineScheduler: isTimeZoneSet && hasOfflineScheduleCapability");
-
-            final OfflineScheduler offlineScheduler = new OfflineScheduler();
-            offlineScheduler.start(deviceModel);
-            offlineScheduler.readFromDevice();
-
-            if (offlineScheduler.hasNonLocalTimeEvents()) {
-                AfLog.w("OfflineScheduler: detected non-local time events - starting migration");
-
-                deviceModel.getTimeZone()
-                        .flatMap(new Func1<TimeZone, Observable<OfflineScheduleEvent>>() {
-                            @Override
-                            public Observable<OfflineScheduleEvent> call(final TimeZone timeZone) {
-                                return offlineScheduler.getScheduleEvents()
-                                        .filter(new Func1<OfflineScheduleEvent, Boolean>() {
-                                            @Override
-                                            public Boolean call(OfflineScheduleEvent offlineScheduleEvent) {
-                                                return !offlineScheduleEvent.isInLocalTime();
-                                            }
-                                        })
-                                        .doOnNext(new Action1<OfflineScheduleEvent>() {
-                                            @Override
-                                            public void call(OfflineScheduleEvent offlineScheduleEvent) {
-
-                                                String oldTime = offlineScheduleEvent.getDayGMT() + ":" +
-                                                        offlineScheduleEvent.getHourGMT() + ":" +
-                                                        offlineScheduleEvent.getMinuteGMT();
-
-                                                offlineScheduleEvent.migrateToLocalTimeZone(timeZone);
-
-                                                String newTime = offlineScheduleEvent.getDay() + ":" +
-                                                        offlineScheduleEvent.getHour() + ":" +
-                                                        offlineScheduleEvent.getMinute();
-
-                                                AfLog.w("OfflineScheduler: migrated event " + offlineScheduleEvent.getId() +
-                                                        " from " + oldTime + " to " + newTime + " " + timeZone.getID());
-                                            }
-                                        });
-                            }
-                        })
-                        .subscribe(new Observer<OfflineScheduleEvent>() {
-                            @Override
-                            public void onCompleted() {
-                                offlineScheduler.writeToDevice();
-
-                                AfLog.w("OfflineScheduler: migration complete");
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-                                AfLog.w("OfflineScheduler: migration error");
-                                AfLog.e(e);
-                            }
-
-                            @Override
-                            public void onNext(OfflineScheduleEvent offlineScheduleEvent) {
-                            }
-                        });
-            }
-
-            offlineScheduler.stop();
+        if (!OfflineScheduler.hasOfflineScheduleCapability(deviceModel)) {
+            return null;
         }
 
+        AfLog.i("OfflineScheduler.migrateToDeviceTimeZone: Device hasOfflineScheduleCapability " + deviceModel.getId());
+
+        OfflineScheduler os = new OfflineScheduler();
+
+        return Observable.fromCallable(new Callable<OfflineScheduler>() {
+
+                OfflineScheduler offlineScheduler;
+                DeviceModel deviceModel;
+
+                Callable<OfflineScheduler> init(OfflineScheduler os, DeviceModel dm) {
+                    offlineScheduler = os;
+                    deviceModel = dm;
+                    return this;
+                }
+
+                @Override
+                public OfflineScheduler call() throws Exception {
+
+                    if (!deviceModel.isTimeZoneSet()) {
+                        throw new IllegalArgumentException("timeZone not set");
+                    }
+
+                    offlineScheduler.start(deviceModel);
+                    offlineScheduler.readFromDevice();
+
+                    return offlineScheduler;
+                }
+            }.init(os, deviceModel))
+
+            .filter(new Func1<OfflineScheduler, Boolean>() {
+                @Override
+                public Boolean call(OfflineScheduler offlineScheduler) {
+                    return offlineScheduler.hasNonLocalTimeEvents();
+                }
+            })
+
+            .flatMap(new Func1<OfflineScheduler, Observable<OfflineScheduleEvent>>() {
+
+                @Override
+                public Observable<OfflineScheduleEvent> call(OfflineScheduler offlineScheduler) {
+                    return offlineScheduler.getDeviceModel().getTimeZone()
+                        .flatMap(new Func1<TimeZone, Observable<OfflineScheduleEvent>>() {
+
+                            OfflineScheduler offlineScheduler;
+
+                            Func1<TimeZone, Observable<OfflineScheduleEvent>> init(OfflineScheduler os) {
+                                offlineScheduler = os;
+                                return this;
+                            }
+
+                            @Override
+                            public Observable<OfflineScheduleEvent> call(TimeZone timeZone) {
+
+                                return offlineScheduler.getScheduleEvents()
+
+                                    .filter(new Func1<OfflineScheduleEvent, Boolean>() {
+                                        @Override
+                                        public Boolean call(OfflineScheduleEvent offlineScheduleEvent) {
+                                            return !offlineScheduleEvent.isInLocalTime();
+                                        }
+                                    })
+
+                                    .map(new Func1<OfflineScheduleEvent, OfflineScheduleEvent>() {
+
+                                        TimeZone timeZone;
+
+                                        Func1<OfflineScheduleEvent, OfflineScheduleEvent> init(TimeZone tz) {
+                                            timeZone = tz;
+                                            return this;
+                                        }
+
+                                        @Override
+                                        public OfflineScheduleEvent call(OfflineScheduleEvent offlineScheduleEvent) {
+                                            String oldTime = offlineScheduleEvent.getDayGMT() + ":" +
+                                                    offlineScheduleEvent.getHourGMT() + ":" +
+                                                    offlineScheduleEvent.getMinuteGMT();
+
+                                            offlineScheduleEvent.migrateToLocalTimeZone(timeZone);
+
+                                            String newTime = offlineScheduleEvent.getDay() + ":" +
+                                                    offlineScheduleEvent.getHour() + ":" +
+                                                    offlineScheduleEvent.getMinute();
+
+                                            AfLog.w("OfflineScheduler: migrated event " + offlineScheduleEvent.getId() +
+                                                    " from " + oldTime + " to " + newTime + " " + timeZone.getID());
+
+                                            return offlineScheduleEvent;
+                                        }
+                                    }.init(timeZone))
+
+                                    .doOnCompleted(new Action0() {
+                                        OfflineScheduler offlineScheduler;
+
+                                        Action0 init(OfflineScheduler os) {
+                                            offlineScheduler = os;
+                                            return this;
+                                        }
+
+                                        @Override
+                                        public void call() {
+                                            offlineScheduler.writeToDevice();
+                                        }
+                                    }.init(offlineScheduler));
+                            }
+                        }.init(offlineScheduler));
+
+                }
+            })
+
+            .doOnTerminate(new Action0() {
+
+                OfflineScheduler offlineScheduler;
+
+                Action0 init(OfflineScheduler os) {
+                    offlineScheduler = os;
+                    return this;
+                }
+
+                @Override
+                public void call() {
+                    offlineScheduler.stop();
+                }
+            }.init(os));
     }
 
 }

@@ -29,7 +29,6 @@ import io.afero.sdk.android.clock.AndroidClock;
 import io.afero.sdk.android.log.AndroidLog;
 import io.afero.sdk.client.retrofit2.AferoClientRetrofit2;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
-import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.ConclaveClient;
 import io.afero.sdk.device.ConclaveDeviceEventSource;
@@ -38,20 +37,17 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.softhub.AferoSofthub;
 import io.afero.sdk.utils.RxUtils;
-import retrofit2.Response;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
     private Subscription mTokenRefreshSubscription;
     private Subscription mConclaveStatusSubscription;
-    private Subscription mSignInSubscription;
     private Subscription mDeviceEventStreamSubscription;
 
     private DeviceEventSourceConnectObserver mDeviceEventSourceConnectObserver;
@@ -64,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String mUserId;
 
-    private final Observer<AferoSofthub> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<AferoSofthub>();
+    private final Observer<AferoSofthub> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<>();
 
     @BindView(R.id.device_list_view)
     DeviceListView mDeviceListView;
@@ -121,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
         mAferoClient = new AferoClientRetrofit2(aferoClientConfig);
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
-        mDeviceCollection = new DeviceCollection(mAferoClient, ClientID.get(this));
+        mDeviceCollection = new DeviceCollection(mAferoClient);
 
         if (token != null) {
             mAferoClient.setToken(new AccessToken(accessToken, refreshToken));
@@ -130,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mDeviceEventSource = (ConclaveDeviceEventSource)mDeviceCollection.getDeviceEventSource();
-        mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(MainActivity.this);
+        mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(this);
 
         mConclaveStatusSubscription = mDeviceEventSource.observeConclaveStatus()
                 .onBackpressureBuffer()
@@ -142,10 +138,15 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, ClientID.get(this));
+        mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient);
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
         if (mAferoClient.getToken() != null) {
+            // listen for token refresh failures
+            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
+
             startDeviceStream();
         }
 
@@ -169,8 +170,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
-        mConclaveStatusSubscription = RxUtils.safeUnSubscribe(mConclaveStatusSubscription);
         mDeviceEventStreamSubscription = RxUtils.safeUnSubscribe(mDeviceEventStreamSubscription);
 
         try {
@@ -190,11 +189,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        // listen for token refresh failures
-        mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new TokenObserver(this));
-
         if (mConnectivityReceiver == null) {
             mConnectivityReceiver = new ConnectivityReceiver(this);
         }
@@ -207,9 +201,13 @@ public class MainActivity extends AppCompatActivity {
         mAferoSofthub.onResume();
     }
 
+    /**
+     * This will cause to {@link AferoClientRetrofit2#tokenRefreshObservable()} to emit onCompleted,
+     * which will call {@link #onSignOut()}
+     */
     @OnClick(R.id.button_sign_out)
     void onClickSignOut() {
-        onSignOut();
+        mAferoClient.signOut(null, null);
     }
 
     @Override
@@ -276,13 +274,21 @@ public class MainActivity extends AppCompatActivity {
 
         showConclaveStatus(ConclaveClient.Status.CONNECTING);
 
-        mSignInSubscription = mAferoClient.getAccessToken(email, password)
+        mAferoClient.getAccessToken(email, password)
                 .concatMap(new MapAccessTokenToUserDetails())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new SignInObserver(this));
     }
 
     private void onSignIn(UserDetails userDetails) {
+
+        mPasswordEditText.setText("");
+
+        // listen for token refresh failures
+        mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new TokenObserver(this));
+
         mUserId = userDetails.userId;
         String accountId = null;
         String accountName = null;
@@ -313,6 +319,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onSignInError(Throwable e) {
         mNetworkStatus.setText(e.getMessage());
+        mPasswordEditText.setText("");
         onSignOut();
     }
 
@@ -323,6 +330,7 @@ public class MainActivity extends AppCompatActivity {
 
         mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
 
+        mUserId = null;
         Prefs.clearAccountPrefs(this);
 
         mAferoSofthub.stop();
@@ -346,8 +354,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startDeviceStream() {
         if (mDeviceEventSource != null && (!mDeviceEventSource.isConnected()) && mDeviceEventStreamSubscription == null) {
-            mDeviceEventStreamSubscription = registerClient()
-                .concatMap(new StartDeviceEventStreamFunc(this))
+            mDeviceEventStreamSubscription = startDeviceEventStream()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(mDeviceEventSourceConnectObserver);
         }
@@ -355,30 +362,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void onConclaveStatusChange(ConclaveClient.Status status) {
         showConclaveStatus(status);
-    }
-
-    private Observable<Response<Void>> registerClient() {
-        rx.Observable<String> observable = null;
-
-        // register for push notifications
-//        if (!mHasRegisteredGCM) {
-//            mHasRegisteredGCM = true;
-//            if (GCMClient.checkPlayServices(this)) {
-//                observable = GCMClient.getRegistrationId(getApplicationContext())
-//                        .onErrorResumeNext(new JustEmptyString());
-//            }
-//        }
-
-        if (observable == null) {
-            observable = Observable.just("");
-        }
-
-        if (!ClientID.getIDWasRegistered()) {
-            return observable.flatMap(new MapPushIdToDeviceInfo(this))
-                .subscribeOn(Schedulers.io());
-        }
-
-        return Observable.just(Response.success((Void) null));
     }
 
     private void onDeviceEventStreamConnectComplete() {
@@ -416,19 +399,7 @@ public class MainActivity extends AppCompatActivity {
         PermissionsHelper.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
     }
 
-    private static class StartDeviceEventStreamFunc extends RxUtils.WeakFunc1<Response, Observable<ConclaveDeviceEventSource>, MainActivity> {
-
-        StartDeviceEventStreamFunc(MainActivity strongRef) {
-            super(strongRef);
-        }
-
-        @Override
-        public Observable<ConclaveDeviceEventSource> call(MainActivity activity, Response baseResponse) {
-            return activity.callStartDeviceEventStream();
-        }
-    }
-
-    private Observable<ConclaveDeviceEventSource> callStartDeviceEventStream() {
+    private Observable<ConclaveDeviceEventSource> startDeviceEventStream() {
         if (!mDeviceEventSource.hasStarted()) {
             final String accountId = mAferoClient.getActiveAccountId();
             final String userId = mUserId;
@@ -436,40 +407,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             return mDeviceEventSource.reconnect();
         }
-    }
-
-    private static class MapPushIdToDeviceInfo extends RxUtils.WeakFunc1<String, Observable<Response<Void>>, MainActivity> {
-
-        MapPushIdToDeviceInfo(MainActivity activity) {
-            super(activity);
-        }
-
-        @Override
-        public Observable<Response<Void>> call(MainActivity mainActivity, String pushId) {
-            return mainActivity.callMapPushIdToDeviceInfo(pushId);
-        }
-    }
-
-    private Observable<Response<Void>> callMapPushIdToDeviceInfo(String pushId) {
-        DeviceInfoBody deviceInfo = new DeviceInfoBody(DeviceInfoBody.PLATFORM_ANDROID, pushId, ClientID.get(this), BuildConfig.APPLICATION_ID);
-
-        deviceInfo.extendedData.app_version = BuildConfig.VERSION_NAME;
-        deviceInfo.extendedData.app_build_number = BuildConfig.VERSION_CODE;
-        deviceInfo.extendedData.app_identifier = BuildConfig.APPLICATION_ID;
-        deviceInfo.extendedData.app_build_type = BuildConfig.BUILD_TYPE;
-
-        final String userId = mUserId;
-        if (userId != null && !userId.isEmpty()) {
-            return mAferoClient.postDeviceInfo(userId, deviceInfo)
-                .doOnNext(new Action1<Response<Void>>() {
-                    @Override
-                    public void call(Response<Void> response) {
-                        ClientID.setIDWasRegistered(true);
-                    }
-                });
-        }
-
-        return Observable.just(Response.success((Void) null));
     }
 
     private static class TokenObserver extends RxUtils.WeakObserver<AccessToken, MainActivity> {

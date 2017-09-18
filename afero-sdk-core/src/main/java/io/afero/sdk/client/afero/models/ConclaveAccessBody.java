@@ -8,4 +8,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ConclaveAccessBody {
+    public boolean user = true;
+    public boolean softHub = false;
 }

@@ -60,13 +60,12 @@ public class ConclaveMessage {
     public static class Login {
         public LoginFields login;
 
-        public Login(String accountId, String userId, String token, String type, String clientId, String clientVersion, boolean trace) {
+        public Login(String accountId, String userId, String token, String type, String clientVersion, boolean trace) {
             login = new LoginFields();
             login.channelId = accountId;
             login.userId = userId;
             login.accessToken = token;
             login.type = type;
-            login.mobileDeviceId = clientId;
             login.version = clientVersion;
             login.trace = trace;
         }
@@ -78,7 +77,6 @@ public class ConclaveMessage {
         public String userId;
         public String accessToken;
         public String type;
-        public String mobileDeviceId;
         public String version;
         public int protocol = PROTOCOL_VERSION;
         public boolean trace;

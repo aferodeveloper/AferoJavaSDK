@@ -24,7 +24,6 @@ import rx.subjects.PublishSubject;
 
 public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.ViewHolder> {
 
-    private Subscription mCreateSubscription;
     private Subscription mUpdateSubscription;
     private Subscription mRemoveSubscription;
     private final Vector<DeviceModel> mDevices = new Vector<>();
@@ -76,15 +75,13 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
     };
 
     public DeviceViewAdapter(DeviceCollection deviceCollection) {
-        updateDevices(deviceCollection.getDevices());
-
-        mCreateSubscription = updateDevices(deviceCollection.observeCreates());
-        mUpdateSubscription = updateDevices(deviceCollection.observeUpdates());
+        mUpdateSubscription = updateDevices(deviceCollection.getDevices()
+                .concatWith(deviceCollection.observeCreates()
+                        .mergeWith(deviceCollection.observeUpdates())));
         mRemoveSubscription = removeDevices(deviceCollection.observeDeletes());
     }
 
     public void stop() {
-        mCreateSubscription = RxUtils.safeUnSubscribe(mCreateSubscription);
         mUpdateSubscription = RxUtils.safeUnSubscribe(mUpdateSubscription);
         mRemoveSubscription = RxUtils.safeUnSubscribe(mRemoveSubscription);
     }

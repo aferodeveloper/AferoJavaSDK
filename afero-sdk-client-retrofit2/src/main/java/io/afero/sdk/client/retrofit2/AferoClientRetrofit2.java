@@ -16,16 +16,16 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.api.AferoClientAPI;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
-import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
+import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceSync;
@@ -468,7 +468,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
-     * <p><b>For internal use only. Use {@link DeviceModel#writeModelValue} instead.</b></p>
+     * <p><b>For internal use only. Use {@link DeviceModel#writeAttributes()} instead.</b></p>
      *
      * @param deviceModel {@link DeviceModel} upon which attribute will be written
      * @param body Array of {@link WriteRequest} containing the attribute values to be written
@@ -483,7 +483,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
-     * <p><b>For internal use only. Use {@link DeviceModel#writeModelValues} instead.</b></p>
+     * <p><b>For internal use only. Use {@link DeviceModel#writeAttributes()} instead.</b></p>
      *
      * @param deviceModel {@link DeviceModel} upon which attributes will be written
      * @param body Array of {@link WriteRequest} containing the attribute values to be written
@@ -535,12 +535,17 @@ public class AferoClientRetrofit2 implements AferoClient {
     /**
      * <p><b>For internal use only. Use {@link DeviceCollection} and {@link DeviceEventSource} instead.</b></p>
      *
-     * @param mobileClientId
      * @return {@link Observable} that emits {@link ConclaveAccessDetails} in {@link rx.Observer#onNext}.
      */
     @Override
+    public Observable<ConclaveAccessDetails> postConclaveAccess() {
+        return mAferoService.postConclaveAccess(mActiveAccountId, new ConclaveAccessBody());
+    }
+
+    @Deprecated
+    @Override
     public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
-        return mAferoService.postConclaveAccess(mActiveAccountId, mobileClientId, new ConclaveAccessBody());
+        return mAferoService.postConclaveAccess(mActiveAccountId, new ConclaveAccessBody());
     }
 
     /**
