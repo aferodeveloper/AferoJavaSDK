@@ -46,7 +46,7 @@ public class DeviceInspectorView extends FrameLayout {
     private static final int TRANSITION_DURATION = 200;
 
     private final DeviceInspectorController mController = new DeviceInspectorController(this);
-    private final AttributeAdapter mAdapter = new AttributeAdapter();
+    private final AttributeAdapter mAttributeAdapter = new AttributeAdapter();
 
     public DeviceInspectorView(@NonNull Context context) {
         super(context);
@@ -67,23 +67,23 @@ public class DeviceInspectorView extends FrameLayout {
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mAttributeListView.setLayoutManager(layoutManager);
-        mAttributeListView.setAdapter(mAdapter);
+        mAttributeListView.setAdapter(mAttributeAdapter);
     }
 
-    public void start(final DeviceModel deviceModel) {
+    public void start(DeviceModel deviceModel) {
         if (isStarted()) {
             return;
         }
 
         mController.start(deviceModel);
-        mAdapter.start(deviceModel);
-        mAdapter.getViewOnClick()
+        mAttributeAdapter.start(deviceModel);
+        mAttributeAdapter.getViewOnClick()
                 .subscribe(new Action1<View>() {
                     @Override
                     public void call(View view) {
                         int pos = mAttributeListView.getChildAdapterPosition(view);
                         if (pos != RecyclerView.NO_POSITION) {
-                            startAttributeEditor(deviceModel, mAdapter.getAttributeAt(pos));
+                            startAttributeEditor(mController.getDeviceModel(), mAttributeAdapter.getAttributeAt(pos));
                         }
                     }
                 });
@@ -94,7 +94,7 @@ public class DeviceInspectorView extends FrameLayout {
     public void stop() {
         if (isStarted()) {
             mController.stop();
-            mAdapter.stop();
+            mAttributeAdapter.stop();
 
             startExitTransition();
         }
@@ -130,7 +130,7 @@ public class DeviceInspectorView extends FrameLayout {
                 .withEndAction(new Runnable() {
                     @Override
                     public void run() {
-                        mAdapter.clear();
+                        mAttributeAdapter.clear();
                         setVisibility(INVISIBLE);
                     }
                 });

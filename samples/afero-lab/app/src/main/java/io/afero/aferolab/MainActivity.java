@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient);
+        mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, null);
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
         if (mAferoClient.getToken() != null) {
