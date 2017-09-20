@@ -16,12 +16,15 @@ class DeviceInspectorController {
 
     private final DeviceInspectorView mView;
     private Subscription mDeviceUpdateSubscription;
+    private DeviceModel mDeviceModel;
 
     DeviceInspectorController(DeviceInspectorView view) {
         mView = view;
     }
 
     void start(DeviceModel deviceModel) {
+
+        mDeviceModel = deviceModel;
         mDeviceUpdateSubscription = deviceModel.getUpdateObservable()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<DeviceModel>() {
@@ -40,8 +43,12 @@ class DeviceInspectorController {
         mDeviceUpdateSubscription = RxUtils.safeUnSubscribe(mDeviceUpdateSubscription);
     }
 
-    public boolean isStarted() {
+    boolean isStarted() {
         return mDeviceUpdateSubscription != null;
+    }
+
+    DeviceModel getDeviceModel() {
+        return mDeviceModel;
     }
 
     /**

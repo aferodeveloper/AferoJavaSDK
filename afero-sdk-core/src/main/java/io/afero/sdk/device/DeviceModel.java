@@ -567,6 +567,17 @@ public final class DeviceModel {
         return ad != null ? ad.mPendingValue : null;
     }
 
+    /**
+     * @param attribute
+     */
+    public void cancelAttributePendingValue(DeviceProfile.Attribute attribute) {
+        AttributeData ad = getAttributeData(attribute);
+        if (ad != null && ad.mCurrentValue != null) {
+            ad.mPendingValue = new AttributeValue(ad.mCurrentValue.toString(), attribute.getDataType());
+            ad.mExpectedUpdateTime = 0;
+        }
+    }
+
     @Deprecated
     public boolean isRunning() {
         DeviceProfile.Presentation presentation = getPresentation();

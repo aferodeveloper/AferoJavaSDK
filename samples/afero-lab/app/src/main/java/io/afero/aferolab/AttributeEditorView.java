@@ -6,24 +6,32 @@ import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.CardView;
+import android.support.v7.widget.PopupMenu;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import butterknife.OnEditorAction;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
+
+import static io.afero.aferolab.AttributeEditorView.ValueEditorType.NUMBER_DECIMAL_DISCRETE;
+import static io.afero.aferolab.AttributeEditorView.ValueEditorType.NUMBER_DISCRETE;
 
 
 public class AttributeEditorView extends FrameLayout {
@@ -33,9 +41,9 @@ public class AttributeEditorView extends FrameLayout {
         TEXT,
         NUMBER,
         NUMBER_DECIMAL,
+        NUMBER_DISCRETE,
         BOOLEAN,
-        BYTES,
-        ENUM
+        NUMBER_DECIMAL_DISCRETE, BYTES
     }
 
     @BindView(R.id.attribute_id_text)
@@ -47,6 +55,9 @@ public class AttributeEditorView extends FrameLayout {
     @BindView(R.id.attribute_data_type_text)
     TextView mAttributeDataTypeText;
 
+    @BindView(R.id.attribute_value_options_label)
+    TextView mAttributeValueOptionsLabelText;
+
     @BindView(R.id.attribute_value_text)
     AferoEditText mAttributeValueEditText;
 
@@ -56,11 +67,16 @@ public class AttributeEditorView extends FrameLayout {
     @BindView(R.id.attribute_value_switch)
     Switch mAttributeValueSwitch;
 
+    @BindView(R.id.attribute_value_button)
+    ImageButton mAttributeValueButton;
+
     @BindView(R.id.view_scrim)
     View mScrimView;
 
     @BindView(R.id.attribute_editor_card)
     CardView mAttributeCard;
+
+    private PopupMenu mPopupMenu;
 
     private static final long ENTER_TRANSITION_DURATION = 100;
     private static final long EXIT_TRANSITION_DURATION = 100;
@@ -69,6 +85,8 @@ public class AttributeEditorView extends FrameLayout {
     private final TimeInterpolator mEnterTransitionInterpolator = new OvershootInterpolator();
 
     private ValueEditorType mEditorType = ValueEditorType.NONE;
+
+    private boolean mValueEditTextEnabled;
 
     private final SeekBar.OnSeekBarChangeListener mSeekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
         @Override
@@ -124,7 +142,17 @@ public class AttributeEditorView extends FrameLayout {
 
     public void start(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
         if (!isStarted()) {
+            mAttributeValueEditText.setEnabled(false);
+            mAttributeValueEditText.setVisibility(VISIBLE);
+            mAttributeValueSeekBar.setVisibility(View.GONE);
+            mAttributeValueSwitch.setVisibility(View.GONE);
+            mAttributeValueButton.setVisibility(View.GONE);
+            mAttributeValueEditText.setFilters(new InputFilter[]{});
+            mAttributeValueEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            mAttributeValueOptionsLabelText.setText("");
+
             mController.start(deviceModel, attribute);
+
             startEnterTransition();
         }
     }
@@ -133,12 +161,49 @@ public class AttributeEditorView extends FrameLayout {
         if (isStarted()) {
             mController.stop();
             mAttributeValueEditText.hideKeyboard();
+            mPopupMenu = null;
             startExitTransition();
         }
     }
 
     public boolean isStarted() {
         return mController.isStarted();
+    }
+
+    public void setEditorEnabled(boolean enabled) {
+        mAttributeValueButton.setEnabled(enabled);
+        mAttributeValueEditText.setEnabled(enabled && mValueEditTextEnabled);
+        mAttributeValueSeekBar.setEnabled(enabled);
+        mAttributeValueSwitch.setEnabled(enabled);
+    }
+
+    public void addEnumItem(String label, String value) {
+        mAttributeValueButton.setVisibility(View.VISIBLE);
+
+        if (mPopupMenu == null) {
+            mPopupMenu = new PopupMenu(getContext(), mAttributeValueButton, Gravity.BOTTOM);
+        }
+
+        final MenuItem item = mPopupMenu.getMenu().add(label);
+        item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+            String itemValue;
+
+            MenuItem.OnMenuItemClickListener init(String v) {
+                itemValue = v;
+                return this;
+            }
+
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                mController.onAttributeValueSelected(itemValue);
+                return true;
+            }
+        }.init(value));
+    }
+
+    public void setAttributeValueEnumText(String label) {
+        mAttributeValueOptionsLabelText.setText(label);
     }
 
     public void setAttributeIdText(int id) {
@@ -160,13 +225,6 @@ public class AttributeEditorView extends FrameLayout {
     public void setAttributeValueEditorType(ValueEditorType editorType) {
         mEditorType = editorType;
 
-        mAttributeValueEditText.setEnabled(false);
-        mAttributeValueEditText.setVisibility(VISIBLE);
-        mAttributeValueSeekBar.setVisibility(View.GONE);
-        mAttributeValueSwitch.setVisibility(View.GONE);
-        mAttributeValueEditText.setFilters(new InputFilter[]{});
-        mAttributeValueEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-
         int numberInputType = 0;
 
         switch (mEditorType) {
@@ -174,16 +232,22 @@ public class AttributeEditorView extends FrameLayout {
                 break;
 
             case TEXT:
+                mValueEditTextEnabled = true;
                 mAttributeValueEditText.setEnabled(true);
                 break;
 
             case NUMBER_DECIMAL:
+            case NUMBER_DECIMAL_DISCRETE:
                 numberInputType |= InputType.TYPE_NUMBER_FLAG_DECIMAL;
             case NUMBER:
+            case NUMBER_DISCRETE:
                 numberInputType |= InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
+                mValueEditTextEnabled = true;
                 mAttributeValueEditText.setEnabled(true);
                 mAttributeValueEditText.setInputType(numberInputType);
-                mAttributeValueSeekBar.setVisibility(View.VISIBLE);
+                mAttributeValueSeekBar.setVisibility(
+                        mEditorType == NUMBER_DISCRETE || mEditorType == NUMBER_DECIMAL_DISCRETE
+                                ? View.GONE : View.VISIBLE);
                 break;
 
             case BOOLEAN:
@@ -191,14 +255,16 @@ public class AttributeEditorView extends FrameLayout {
                 break;
 
             case BYTES:
+                mValueEditTextEnabled = true;
                 mAttributeValueEditText.setEnabled(true);
                 mAttributeValueEditText.setFilters(new InputFilter[]{new CharacterInputFilter("0123456789ABCDEF")});
                 mAttributeValueEditText.setInputType(mAttributeValueEditText.getInputType() | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
                 break;
-
-            case ENUM:
-                break;
         }
+    }
+
+    public void setAttributeValueSliderMax(int max) {
+        mAttributeValueSeekBar.setMax(max);
     }
 
     public void setAttributeValueSliderProportion(double proportion) {
@@ -208,7 +274,12 @@ public class AttributeEditorView extends FrameLayout {
     }
 
     public double getAttributeValueSliderProportion() {
-        return (double) mAttributeValueSeekBar.getProgress() / (double) mAttributeValueSeekBar.getMax();
+        return Math.min((double) mAttributeValueSeekBar.getProgress() / (double) mAttributeValueSeekBar.getMax(), 1.0);
+    }
+
+    @OnClick(R.id.attribute_value_button)
+    void onClickAttributeButton() {
+        mPopupMenu.show();
     }
 
     @OnEditorAction(R.id.attribute_value_text)
