@@ -201,20 +201,14 @@ class AttributeEditorController {
 
         if (mAttribute.isWritable()) {
             if (mAttribute.isNumericType()) {
-                if (mValueOptions == null) {
-                    if (mAttribute.isNumericDecimalType()) {
-                        editorType = AttributeEditorView.ValueEditorType.NUMBER_DECIMAL;
-                    } else {
-                        editorType = AttributeEditorView.ValueEditorType.NUMBER;
-                    }
+                if (mAttribute.isNumericDecimalType()) {
+                    editorType = AttributeEditorView.ValueEditorType.NUMBER_DECIMAL;
                 } else {
-                    editorType = AttributeEditorView.ValueEditorType.NUMBER_DISCRETE;
+                    editorType = AttributeEditorView.ValueEditorType.NUMBER;
                 }
-            }
-            else if (mAttribute.getDataType() == AttributeValue.DataType.BYTES) {
+            } else if (mAttribute.getDataType() == AttributeValue.DataType.BYTES) {
                 editorType = AttributeEditorView.ValueEditorType.BYTES;
-            }
-            else if (mAttribute.getDataType() == AttributeValue.DataType.BOOLEAN) {
+            } else if (mAttribute.getDataType() == AttributeValue.DataType.BOOLEAN) {
                 editorType = AttributeEditorView.ValueEditorType.BOOLEAN;
             } else {
                 editorType = AttributeEditorView.ValueEditorType.TEXT;
