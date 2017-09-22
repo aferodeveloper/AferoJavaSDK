@@ -10,11 +10,17 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.afero.sdk.device.DeviceCollection;
+import io.afero.sdk.device.DeviceModel;
+import rx.Observable;
+import rx.functions.Action1;
+import rx.subjects.PublishSubject;
+
 
 public class DeviceListView extends FrameLayout {
 
@@ -22,6 +28,7 @@ public class DeviceListView extends FrameLayout {
     RecyclerView mDeviceCardsView;
 
     private DeviceViewAdapter mAdapter;
+    private final PublishSubject<DeviceModel> mOnClickDeviceSubject = PublishSubject.create();
 
     public DeviceListView(Context context) {
         super(context);
@@ -51,13 +58,24 @@ public class DeviceListView extends FrameLayout {
     public void start(DeviceCollection deviceCollection) {
         mAdapter = new DeviceViewAdapter(deviceCollection);
         mDeviceCardsView.setAdapter(mAdapter);
+
+        mAdapter.getViewOnClick().subscribe(
+                new Action1<View>() {
+                    @Override
+                    public void call(View view) {
+                        int itemPosition = mDeviceCardsView.getChildLayoutPosition(view);
+                        if (itemPosition != RecyclerView.NO_POSITION) {
+                            mOnClickDeviceSubject.onNext(mAdapter.getDeviceModelAt(itemPosition));
+                        }
+                    }
+                });
     }
 
     public void stop() {
         mAdapter.stop();
     }
 
-    public void setAdapter(RecyclerView.Adapter adapter) {
-        mDeviceCardsView.setAdapter(adapter);
+    public Observable<DeviceModel> getDeviceOnClick() {
+        return mOnClickDeviceSubject;
     }
 }

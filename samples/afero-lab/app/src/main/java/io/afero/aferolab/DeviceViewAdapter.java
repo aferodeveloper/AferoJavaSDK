@@ -20,12 +20,14 @@ import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.subjects.PublishSubject;
 
 public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.ViewHolder> {
 
     private Subscription mUpdateSubscription;
     private Subscription mRemoveSubscription;
     private final Vector<DeviceModel> mDevices = new Vector<>();
+    private final PublishSubject<View> mOnClickViewSubject = PublishSubject.create();
 
     private Comparator<DeviceModel> mSortComparator = new Comparator<DeviceModel>() {
         @Override
@@ -84,6 +86,10 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
         mRemoveSubscription = RxUtils.safeUnSubscribe(mRemoveSubscription);
     }
 
+    Observable<View> getViewOnClick() {
+        return mOnClickViewSubject;
+    }
+
     public int indexOf(DeviceModel deviceModel) {
         return mDevices.indexOf(deviceModel);
     }
@@ -122,6 +128,13 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_device_list_item, parent, false);
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mOnClickViewSubject.onNext(view);
+            }
+        });
+
         return new ViewHolder(view);
     }
 
@@ -134,6 +147,10 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
     @Override
     public int getItemCount() {
         return mDevices.size();
+    }
+
+    public DeviceModel getDeviceModelAt(int itemPosition) {
+        return mDevices.get(itemPosition);
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

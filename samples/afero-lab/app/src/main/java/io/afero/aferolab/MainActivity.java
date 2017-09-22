@@ -33,6 +33,7 @@ import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.ConclaveClient;
 import io.afero.sdk.device.ConclaveDeviceEventSource;
 import io.afero.sdk.device.DeviceCollection;
+import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.softhub.AferoSofthub;
 import io.afero.sdk.utils.RxUtils;
@@ -67,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.device_inspector)
     DeviceInspectorView mDeviceInspectorView;
 
+    @BindView(R.id.attribute_editor)
+    AttributeEditorView mAttributeEditorView;
+
     @BindView(R.id.edit_text_email)
     AferoEditText mEmailEditText;
 
@@ -84,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.text_network_status)
     TextView mNetworkStatus;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient);
+        mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, null);
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
         if (mAferoClient.getToken() != null) {
@@ -146,6 +151,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mDeviceListView.start(mDeviceCollection);
+        mDeviceListView.getDeviceOnClick()
+                .subscribe(new Action1<DeviceModel>() {
+                    @Override
+                    public void call(DeviceModel deviceModel) {
+                        mDeviceInspectorView.start(deviceModel);
+                    }
+                });
 
         setupViews();
 
@@ -196,6 +208,21 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.button_sign_out)
     void onClickSignOut() {
         mAferoClient.signOut(null, null);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mAttributeEditorView.isStarted()) {
+            mAttributeEditorView.stop();
+            return;
+        }
+
+        if (mDeviceInspectorView.isStarted()) {
+            mDeviceInspectorView.stop();
+            return;
+        }
+
+        super.onBackPressed();
     }
 
     private void setupViews() {
@@ -297,6 +324,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onSignOut() {
+
+        mDeviceInspectorView.stop();
+        mAttributeEditorView.stop();
+
         mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
 
         mUserId = null;
