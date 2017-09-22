@@ -30,9 +30,6 @@ import butterknife.OnEditorAction;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 
-import static io.afero.aferolab.AttributeEditorView.ValueEditorType.NUMBER_DECIMAL_DISCRETE;
-import static io.afero.aferolab.AttributeEditorView.ValueEditorType.NUMBER_DISCRETE;
-
 
 public class AttributeEditorView extends FrameLayout {
 
@@ -41,9 +38,8 @@ public class AttributeEditorView extends FrameLayout {
         TEXT,
         NUMBER,
         NUMBER_DECIMAL,
-        NUMBER_DISCRETE,
         BOOLEAN,
-        NUMBER_DECIMAL_DISCRETE, BYTES
+        BYTES
     }
 
     @BindView(R.id.attribute_id_text)
@@ -237,17 +233,13 @@ public class AttributeEditorView extends FrameLayout {
                 break;
 
             case NUMBER_DECIMAL:
-            case NUMBER_DECIMAL_DISCRETE:
                 numberInputType |= InputType.TYPE_NUMBER_FLAG_DECIMAL;
             case NUMBER:
-            case NUMBER_DISCRETE:
                 numberInputType |= InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
                 mValueEditTextEnabled = true;
                 mAttributeValueEditText.setEnabled(true);
                 mAttributeValueEditText.setInputType(numberInputType);
-                mAttributeValueSeekBar.setVisibility(
-                        mEditorType == NUMBER_DISCRETE || mEditorType == NUMBER_DECIMAL_DISCRETE
-                                ? View.GONE : View.VISIBLE);
+                mAttributeValueSeekBar.setVisibility(View.VISIBLE);
                 break;
 
             case BOOLEAN:
