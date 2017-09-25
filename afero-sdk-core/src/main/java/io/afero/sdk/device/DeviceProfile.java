@@ -837,7 +837,7 @@ public class DeviceProfile {
 
         private void updateCount() {
             BigDecimal range = mMax.subtract(mMin);
-            mCount = range.divide(mStep, ROUNDING_MODE);
+            mCount = range.divide(mStep, ROUNDING_MODE).abs().add(BigDecimal.ONE);
         }
 
         public BigDecimal getCount() {
@@ -854,12 +854,16 @@ public class DeviceProfile {
         }
 
         public long getIndexByProportion(double proportion) {
-            return mCount.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE).longValue();
+            if (mCount.compareTo(BigDecimal.ZERO) == 0) {
+                return 0;
+            }
+            BigDecimal index = mCount.subtract(BigDecimal.ONE);
+            return index.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE).longValue();
         }
 
         public BigDecimal getValueByProportion(double proportion) {
-            BigDecimal index = mCount.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE);
-            return mMin.add(mStep.multiply(index));
+            long index = getIndexByProportion(proportion);
+            return mMin.add(mStep.multiply(new BigDecimal(index)));
         }
 
         public double getProportionByValue(BigDecimal value) {
