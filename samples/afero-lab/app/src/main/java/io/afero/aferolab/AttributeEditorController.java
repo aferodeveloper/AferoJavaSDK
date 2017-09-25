@@ -39,7 +39,7 @@ class AttributeEditorController {
 
         if (mValueOptions != null) {
             mRange = makeRangeFromValueOptions();
-            mView.setAttributeValueSliderMax(mValueOptions.length - 1);
+            mView.setAttributeValueSliderMax(mRange.getMax().intValue());
 
             for (DeviceProfile.DisplayRule vo : mValueOptions) {
                 mView.addEnumItem(vo.getApplyLabel(), vo.match);
@@ -184,17 +184,17 @@ class AttributeEditorController {
     }
 
     private int getValueOptionsIndex(AttributeValue value) {
-        String stringValue = value.toString();
         int i = 0;
 
         for (DeviceProfile.DisplayRule vo : mValueOptions) {
-            if (stringValue.equals(vo.match)) {
-                break;
+            AttributeValue matchValue = new AttributeValue(vo.match, value.getDataType());
+            if (matchValue.compareTo(value) == 0) {
+                return i;
             }
             ++i;
         }
 
-        return i;
+        return 0;
     }
 
     private AttributeEditorView.ValueEditorType getAttributeValueEditorType() {
