@@ -115,7 +115,7 @@ class AttributeEditorController {
     }
 
     private void updateDeviceModel(AttributeValue value) {
-        mView.setAttributeValueText(value.toString());
+        updateView(value);
 
         mAttributeWriteSubscription = RxUtils.safeUnSubscribe(mAttributeWriteSubscription);
         mAttributeWriteSubscription = mDeviceModel.writeAttributes()
@@ -145,17 +145,18 @@ class AttributeEditorController {
     }
 
     private void onDeviceUpdate() {
-
         mView.setEditorEnabled(mDeviceModel.isAvailable() && mAttribute.isWritable());
 
-        if (mAttributeWriteSubscription != null) {
-            // write already in progress...
-            return;
+        if (mAttributeWriteSubscription == null) {
+            AttributeValue value = mDeviceModel.getAttributeCurrentValue(mAttribute);
+            updateView(value);
         }
+    }
 
-        AttributeValue value = mDeviceModel.getAttributeCurrentValue(mAttribute);
+    private void updateView(AttributeValue value) {
         mView.setAttributeValueText(value != null ? value.toString() : null);
         mView.setAttributeValueEnumText(getValueOptionsLabelFromValue(value));
+        mView.setAttributeValueSwitch(value != null ? value.booleanValue() : false);
 
         if (mAttribute.isNumericType()) {
             BigDecimal numericValue = value != null ? value.numericValue() : BigDecimal.ZERO;

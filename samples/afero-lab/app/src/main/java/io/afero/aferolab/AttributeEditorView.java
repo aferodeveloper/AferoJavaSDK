@@ -101,6 +101,14 @@ public class AttributeEditorView extends FrameLayout {
         }
     };
 
+    private CompoundButton.OnCheckedChangeListener mSwitchChangeListener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+            mController.onAttributeValueBooleanEditorChanged(b);
+        }
+    };
+
+
     public AttributeEditorView(@NonNull Context context) {
         super(context);
     }
@@ -127,13 +135,7 @@ public class AttributeEditorView extends FrameLayout {
 
         mAttributeValueSeekBar.setMax(Integer.MAX_VALUE);
         mAttributeValueSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
-
-        mAttributeValueSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                mController.onAttributeValueBooleanEditorChanged(b);
-            }
-        });
+        mAttributeValueSwitch.setOnCheckedChangeListener(mSwitchChangeListener);
     }
 
     public void start(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
@@ -216,6 +218,12 @@ public class AttributeEditorView extends FrameLayout {
 
     public void setAttributeValueText(String valueText) {
         mAttributeValueEditText.setText(valueText != null ? valueText : "");
+    }
+
+    public void setAttributeValueSwitch(boolean value) {
+        mAttributeValueSwitch.setOnCheckedChangeListener(null);
+        mAttributeValueSwitch.setChecked(value);
+        mAttributeValueSwitch.setOnCheckedChangeListener(mSwitchChangeListener);
     }
 
     public void setAttributeValueEditorType(ValueEditorType editorType) {
