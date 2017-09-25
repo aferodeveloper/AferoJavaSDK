@@ -213,8 +213,10 @@ public class AferoSofthub {
                 ;
 
         if (mAppInfo != null && !mAppInfo.isEmpty()) {
-            final int maxAppInfoLen = HARDWARE_INFO_MAX_LENGTH - hwInfo.length() - 1;
-            hwInfo += "," + mAppInfo.trim().substring(0, maxAppInfoLen);
+            hwInfo += "," + mAppInfo.trim();
+            if (hwInfo.length() > HARDWARE_INFO_MAX_LENGTH) {
+                hwInfo = hwInfo.substring(0, HARDWARE_INFO_MAX_LENGTH);
+            }
         }
 
         final String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
