@@ -849,21 +849,16 @@ public class DeviceProfile {
         }
 
         public long getIndexByValue(BigDecimal value) {
-            final double proportion = getProportionByValue(value);
-            return mCount.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE).longValue();
+            return getIndexByProportion(getProportionByValue(value));
         }
 
         public long getIndexByProportion(double proportion) {
-            if (mCount.compareTo(BigDecimal.ZERO) == 0) {
-                return 0;
-            }
-            BigDecimal index = mCount.subtract(BigDecimal.ONE);
-            return index.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE).longValue();
+            return getBigIndexByProportion(proportion).longValue();
         }
 
         public BigDecimal getValueByProportion(double proportion) {
-            long index = getIndexByProportion(proportion);
-            return mMin.add(mStep.multiply(new BigDecimal(index)));
+            BigDecimal index = getBigIndexByProportion(proportion);
+            return mMin.add(mStep.multiply(index));
         }
 
         public double getProportionByValue(BigDecimal value) {
@@ -878,6 +873,15 @@ public class DeviceProfile {
 
             return prop.doubleValue();
         }
+
+        private BigDecimal getBigIndexByProportion(double proportion) {
+            if (mCount.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+            BigDecimal index = mCount.subtract(BigDecimal.ONE);
+            return index.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE);
+        }
+
     }
 
     @JsonIgnoreProperties(ignoreUnknown=true)
