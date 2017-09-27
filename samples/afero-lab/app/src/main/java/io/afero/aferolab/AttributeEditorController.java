@@ -1,6 +1,8 @@
 package io.afero.aferolab;
 
 
+import android.text.format.DateUtils;
+
 import java.math.BigDecimal;
 
 import io.afero.sdk.client.afero.models.AttributeValue;
@@ -14,6 +16,9 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 
 class AttributeEditorController {
+
+    private static final int ATTRIBUTE_TIMESTAMP_FORMAT_FLAGS = DateUtils.FORMAT_SHOW_DATE |
+            DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_SHOW_YEAR | DateUtils.FORMAT_ABBREV_ALL;
 
     private final AttributeEditorView mView;
     private DeviceModel mDeviceModel;
@@ -155,6 +160,7 @@ class AttributeEditorController {
 
     private void updateView(AttributeValue value) {
         mView.setAttributeValueText(value != null ? value.toString() : null);
+        mView.setAttributeTimestampText(getAttributeTimestampString());
         mView.setAttributeValueEnumText(getValueOptionsLabelFromValue(value));
         mView.setAttributeValueSwitch(value != null ? value.booleanValue() : false);
 
@@ -167,6 +173,16 @@ class AttributeEditorController {
 
             mView.setAttributeValueSliderProportion(mRange.getProportionByValue(numericValue));
         }
+    }
+
+    private String getAttributeTimestampString() {
+        long timestamp = mDeviceModel.getAttributeUpdatedTime(mAttribute);
+
+        if (timestamp != 0) {
+            return DateUtils.formatDateTime(mView.getContext(), timestamp, ATTRIBUTE_TIMESTAMP_FORMAT_FLAGS);
+        }
+
+        return "-";
     }
 
     private String getValueOptionsLabelFromValue(AttributeValue value) {
