@@ -78,6 +78,7 @@ public final class DeviceModel {
         public AttributeValue mCurrentValue;
         public AttributeValue mPendingValue;
         long mExpectedUpdateTime;
+        long mUpdatedTimeStamp;
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -568,7 +569,7 @@ public final class DeviceModel {
     }
 
     /**
-     * @param attribute
+     * @param attribute {@link DeviceProfile.Attribute}
      */
     public void cancelAttributePendingValue(DeviceProfile.Attribute attribute) {
         AttributeData ad = getAttributeData(attribute);
@@ -576,6 +577,18 @@ public final class DeviceModel {
             ad.mPendingValue = new AttributeValue(ad.mCurrentValue.toString(), attribute.getDataType());
             ad.mExpectedUpdateTime = 0;
         }
+    }
+
+    /**
+     * Get the timestamp when the value of the specified {@link DeviceProfile.Attribute} was last
+     * updated in the Afero Cloud.
+     *
+     * @param attribute {@link DeviceProfile.Attribute}
+     * @return long timestamp in milliseconds
+     */
+    public long getAttributeUpdatedTime(DeviceProfile.Attribute attribute) {
+        AttributeData ad = getAttributeData(attribute);
+        return ad != null ? ad.mUpdatedTimeStamp : 0;
     }
 
     @Deprecated
@@ -780,13 +793,13 @@ public final class DeviceModel {
         if (hasValidValues && deviceSync.attributes != null) {
             hasChanged = true;
             for (DeviceSync.AttributeEntry ae : deviceSync.attributes) {
-                updateAttributeValues(ae.id, ae.value);
+                updateAttributeValues(ae);
             }
         }
 
         if (hasValidValues && deviceSync.attribute != null) {
             hasChanged = true;
-            updateAttributeValues(deviceSync.attribute.id, deviceSync.attribute.value);
+            updateAttributeValues(deviceSync.attribute);
         }
 
         if (deviceSync.profileId != null) {
@@ -930,18 +943,22 @@ public final class DeviceModel {
         }
     }
 
-    private void updateAttributeValues(int attrId, String value) {
+    private void updateAttributeValues(DeviceSync.AttributeEntry ae) {
         try {
-            AttributeData data = mAttributes.get(attrId);
+            AttributeData data = mAttributes.get(ae.id);
             if (data == null) {
                 data = new AttributeData();
-                mAttributes.put(attrId, data);
+                mAttributes.put(ae.id, data);
             }
 
-            DeviceProfile.Attribute attribute = getAttributeById(attrId);
-            if (attribute != null && value != null) {
-                data.mCurrentValue = new AttributeValue(value, attribute.getDataType());
-                data.mPendingValue = new AttributeValue(value, attribute.getDataType());
+            DeviceProfile.Attribute attribute = getAttributeById(ae.id);
+            if (attribute != null && ae.value != null) {
+                data.mCurrentValue = new AttributeValue(ae.value, attribute.getDataType());
+                data.mPendingValue = new AttributeValue(ae.value, attribute.getDataType());
+
+                if (ae.updatedTimestamp != 0) {
+                    data.mUpdatedTimeStamp = ae.updatedTimestamp;
+                }
             }
             data.mExpectedUpdateTime = 0;
 

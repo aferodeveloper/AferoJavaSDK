@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 
 import io.afero.sdk.device.DeviceProfile;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -90,6 +91,18 @@ public class RangeOptionsTest {
         ro.setStep(BigDecimal.ONE);
 
         assertTrue(ro.getCount().compareTo(new BigDecimal(100)) == 0);
+    }
+
+    @Test
+    public void testMinMaxInt64() {
+        DeviceProfile.RangeOptions ro = new DeviceProfile.RangeOptions();
+
+        ro.setMin(new BigDecimal(Long.MIN_VALUE));
+        ro.setMax(new BigDecimal(Long.MAX_VALUE));
+        ro.setStep(BigDecimal.ONE);
+
+        assertTrue(ro.getMin().compareTo(ro.getValueByProportion(0)) == 0);
+        assertTrue(ro.getMax().compareTo(ro.getValueByProportion(1)) == 0);
     }
 
     @Test
