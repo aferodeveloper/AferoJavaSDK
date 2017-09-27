@@ -2,7 +2,7 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.sdk;
+package io.afero.sdk.scheduler;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -11,15 +11,21 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.mock.MockAferoClient;
+import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceModelTest;
 import io.afero.sdk.device.DeviceProfile;
-import io.afero.sdk.scheduler.OfflineScheduleEvent;
-import io.afero.sdk.scheduler.OfflineScheduler;
+import io.afero.sdk.log.AfLog;
+import io.afero.sdk.log.JavaLog;
+import rx.Observable;
+import rx.Observer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class OfflineSchedulerTest extends AferoTest {
@@ -28,12 +34,14 @@ public class OfflineSchedulerTest extends AferoTest {
 
     @Before
     public void setup() throws IOException {
+        AfLog.init(new JavaLog());
         deviceProfile = loadDeviceProfile("resources/offlineScheduleEvent/deviceProfile.json");
     }
 
     @Test
     public void constructor() throws Exception {
-        DeviceModel dm = DeviceModelTest.createDeviceModel(deviceProfile, null);
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceModel dm = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient);
         OfflineScheduler os = new OfflineScheduler();
         os.start(dm);
 
@@ -46,7 +54,8 @@ public class OfflineSchedulerTest extends AferoTest {
 
     @Test
     public void readFromDevice() throws Exception {
-        DeviceModel dm = DeviceModelTest.createDeviceModel(deviceProfile, null);
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceModel dm = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient);
         OfflineScheduler os = new OfflineScheduler();
         os.start(dm);
         os.readFromDevice();
@@ -61,7 +70,7 @@ public class OfflineSchedulerTest extends AferoTest {
 
         DeviceProfile.Attribute attribute = deviceProfile.getAttributeById(59002);
         AttributeValue av = new AttributeValue("00", AttributeValue.DataType.BYTES);
-        dm.writeAttribute(attribute, av);
+        dm.writeAttributes().put(attribute.getId(), av).commit().subscribe();
 
         os.readFromDevice();
 
@@ -132,4 +141,76 @@ public class OfflineSchedulerTest extends AferoTest {
         assertEquals((20 - offset) % 24, calendar.get(OfflineScheduler.CALENDAR_HOUR));
         assertEquals(32, calendar.get(OfflineScheduler.CALENDAR_MINUTE));
     }
+
+    @Test
+    public void migrateAllToDeviceTimeZone() throws Exception {
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceSync data = loadDeviceSync("resources/offlineScheduleEvent/migrateDeviceSync.json");
+        DeviceModel deviceModel = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient, data);
+        DeviceProfile.Attribute attr1 = deviceModel.getAttributeById(59002);
+        DeviceProfile.Attribute attr2 = deviceModel.getAttributeById(59003);
+        DeviceProfile.Attribute attr3 = deviceModel.getAttributeById(59004);
+
+        Observable<OfflineScheduleEvent> offlineScheduleMigration = OfflineScheduler.migrateToDeviceTimeZone(deviceModel);
+        assertNotNull(offlineScheduleMigration);
+
+        offlineScheduleMigration.toBlocking()
+            .subscribe(new Observer<OfflineScheduleEvent>() {
+                @Override
+                public void onCompleted() {
+
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    e.printStackTrace();
+                    assertTrue(false);
+                }
+
+                @Override
+                public void onNext(OfflineScheduleEvent offlineScheduleEvent) {
+                    assertTrue(offlineScheduleEvent.isInLocalTime());
+                }
+            }
+        );
+
+        AttributeValue av = deviceModel.getAttributePendingValue(attr1);
+        assertEquals("0302092D", av.toString());
+
+        av = deviceModel.getAttributePendingValue(attr2);
+        assertEquals("0303021D", av.toString());
+
+        av = deviceModel.getAttributePendingValue(attr3);
+        assertEquals("0304030D", av.toString());
+    }
+
+    @Test
+    public void migrateAllToDeviceTimeZoneWithNoTimeZoneSet() throws Exception {
+        MockAferoClient aferoClient = new MockAferoClient();
+        DeviceSync data = loadDeviceSync("resources/offlineScheduleEvent/migrateDeviceSyncNoTimeZone.json");
+        DeviceModel deviceModel = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient, data);
+
+        Observable<OfflineScheduleEvent> offlineScheduleMigration = OfflineScheduler.migrateToDeviceTimeZone(deviceModel);
+        assertNotNull(offlineScheduleMigration);
+
+        offlineScheduleMigration.toBlocking()
+            .subscribe(new Observer<OfflineScheduleEvent>() {
+                @Override
+                public void onCompleted() {
+                    assertTrue(false);
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    // we are expecting to get an error here.
+                }
+
+                @Override
+                public void onNext(OfflineScheduleEvent offlineScheduleEvent) {
+                    assertTrue(false);
+                }
+            }
+        );
+   }
+
 }

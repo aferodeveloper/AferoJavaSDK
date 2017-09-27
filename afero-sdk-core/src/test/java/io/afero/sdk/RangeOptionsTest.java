@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 
 import io.afero.sdk.device.DeviceProfile;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -82,6 +83,29 @@ public class RangeOptionsTest {
     }
 
     @Test
+    public void testGetCount() {
+        DeviceProfile.RangeOptions ro = new DeviceProfile.RangeOptions();
+
+        ro.setMin(BigDecimal.ZERO);
+        ro.setMax(new BigDecimal(99));
+        ro.setStep(BigDecimal.ONE);
+
+        assertTrue(ro.getCount().compareTo(new BigDecimal(100)) == 0);
+    }
+
+    @Test
+    public void testMinMaxInt64() {
+        DeviceProfile.RangeOptions ro = new DeviceProfile.RangeOptions();
+
+        ro.setMin(new BigDecimal(Long.MIN_VALUE));
+        ro.setMax(new BigDecimal(Long.MAX_VALUE));
+        ro.setStep(BigDecimal.ONE);
+
+        assertTrue(ro.getMin().compareTo(ro.getValueByProportion(0)) == 0);
+        assertTrue(ro.getMax().compareTo(ro.getValueByProportion(1)) == 0);
+    }
+
+    @Test
     public void testIndexAndProportionWithIntegers() {
         DeviceProfile.RangeOptions ro = new DeviceProfile.RangeOptions();
 
@@ -89,7 +113,7 @@ public class RangeOptionsTest {
         ro.setMax(new BigDecimal(100));
         ro.setStep(BigDecimal.ONE);
 
-        assertTrue(ro.getCount().compareTo(new BigDecimal(100)) == 0);
+        assertTrue(ro.getCount().compareTo(new BigDecimal(101)) == 0);
 
         BigDecimal value = ro.getValueByIndex(50);
         assertTrue(value.compareTo(new BigDecimal(50)) == 0);
@@ -118,10 +142,18 @@ public class RangeOptionsTest {
         ro.setMax(max);
         ro.setStep(step);
 
-        assertTrue(ro.getCount().compareTo(new BigDecimal(4)) == 0);
+        assertTrue(ro.getCount().compareTo(new BigDecimal(5)) == 0);
 
-        BigDecimal value = ro.getValueByIndex(1);
+        BigDecimal value = ro.getValueByIndex(0);
+        assertTrue(value.compareTo(new BigDecimal("1.000")) == 0);
+        value = ro.getValueByIndex(1);
         assertTrue(value.compareTo(new BigDecimal("1.025")) == 0);
+        value = ro.getValueByIndex(2);
+        assertTrue(value.compareTo(new BigDecimal("1.050")) == 0);
+        value = ro.getValueByIndex(3);
+        assertTrue(value.compareTo(new BigDecimal("1.075")) == 0);
+        value = ro.getValueByIndex(4);
+        assertTrue(value.compareTo(new BigDecimal("1.100")) == 0);
 
         value = ro.getValueByProportion(0);
         assertTrue(value.compareTo(min) == 0);

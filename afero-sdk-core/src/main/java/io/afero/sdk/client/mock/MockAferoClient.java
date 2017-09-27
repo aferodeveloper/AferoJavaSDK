@@ -12,10 +12,10 @@ import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceRequest;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
@@ -27,7 +27,9 @@ public class MockAferoClient implements AferoClient {
     private final ResourceLoader mLoader;
     private DeviceAssociateResponse mDeviceAssociateResponse;
     private String mFileNameGetDevices = "getDevices.json";
-    private Observable<RequestResponse[]> postBatchAttributeWriteResponse;
+    private Observable<WriteResponse[]> postBatchAttributeWriteResponse;
+    private TimeZone mDeviceTimeZone;
+    private int mRequestId;
 
     public MockAferoClient() {
         mLoader = new ResourceLoader();
@@ -44,14 +46,14 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode) {
+    public Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode) {
 
         if (postBatchAttributeWriteResponse == null) {
-            RequestResponse[] response = new RequestResponse[body.length];
+            WriteResponse[] response = new WriteResponse[body.length];
             for (int i = 0; i < response.length; ++i) {
-                RequestResponse rr = new RequestResponse();
-                rr.requestId = i + 1;
-                rr.status = RequestResponse.STATUS_SUCCESS;
+                WriteResponse rr = new WriteResponse();
+                rr.requestId = ++mRequestId;
+                rr.status = WriteResponse.STATUS_SUCCESS;
                 rr.timestampMs = System.currentTimeMillis();
                 response[i] = rr;
             }
@@ -83,7 +85,12 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
+    public Observable<ConclaveAccessDetails> postConclaveAccess() {
+        return null;
+    }
+
+    @Override
+    public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileDeviceId) {
         return null;
     }
 
@@ -130,8 +137,13 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz) {
+    public Observable<Void> putDeviceTimeZone(DeviceModel deviceModel, TimeZone tz) {
         return Observable.just(null);
+    }
+
+    @Override
+    public Observable<TimeZone> getDeviceTimeZone(DeviceModel deviceModel) {
+        return mDeviceTimeZone != null ? Observable.just(mDeviceTimeZone) : Observable.<TimeZone>empty();
     }
 
     @Override
@@ -171,7 +183,11 @@ public class MockAferoClient implements AferoClient {
         mFileNameGetDevices = file;
     }
 
-    public void setPostBatchAttributeWriteResponse(Observable<RequestResponse[]> response) {
+    public void setPostBatchAttributeWriteResponse(Observable<WriteResponse[]> response) {
         postBatchAttributeWriteResponse = response;
+    }
+
+    public void setDeviceTimeZone(TimeZone tz) {
+        mDeviceTimeZone = tz;
     }
 }

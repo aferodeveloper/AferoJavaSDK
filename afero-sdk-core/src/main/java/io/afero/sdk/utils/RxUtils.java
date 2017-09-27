@@ -7,10 +7,12 @@ package io.afero.sdk.utils;
 import java.lang.ref.WeakReference;
 
 import io.afero.sdk.log.AfLog;
+import io.afero.sdk.scheduler.OfflineScheduler;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.functions.Func0;
 import rx.functions.Func1;
 
 public class RxUtils {
@@ -147,4 +149,17 @@ public class RxUtils {
         }
     }
 
+    public static class ReturnFunc0<R> implements Func0<R> {
+
+        R result;
+
+        public ReturnFunc0(R r) {
+            result = r;
+        }
+
+        @Override
+        public R call() {
+            return result;
+        }
+    }
 }

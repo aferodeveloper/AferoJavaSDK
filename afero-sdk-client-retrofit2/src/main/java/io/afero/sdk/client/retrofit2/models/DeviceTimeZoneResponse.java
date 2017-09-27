@@ -2,12 +2,12 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.sdk.client.afero.models;
+package io.afero.sdk.client.retrofit2.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ConclaveAccessBody {
-    public boolean user = true;
-    public boolean softHub = false;
+public class DeviceTimeZoneResponse {
+    public Boolean userOverride;
+    public String timezone;
 }

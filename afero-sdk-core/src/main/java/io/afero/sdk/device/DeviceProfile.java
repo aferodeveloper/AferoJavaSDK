@@ -837,7 +837,7 @@ public class DeviceProfile {
 
         private void updateCount() {
             BigDecimal range = mMax.subtract(mMin);
-            mCount = range.divide(mStep, ROUNDING_MODE);
+            mCount = range.divide(mStep, ROUNDING_MODE).abs().add(BigDecimal.ONE);
         }
 
         public BigDecimal getCount() {
@@ -849,16 +849,15 @@ public class DeviceProfile {
         }
 
         public long getIndexByValue(BigDecimal value) {
-            final double proportion = getProportionByValue(value);
-            return mCount.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE).longValue();
+            return getIndexByProportion(getProportionByValue(value));
         }
 
         public long getIndexByProportion(double proportion) {
-            return mCount.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE).longValue();
+            return getBigIndexByProportion(proportion).longValue();
         }
 
         public BigDecimal getValueByProportion(double proportion) {
-            BigDecimal index = mCount.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE);
+            BigDecimal index = getBigIndexByProportion(proportion);
             return mMin.add(mStep.multiply(index));
         }
 
@@ -874,6 +873,15 @@ public class DeviceProfile {
 
             return prop.doubleValue();
         }
+
+        private BigDecimal getBigIndexByProportion(double proportion) {
+            if (mCount.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+            BigDecimal index = mCount.subtract(BigDecimal.ONE);
+            return index.multiply(new BigDecimal(proportion)).setScale(0, ROUNDING_MODE);
+        }
+
     }
 
     @JsonIgnoreProperties(ignoreUnknown=true)

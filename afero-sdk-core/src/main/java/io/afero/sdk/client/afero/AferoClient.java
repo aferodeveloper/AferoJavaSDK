@@ -9,10 +9,10 @@ import java.util.TimeZone;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.DeviceRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.RequestResponse;
+import io.afero.sdk.client.afero.models.WriteRequest;
+import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
@@ -22,13 +22,16 @@ public interface AferoClient {
 
     Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode);
 
-    Observable<RequestResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, DeviceRequest[] body, int maxRetryCount, int statusCode);
+    Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode);
 
     Observable<DeviceProfile> getDeviceProfile(String profileId);
 
     Observable<DeviceProfile[]> getAccountDeviceProfiles();
 
+    @Deprecated
     Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId);
+
+    Observable<ConclaveAccessDetails> postConclaveAccess();
 
     Observable<Location> putDeviceLocation(String deviceId, Location location);
 
@@ -40,7 +43,9 @@ public interface AferoClient {
 
     Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel);
 
-    Observable<Void> putDeviceTimezone(DeviceModel deviceModel, TimeZone tz);
+    Observable<Void> putDeviceTimeZone(DeviceModel deviceModel, TimeZone tz);
+
+    Observable<TimeZone> getDeviceTimeZone(DeviceModel deviceModel);
 
     Observable<DeviceSync[]> getDevicesWithState();
 

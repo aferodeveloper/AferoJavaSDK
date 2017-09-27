@@ -255,7 +255,7 @@ public class AferoSofthubTest {
 
         HubbyHelperTester() {
             activity = Robolectric.buildActivity(Activity.class).create().get();
-            aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, null);
+            aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D");
             aferoSofthub.setHubbyImpl(hubbyImpl);
             aferoSofthub.observeCompletion().subscribe(onNextComplete);
             aferoSofthub.observeAssociation().subscribe(onNextAssociation);

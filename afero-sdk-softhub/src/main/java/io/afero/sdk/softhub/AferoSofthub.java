@@ -40,14 +40,15 @@ public class AferoSofthub {
     private static final String WAKE_LOCK_TAG = "io.afero.sdk.hubby.AferoSofthub.OTAWakeLockTag";
     private static final long OTA_END_DELAY = 30000;
     private static final long WAKE_LOCK_WATCHDOG_INTERVAL = 5000;
+    private static final int HARDWARE_INFO_MAX_LENGTH = 500;
 
     private HubbyImpl mHubbyImpl = new NativeHubbyImpl();
 
     private final WeakReference<Context> mContextRef;
     private final AferoClient mAferoClient;
-    private final String mClientId;
     private final String mSetupPath;
     private final String mOTAPath;
+    private final String mAppInfo;
     private final NotificationCallback mNotificationCallback;
 
     private boolean mIsHubbyRunning;
@@ -78,10 +79,10 @@ public class AferoSofthub {
         }
     };
 
-    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String clientId) {
+    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo) {
         mContextRef = new WeakReference<>(context);
         mAferoClient = aferoClient;
-        mClientId = clientId;
+        mAppInfo = appInfo;
 
         mNotificationCallback = new HubbyNotificationCallback(this);
 
@@ -89,9 +90,9 @@ public class AferoSofthub {
         mSetupPath = context.getFilesDir().getAbsolutePath();
     }
 
-    public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String clientId) {
+    public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo) {
         if (sInstance == null) {
-            sInstance = new AferoSofthub(context, aferoClient, clientId);
+            sInstance = new AferoSofthub(context, aferoClient, appInfo);
         }
 
         return sInstance;
@@ -206,17 +207,23 @@ public class AferoSofthub {
     private void startHubby() {
         AfLog.i("AferoSofthub: starting hubby");
 
-        final String hwInfo = "os:android,manufacturer:" + Build.MANUFACTURER +
+        String hwInfo = "os:android,manufacturer:" + Build.MANUFACTURER +
                 ",model:" + Build.MODEL +
-                ",version:" + Build.VERSION.RELEASE +
-                (mClientId != null ? ",clientId:" + mClientId : "")
+                ",version:" + Build.VERSION.RELEASE
                 ;
+
+        if (mAppInfo != null && !mAppInfo.isEmpty()) {
+            hwInfo += "," + mAppInfo.trim();
+            if (hwInfo.length() > HARDWARE_INFO_MAX_LENGTH) {
+                hwInfo = hwInfo.substring(0, HARDWARE_INFO_MAX_LENGTH);
+            }
+        }
+
         final String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
 
         HashMap<Hubby.Config,String> config = new HashMap<>(1);
         config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
         config.put(Hubby.Config.OTA_WORKING_PATH, mOTAPath);
-
         config.put(Hubby.Config.HARDWARE_INFO, hwInfo);
 
         if (mService != null) {
