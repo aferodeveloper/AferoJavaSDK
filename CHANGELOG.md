@@ -1,9 +1,22 @@
 Change Log
 ==========
 
-Version 0.7.2 *(2017-08-??)*
+Version 0.8.0 *(2017-08-27)*
 ----------------------------
-
+ * New: Added `DeviceModel.setTimeZone(TimeZone)` and `getTimeZone()`
+ * New: Added device inspector and attribute editor views to `AferoLab` sample app
+ * Changed `OfflineScheduler` to use device local time for all event rather than UTC.
+ * Changed `DeviceModel` to add the ability to migrate device data should attribute formats change.
+ * Added `DeviceDataMigrator` to migrate `OfflineScheduleEvents` from UTC to device local time.
+ * Changed `AttributeWriter` logic to send write requests in batches of 5 to prevent too
+   many concurrent writes to devices.
+ * Fix: `AttributeWriter` now handles several error conditions more gracefully.
+ * Fix: `DeviceProfile.RangeOptions.getCount()` returns the correct count instead of `count - 1`.
+ * Changed `ConclaveAccessManager` to use a different endpoint to fetch the Conclave token.
+   The new endpoint doesn't require a mobileDeviceId as did the old one.
+ * Changed `AferoSofthub.acquireInstance` to accept an `appInfo` string that can be used
+   to attach app specific information to the softhub instance for debugging purposes.
+ * Changed `DeviceCollection` to no longer require a `clientId` to be passed in.
 
 Version 0.7.1 *(2017-08-25)*
 ----------------------------
