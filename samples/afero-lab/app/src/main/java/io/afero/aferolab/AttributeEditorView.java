@@ -51,6 +51,9 @@ public class AttributeEditorView extends FrameLayout {
     @BindView(R.id.attribute_data_type_text)
     TextView mAttributeDataTypeText;
 
+    @BindView(R.id.attribute_timestamp_text)
+    TextView mAttributeTimestampText;
+
     @BindView(R.id.attribute_value_options_label)
     TextView mAttributeValueOptionsLabelText;
 
@@ -214,6 +217,10 @@ public class AttributeEditorView extends FrameLayout {
 
     public void setAttributeDataTypeText(@Nullable String s) {
         mAttributeDataTypeText.setText(s != null ? s : "-");
+    }
+
+    public void setAttributeTimestampText(@Nullable String s) {
+        mAttributeTimestampText.setText(s != null ? s : "-");
     }
 
     public void setAttributeValueText(String valueText) {
