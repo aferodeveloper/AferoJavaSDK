@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 0.8.1 *(2017-10-??)*
+----------------------------
+
+
 Version 0.8.0 *(2017-09-27)*
 ----------------------------
  * New: Added `DeviceModel.setTimeZone(TimeZone)` and `getTimeZone()`
