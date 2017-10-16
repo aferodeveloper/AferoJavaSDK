@@ -23,9 +23,9 @@ public class PermissionsHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Android M Permission check
             boolean hasLocation = activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-//            boolean hasCamera = mActivity.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+            boolean hasCamera = activity.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
 
-            if (!hasLocation) {
+            if (!hasLocation || !hasCamera) {
                 askUserForAllPermissions(activity);
             } else {
                 AfLog.d("checkRequiredPermissions: permissions granted");
@@ -44,7 +44,7 @@ public class PermissionsHelper {
                     activity.requestPermissions(
                             new String[]{
                                     Manifest.permission.ACCESS_FINE_LOCATION,
-//                                    Manifest.permission.CAMERA
+                                    Manifest.permission.CAMERA
                             },
                             PERMISSION_REQUEST_ALL);
                 }
