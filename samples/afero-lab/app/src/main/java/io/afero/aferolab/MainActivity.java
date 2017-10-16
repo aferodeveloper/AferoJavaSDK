@@ -13,7 +13,11 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -23,7 +27,6 @@ import java.net.HttpURLConnection;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 import butterknife.OnEditorAction;
 import io.afero.sdk.android.clock.AndroidClock;
 import io.afero.sdk.android.log.AndroidLog;
@@ -62,6 +65,12 @@ public class MainActivity extends AppCompatActivity {
 
     private final Observer<AferoSofthub> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<>();
 
+    @BindView(R.id.root_view)
+    ViewGroup mRootView;
+
+    @BindView(R.id.app_toolbar)
+    Toolbar mAppToolbar;
+
     @BindView(R.id.device_list_view)
     DeviceListView mDeviceListView;
 
@@ -89,12 +98,16 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.text_network_status)
     TextView mNetworkStatus;
 
+    private AddDeviceView mAddDeviceView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+
+        setSupportActionBar(mAppToolbar);
 
         AndroidClock.init();
         AfLog.init(new AndroidLog("AfLab"));
@@ -201,13 +214,64 @@ public class MainActivity extends AppCompatActivity {
         mAferoSofthub.onResume();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_add_device:
+                onActionAddDevice();
+                return true;
+
+            case R.id.action_sign_out:
+                onActionSignOut();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    void onActionAddDevice() {
+        if (mAddDeviceView == null) {
+            mAddDeviceView = AddDeviceView.create(mRootView);
+            mAddDeviceView.start();
+        }
+    }
+
     /**
      * This will cause to {@link AferoClientRetrofit2#tokenRefreshObservable()} to emit onCompleted,
      * which will call {@link #onSignOut()}
      */
-    @OnClick(R.id.button_sign_out)
-    void onClickSignOut() {
+    void onActionSignOut() {
         mAferoClient.signOut(null, null);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mAttributeEditorView.isStarted()) {
+            mAttributeEditorView.stop();
+            return;
+        }
+
+        if (mDeviceInspectorView.isStarted()) {
+            mDeviceInspectorView.stop();
+            return;
+        }
+
+        if (mAddDeviceView != null) {
+            mAddDeviceView.stop();
+            mAddDeviceView = null;
+            return;
+        }
+
+        super.onBackPressed();
     }
 
     private void setupViews() {
