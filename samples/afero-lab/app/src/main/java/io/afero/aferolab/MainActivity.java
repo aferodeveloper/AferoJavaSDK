@@ -28,6 +28,13 @@ import java.net.HttpURLConnection;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnEditorAction;
+import io.afero.aferolab.addDevice.AddDeviceView;
+import io.afero.aferolab.attributeEditor.AttributeEditorView;
+import io.afero.aferolab.deviceInspector.DeviceInspectorView;
+import io.afero.aferolab.deviceList.DeviceListView;
+import io.afero.aferolab.helper.PermissionsHelper;
+import io.afero.aferolab.helper.PrefsHelper;
+import io.afero.aferolab.widget.AferoEditText;
 import io.afero.sdk.android.clock.AndroidClock;
 import io.afero.sdk.android.log.AndroidLog;
 import io.afero.sdk.client.retrofit2.AferoClientRetrofit2;
@@ -112,9 +119,9 @@ public class MainActivity extends AppCompatActivity {
         AndroidClock.init();
         AfLog.init(new AndroidLog("AfLab"));
 
-        final String accountId = Prefs.getAccountId(this);
-        final String accessToken = Prefs.getAccessToken(this);
-        final String refreshToken = Prefs.getRefreshToken(this);
+        final String accountId = PrefsHelper.getAccountId(this);
+        final String accessToken = PrefsHelper.getAccessToken(this);
+        final String refreshToken = PrefsHelper.getRefreshToken(this);
 
         AccessToken token = !(accessToken.isEmpty() || refreshToken.isEmpty())
             ? new AccessToken(accessToken, refreshToken)
@@ -168,7 +175,19 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Action1<DeviceModel>() {
                     @Override
                     public void call(DeviceModel deviceModel) {
-                        mDeviceInspectorView.start(deviceModel);
+                        mDeviceInspectorView.start(deviceModel, mDeviceCollection);
+                        mDeviceInspectorView.getObservable().subscribe(new Observer<DeviceInspectorView>() {
+                            @Override
+                            public void onCompleted() {
+                                stopDeviceInspector();
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {}
+
+                            @Override
+                            public void onNext(DeviceInspectorView deviceInspectorView) {}
+                        });
                     }
                 });
 
@@ -241,7 +260,18 @@ public class MainActivity extends AppCompatActivity {
     void onActionAddDevice() {
         if (mAddDeviceView == null) {
             mAddDeviceView = AddDeviceView.create(mRootView);
-            mAddDeviceView.start();
+            mAddDeviceView.start(mDeviceCollection, mAferoClient);
+            mAddDeviceView.getObservable().subscribe(new Observer<AddDeviceView>() {
+                @Override
+                public void onCompleted() {
+                    stopAddDeviceView();                }
+
+                @Override
+                public void onError(Throwable e) {}
+
+                @Override
+                public void onNext(AddDeviceView addDeviceView) {}
+            });
         }
     }
 
@@ -261,17 +291,29 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (mDeviceInspectorView.isStarted()) {
-            mDeviceInspectorView.stop();
+            stopDeviceInspector();
             return;
         }
 
         if (mAddDeviceView != null) {
-            mAddDeviceView.stop();
-            mAddDeviceView = null;
+            stopAddDeviceView();
             return;
         }
 
         super.onBackPressed();
+    }
+
+    private void stopAddDeviceView() {
+        if (mAddDeviceView != null) {
+            mAddDeviceView.stop();
+            mAddDeviceView = null;
+        }
+    }
+
+    private void stopDeviceInspector() {
+        if (mDeviceInspectorView.isStarted()) {
+            mDeviceInspectorView.stop();
+        }
     }
 
     private void setupViews() {
@@ -279,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
             mSignInGroup.setVisibility(View.GONE);
             mStatusGroup.setVisibility(View.VISIBLE);
 
-            mAccountNameText.setText(Prefs.getAccountName(this));
+            mAccountNameText.setText(PrefsHelper.getAccountName(this));
         } else {
             mSignInGroup.setVisibility(View.VISIBLE);
             mStatusGroup.setVisibility(View.GONE);
@@ -350,11 +392,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        Prefs.saveAccessToken(this, mAferoClient.getToken().accessToken);
-        Prefs.saveRefreshToken(this, mAferoClient.getToken().refreshToken);
-        Prefs.saveUserId(this, mUserId);
-        Prefs.saveAccountId(this, accountId);
-        Prefs.saveAccountName(this, accountName);
+        PrefsHelper.saveAccessToken(this, mAferoClient.getToken().accessToken);
+        PrefsHelper.saveRefreshToken(this, mAferoClient.getToken().refreshToken);
+        PrefsHelper.saveUserId(this, mUserId);
+        PrefsHelper.saveAccountId(this, accountId);
+        PrefsHelper.saveAccountName(this, accountName);
 
         mAccountNameText.setText(accountName);
 
@@ -380,7 +422,7 @@ public class MainActivity extends AppCompatActivity {
         mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
 
         mUserId = null;
-        Prefs.clearAccountPrefs(this);
+        PrefsHelper.clearAccountPrefs(this);
 
         mAferoSofthub.stop();
 
@@ -476,8 +518,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onNext(MainActivity activity, AccessToken token) {
-            Prefs.saveAccessToken(activity, token.accessToken);
-            Prefs.saveRefreshToken(activity, token.refreshToken);
+            PrefsHelper.saveAccessToken(activity, token.accessToken);
+            PrefsHelper.saveRefreshToken(activity, token.refreshToken);
         }
     }
 

@@ -51,7 +51,7 @@
                     android:layout_weight="1"
                     />
 
-                <io.afero.aferolab.AferoEditText
+                <io.afero.aferolab.widget.AferoEditText
                     android:id="@+id/edit_text_email"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -80,7 +80,7 @@
                     android:layout_weight="1"
                     />
 
-                <io.afero.aferolab.AferoEditText
+                <io.afero.aferolab.widget.AferoEditText
                     android:id="@+id/edit_text_password"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -126,7 +126,7 @@
         </LinearLayout>
 
 
-        <io.afero.aferolab.DeviceListView
+        <io.afero.aferolab.deviceList.DeviceListView
             xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/device_list_view"
             android:layout_width="match_parent"
@@ -140,7 +140,7 @@
                 android:layout_height="match_parent"
                 />
 
-        </io.afero.aferolab.DeviceListView>
+        </io.afero.aferolab.deviceList.DeviceListView>
 
 
     </LinearLayout>

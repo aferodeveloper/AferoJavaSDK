@@ -3,7 +3,7 @@
   ~ Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
   -->
 
-<io.afero.aferolab.AttributeListItemView
+<io.afero.aferolab.deviceInspector.AttributeListItemView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -53,4 +53,4 @@
         android:textSize="12sp"
         />
 
-</io.afero.aferolab.AttributeListItemView>
+</io.afero.aferolab.deviceInspector.AttributeListItemView>

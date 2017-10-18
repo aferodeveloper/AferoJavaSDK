@@ -2,12 +2,12 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.aferolab;
+package io.afero.aferolab.helper;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 
-public class Prefs {
+public class PrefsHelper {
 
     private static final String SHARED_PREFS_ACCOUNT = "shared_prefs_account";
 

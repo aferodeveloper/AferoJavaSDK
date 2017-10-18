@@ -2,9 +2,11 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.aferolab;
+package io.afero.aferolab.deviceInspector;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,9 +20,16 @@ import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
+import io.afero.aferolab.R;
+import io.afero.aferolab.attributeEditor.AttributeEditorView;
+import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
+import rx.Observable;
 import rx.functions.Action1;
+import rx.subjects.PublishSubject;
 
 
 public class DeviceInspectorView extends FrameLayout {
@@ -43,10 +52,14 @@ public class DeviceInspectorView extends FrameLayout {
     @BindView(R.id.view_scrim)
     View mScrimView;
 
+    @BindView(R.id.device_inspector_progress)
+    ProgressSpinnerView mProgressView;
+
     private static final int TRANSITION_DURATION = 200;
 
-    private final DeviceInspectorController mController = new DeviceInspectorController(this);
+    private DeviceInspectorController mController;
     private final AttributeAdapter mAttributeAdapter = new AttributeAdapter();
+    private PublishSubject<DeviceInspectorView> mViewSubject;
 
     public DeviceInspectorView(@NonNull Context context) {
         super(context);
@@ -70,12 +83,16 @@ public class DeviceInspectorView extends FrameLayout {
         mAttributeListView.setAdapter(mAttributeAdapter);
     }
 
-    public void start(DeviceModel deviceModel) {
+    public void start(DeviceModel deviceModel, DeviceCollection deviceCollection) {
         if (isStarted()) {
             return;
         }
 
+        if (mController == null) {
+            mController = new DeviceInspectorController(this, deviceCollection);
+        }
         mController.start(deviceModel);
+
         mAttributeAdapter.start(deviceModel);
         mAttributeAdapter.getViewOnClick()
                 .subscribe(new Action1<View>() {
@@ -101,7 +118,14 @@ public class DeviceInspectorView extends FrameLayout {
     }
 
     public boolean isStarted() {
-        return mController.isStarted();
+        return mController != null && mController.isStarted();
+    }
+
+    public Observable<DeviceInspectorView> getObservable() {
+        if (mViewSubject == null) {
+            mViewSubject = PublishSubject.create();
+        }
+        return mViewSubject;
     }
 
     public void setDeviceNameText(String name) {
@@ -110,6 +134,33 @@ public class DeviceInspectorView extends FrameLayout {
 
     public void setDeviceStatusText(@StringRes int statusResId) {
         mDeviceStatusText.setText(statusResId);
+    }
+
+    @OnClick(R.id.device_delete)
+    void onClickDelete() {
+        new AlertDialog.Builder(getContext())
+                .setMessage(R.string.dialog_message_remove_device)
+                .setCancelable(true)
+                .setPositiveButton(R.string.button_title_delete, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        mController.deleteDevice();
+                    }
+                })
+                .show();
+    }
+
+    void onCompleted() {
+        mViewSubject.onCompleted();
+        mViewSubject = null;
+    }
+
+    void showProgress() {
+        mProgressView.show();
+    }
+
+    void hideProgress() {
+        mProgressView.hide();
     }
 
     private void startEnterTransition() {
@@ -140,4 +191,5 @@ public class DeviceInspectorView extends FrameLayout {
         AttributeEditorView view = ButterKnife.findById(getRootView(), R.id.attribute_editor);
         view.start(deviceModel, attribute);
     }
+
 }
