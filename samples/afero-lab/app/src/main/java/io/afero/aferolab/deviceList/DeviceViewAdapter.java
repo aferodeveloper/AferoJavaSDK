@@ -2,7 +2,7 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.aferolab;
+package io.afero.aferolab.deviceList;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Vector;
 
+import io.afero.aferolab.R;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.utils.RxUtils;
@@ -22,7 +23,7 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 
-public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.ViewHolder> {
+class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.ViewHolder> {
 
     private Subscription mUpdateSubscription;
     private Subscription mRemoveSubscription;
@@ -74,7 +75,7 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
         }
     };
 
-    public DeviceViewAdapter(DeviceCollection deviceCollection) {
+    DeviceViewAdapter(DeviceCollection deviceCollection) {
         mUpdateSubscription = updateDevices(deviceCollection.getDevices()
                 .concatWith(deviceCollection.observeCreates()
                         .mergeWith(deviceCollection.observeUpdates())));
@@ -149,7 +150,7 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
         return mDevices.size();
     }
 
-    public DeviceModel getDeviceModelAt(int itemPosition) {
+    DeviceModel getDeviceModelAt(int itemPosition) {
         return mDevices.get(itemPosition);
     }
 
@@ -159,7 +160,7 @@ public class DeviceViewAdapter extends RecyclerView.Adapter<DeviceViewAdapter.Vi
             super(view);
         }
 
-        public void update(DeviceModel deviceModel) {
+        void update(DeviceModel deviceModel) {
             ((DeviceListItemView)itemView).update(deviceModel);
         }
     }

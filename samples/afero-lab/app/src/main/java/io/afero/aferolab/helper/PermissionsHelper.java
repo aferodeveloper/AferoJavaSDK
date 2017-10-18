@@ -2,7 +2,7 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.aferolab;
+package io.afero.aferolab.helper;
 
 import android.Manifest;
 import android.app.Activity;
@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
 
+import io.afero.aferolab.R;
 import io.afero.sdk.log.AfLog;
 
 public class PermissionsHelper {

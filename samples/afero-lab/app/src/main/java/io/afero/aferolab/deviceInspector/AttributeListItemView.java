@@ -2,7 +2,7 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.aferolab;
+package io.afero.aferolab.deviceInspector;
 
 import android.content.Context;
 import android.support.annotation.Nullable;
@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.afero.aferolab.R;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;

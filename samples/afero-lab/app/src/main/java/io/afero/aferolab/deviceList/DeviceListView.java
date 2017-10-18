@@ -2,7 +2,7 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.aferolab;
+package io.afero.aferolab.deviceList;
 
 import android.content.Context;
 import android.support.v4.content.ContextCompat;
@@ -15,6 +15,7 @@ import android.widget.FrameLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.afero.aferolab.R;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import rx.Observable;

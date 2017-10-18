@@ -1,4 +1,8 @@
-package io.afero.aferolab;
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
+package io.afero.aferolab.attributeEditor;
 
 import android.animation.TimeInterpolator;
 import android.content.Context;
@@ -27,6 +31,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.OnEditorAction;
+import io.afero.aferolab.R;
+import io.afero.aferolab.widget.AferoEditText;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 

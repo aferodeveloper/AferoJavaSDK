@@ -2,7 +2,7 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-package io.afero.aferolab;
+package io.afero.aferolab.deviceInspector;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 
 import java.util.Vector;
 
+import io.afero.aferolab.R;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.utils.RxUtils;
@@ -20,14 +21,14 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 
-public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.ViewHolder> {
+class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.ViewHolder> {
 
     private final Vector<DeviceProfile.Attribute> mAttributes = new Vector<>();
     private final PublishSubject<View> mOnClickViewSubject = PublishSubject.create();
     private DeviceModel mDeviceModel;
     private Subscription mDeviceUpdateSubscription;
 
-    public AttributeAdapter() {
+    AttributeAdapter() {
     }
 
     public void start(DeviceModel deviceModel) {
@@ -96,7 +97,7 @@ public class AttributeAdapter extends RecyclerView.Adapter<AttributeAdapter.View
         return mAttributes.size();
     }
 
-    public DeviceProfile.Attribute getAttributeAt(int itemPosition) {
+    DeviceProfile.Attribute getAttributeAt(int itemPosition) {
         return mAttributes.get(itemPosition);
     }
 
