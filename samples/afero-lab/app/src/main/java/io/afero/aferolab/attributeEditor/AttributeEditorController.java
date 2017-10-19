@@ -1,4 +1,8 @@
-package io.afero.aferolab;
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
+package io.afero.aferolab.attributeEditor;
 
 
 import android.text.format.DateUtils;

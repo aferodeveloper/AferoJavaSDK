@@ -6,7 +6,9 @@
 
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="io.afero.aferolab.MainActivity">
@@ -14,10 +16,16 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingEnd="20dp"
-        android:paddingStart="20dp"
-        android:paddingTop="20dp">
+        android:orientation="vertical">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/app_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:elevation="4dp"
+            android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
 
         <LinearLayout
             android:id="@+id/group_sign_in"
@@ -43,7 +51,7 @@
                     android:layout_weight="1"
                     />
 
-                <io.afero.aferolab.AferoEditText
+                <io.afero.aferolab.widget.AferoEditText
                     android:id="@+id/edit_text_email"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -72,7 +80,7 @@
                     android:layout_weight="1"
                     />
 
-                <io.afero.aferolab.AferoEditText
+                <io.afero.aferolab.widget.AferoEditText
                     android:id="@+id/edit_text_password"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -90,17 +98,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            android:paddingTop="15dp"
             android:visibility="gone">
-
-            <ImageButton
-                android:id="@+id/button_sign_out"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center_vertical"
-                android:background="@null"
-                android:scaleType="centerInside"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                />
 
             <TextView
                 android:id="@+id/text_account_name"
@@ -125,9 +126,9 @@
         </LinearLayout>
 
 
-        <io.afero.aferolab.DeviceListView
-            android:id="@+id/device_list_view"
+        <io.afero.aferolab.deviceList.DeviceListView
             xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/device_list_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="10dp"
@@ -139,12 +140,13 @@
                 android:layout_height="match_parent"
                 />
 
-        </io.afero.aferolab.DeviceListView>
+        </io.afero.aferolab.deviceList.DeviceListView>
 
 
     </LinearLayout>
 
-    <include layout="@layout/view_device_inspector" />
-    <include layout="@layout/view_attribute_editor" />
+    <include layout="@layout/view_device_inspector"/>
+
+    <include layout="@layout/view_attribute_editor"/>
 
 </FrameLayout>

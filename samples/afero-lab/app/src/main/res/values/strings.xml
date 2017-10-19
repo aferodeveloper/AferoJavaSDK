@@ -15,7 +15,7 @@
 
     <string name="permission_denied_message">For full functionality, give AferoLab all the permissions it needs. You can always do this from Settings&gt;Apps&gt;AferoLab.</string>
     <string name="permission_denied_title">Limited Functionality</string>
-    <string name="permission_needed_message">For full functionality, AferoLab needs access to location, and storage.</string>
+    <string name="permission_needed_message">For full functionality, AferoLab needs access to location and camera.</string>
     <string name="permission_needed_title">Access Needed</string>
 
     <string name="attribute_value_label">Value:</string>
@@ -23,4 +23,19 @@
     <string name="attribute_timestamp_label">Last Update:</string>
     <string name="attribute_switch_text_on">True</string>
     <string name="attribute_switch_text_off">False</string>
+    <string name="add_device">Add Device</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="camera_access_title">Camera Access Needed</string>
+    <string name="permission_camera_rationale">Access to the camera is needed for QR code detection.</string>
+    <string name="button_title_ok">OK</string>
+    <string name="error_qr_code_scan_generic_failure">Scanning the QR code didn’t work quite right. Please try again.</string>
+    <string name="error_create_device_transfer">This device is already linked to someone else’s account. Are you sure you want to transfer the device to your account?</string>
+    <string name="button_title_cancel">CANCEL</string>
+    <string name="button_title_transfer">TRANSFER</string>
+    <string name="error_add_device_forbidden">This device is already linked to someone else’s account. Please remove the device from that account, then try again.</string>
+    <string name="error_add_device_conflict">This device is already linked to your account. Please add another device or go back.</string>
+    <string name="error_add_device_generic">Sorry, that didn’t work quite right. Please try again.</string>
+    <string name="error_generic">Sorry, an error occurred.</string>
+    <string name="button_title_delete">DELETE</string>
+    <string name="dialog_message_remove_device">Are you sure you want to remove this device from your account?</string>
 </resources>
