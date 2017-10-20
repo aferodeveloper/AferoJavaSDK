@@ -4,9 +4,9 @@
   -->
 
 <io.afero.aferolab.deviceInspector.DeviceInspectorView
+    android:id="@+id/device_inspector"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/device_inspector"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@null"
@@ -55,15 +55,54 @@
                     android:textColor="@android:color/darker_gray"
                     android:textSize="12sp"/>
 
+
+                <LinearLayout
+                    android:id="@+id/device_info_extra_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp"
+                    android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/device_delete_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:drawableStart="@mipmap/ic_delete_forever_black_36dp"
+                        android:text="@string/delete_device"
+                        />
+
+                    <Button
+                        android:id="@+id/wifi_connect_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="10dp"
+                        android:drawableStart="@mipmap/ic_network_wifi_black_36dp"
+                        android:text="@string/connect_to_wifi"
+                        />
+
+                </LinearLayout>
             </LinearLayout>
 
             <ImageButton
-                android:id="@+id/device_delete"
+                android:id="@+id/device_info_extra_open"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:background="@null"
-                android:src="@mipmap/ic_delete_forever_black_36dp"
+                android:src="@mipmap/ic_expand_more_black_36dp"
+                />
+
+            <ImageButton
+                android:id="@+id/device_info_extra_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:background="@null"
+                android:src="@mipmap/ic_expand_less_black_36dp"
+                android:visibility="gone"
                 />
         </android.support.v7.widget.CardView>
 

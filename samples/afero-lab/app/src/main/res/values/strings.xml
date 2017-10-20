@@ -38,4 +38,6 @@
     <string name="error_generic">Sorry, an error occurred.</string>
     <string name="button_title_delete">DELETE</string>
     <string name="dialog_message_remove_device">Are you sure you want to remove this device from your account?</string>
+    <string name="delete_device">DELETE DEVICE</string>
+    <string name="connect_to_wifi">CONNECT TO WIFI</string>
 </resources>
