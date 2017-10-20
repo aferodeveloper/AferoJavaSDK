@@ -4,6 +4,7 @@
 
 package io.afero.aferolab.deviceInspector;
 
+import android.animation.LayoutTransition;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -47,10 +48,10 @@ public class DeviceInspectorView extends FrameLayout {
     RecyclerView mAttributeListView;
 
     @BindView(R.id.device_info_card)
-    View mDeviceInfoCard;
+    ViewGroup mDeviceInfoCard;
 
     @BindView(R.id.attributes_card)
-    View mAttributesCard;
+    ViewGroup mAttributesCard;
 
     @BindView(R.id.view_scrim)
     View mScrimView;
@@ -64,8 +65,11 @@ public class DeviceInspectorView extends FrameLayout {
     @BindView(R.id.device_info_extra_close)
     ImageButton mDeviceInfoCloseButton;
 
-    @BindView(R.id.device_info_extra_container)
+    @BindView(R.id.device_info_container)
     ViewGroup mDeviceInfoContainer;
+
+    @BindView(R.id.device_info_extra_container)
+    ViewGroup mDeviceInfoExtraContainer;
 
     @BindView(R.id.wifi_connect_button)
     Button mWifiConnectButton;
@@ -93,6 +97,20 @@ public class DeviceInspectorView extends FrameLayout {
     protected void onFinishInflate() {
         super.onFinishInflate();
         ButterKnife.bind(this);
+
+        LayoutTransition lt = mDeviceInfoCard.getLayoutTransition();
+        if (lt != null) {
+            lt.enableTransitionType(LayoutTransition.CHANGING);
+            lt.setStartDelay(LayoutTransition.CHANGING, 0);
+            lt.setStartDelay(LayoutTransition.CHANGE_APPEARING, 0);
+            lt.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0);
+        }
+
+        lt = mAttributesCard.getLayoutTransition();
+        if (lt != null) {
+            lt.enableTransitionType(LayoutTransition.CHANGING);
+            lt.setStartDelay(LayoutTransition.CHANGING, 0);
+        }
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mAttributeListView.setLayoutManager(layoutManager);
@@ -154,14 +172,14 @@ public class DeviceInspectorView extends FrameLayout {
 
     @OnClick(R.id.device_info_extra_open)
     void onClickDeviceInfoOpen() {
-        mDeviceInfoContainer.setVisibility(VISIBLE);
+        mDeviceInfoExtraContainer.setVisibility(VISIBLE);
         mDeviceInfoOpenButton.setVisibility(GONE);
         mDeviceInfoCloseButton.setVisibility(VISIBLE);
     }
 
     @OnClick(R.id.device_info_extra_close)
     void onClickDeviceInfoClose() {
-        mDeviceInfoContainer.setVisibility(GONE);
+        mDeviceInfoExtraContainer.setVisibility(GONE);
         mDeviceInfoOpenButton.setVisibility(VISIBLE);
         mDeviceInfoCloseButton.setVisibility(GONE);
     }

@@ -4,9 +4,9 @@
   -->
 
 <io.afero.aferolab.deviceInspector.DeviceInspectorView
-    android:id="@+id/device_inspector"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/device_inspector"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@null"
@@ -22,6 +22,7 @@
         />
 
     <LinearLayout
+        android:id="@+id/device_inspector_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -31,10 +32,12 @@
             android:id="@+id/device_info_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
             app:cardElevation="3dp"
             app:contentPadding="5dp">
 
             <LinearLayout
+                android:id="@+id/device_info_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
@@ -64,24 +67,67 @@
                     android:padding="20dp"
                     android:visibility="gone">
 
-                    <Button
-                        android:id="@+id/device_delete_button"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:drawableStart="@mipmap/ic_delete_forever_black_36dp"
-                        android:text="@string/delete_device"
-                        />
+                        android:orientation="horizontal">
 
-                    <Button
-                        android:id="@+id/wifi_connect_button"
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+
+                        <Button
+                            android:id="@+id/wifi_connect_button"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginBottom="10dp"
+                            android:layout_weight="5"
+                            android:drawablePadding="10dp"
+                            android:drawableStart="@mipmap/ic_network_wifi_black_36dp"
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="@string/connect_to_wifi"
+                            />
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="10dp"
-                        android:drawableStart="@mipmap/ic_network_wifi_black_36dp"
-                        android:text="@string/connect_to_wifi"
-                        />
+                        android:orientation="horizontal">
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+
+                        <Button
+                            android:id="@+id/device_delete_button"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="5"
+                            android:drawablePadding="10dp"
+                            android:drawableStart="@mipmap/ic_delete_forever_black_36dp"
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="@string/delete_device"
+                            />
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+                    </LinearLayout>
 
                 </LinearLayout>
             </LinearLayout>
@@ -111,7 +157,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="5dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:animateLayoutChanges="true">
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/device_attribute_recycler_view"
