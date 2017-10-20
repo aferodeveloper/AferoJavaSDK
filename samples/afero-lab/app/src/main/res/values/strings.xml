@@ -40,4 +40,15 @@
     <string name="dialog_message_remove_device">Are you sure you want to remove this device from your account?</string>
     <string name="delete_device">DELETE DEVICE</string>
     <string name="connect_to_wifi">CONNECT TO WIFI</string>
+    <string name="wifi_select_network">Select a Wi-Fi Network</string>
+    <string name="wifi_select_network_prompt">Connect your device to your local network.\\n Pull down to refresh.</string>
+    <string name="wifi_manual_button_title">OTHER NETWORK</string>
+    <string name="wifi_refresh_button_title">REFRESH</string>
+    <string name="wifi_cant_find_wifi">CAN’T FIND WI-FI</string>
+    <string name="wifi_networks_not_found">We can’t find your Wi-Fi connections. Please move your device closer to the base station.</string>
+    <string name="wifi_try_again">Try Again</string>
+    <string name="wifi_unable_to_associate">We couldn’t connect your device to your Wi-Fi network. Please select another network name.</string>
+    <string name="wifi_unable_to_authenticate">We couldn’t authenticate to your Wi-Fi network. Try re-typing your password, or try another network name.</string>
+    <string name="wifi_unable_to_reach_afero">We couldn’t reach the Afero Cloud from your Wi-Fi network. Please check your internet connection, or try another network name.</string>
+    <string name="wifi_your_device_is_now_connected">Your device is now connected to Afero.</string>
 </resources>

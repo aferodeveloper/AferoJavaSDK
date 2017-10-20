@@ -16,7 +16,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -175,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Action1<DeviceModel>() {
                     @Override
                     public void call(DeviceModel deviceModel) {
-                        mDeviceInspectorView.start(deviceModel, mDeviceCollection);
+                        mDeviceInspectorView.start(deviceModel, mDeviceCollection, mAferoClient);
                         mDeviceInspectorView.getObservable().subscribe(new Observer<DeviceInspectorView>() {
                             @Override
                             public void onCompleted() {
