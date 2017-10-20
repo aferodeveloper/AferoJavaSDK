@@ -28,6 +28,8 @@ import butterknife.OnClick;
 import io.afero.aferolab.R;
 import io.afero.aferolab.attributeEditor.AttributeEditorView;
 import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.aferolab.wifiSetup.WifiSetupView;
+import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
@@ -80,6 +82,7 @@ public class DeviceInspectorView extends FrameLayout {
     private DeviceInspectorController mController;
     private final AttributeAdapter mAttributeAdapter = new AttributeAdapter();
     private PublishSubject<DeviceInspectorView> mViewSubject;
+    private WifiSetupView mWifiSetupView;
 
     public DeviceInspectorView(@NonNull Context context) {
         super(context);
@@ -117,13 +120,13 @@ public class DeviceInspectorView extends FrameLayout {
         mAttributeListView.setAdapter(mAttributeAdapter);
     }
 
-    public void start(DeviceModel deviceModel, DeviceCollection deviceCollection) {
+    public void start(DeviceModel deviceModel, DeviceCollection deviceCollection, AferoClient aferoClient) {
         if (isStarted()) {
             return;
         }
 
         if (mController == null) {
-            mController = new DeviceInspectorController(this, deviceCollection);
+            mController = new DeviceInspectorController(this, deviceCollection, aferoClient);
         }
         mController.start(deviceModel);
 
@@ -200,6 +203,7 @@ public class DeviceInspectorView extends FrameLayout {
 
     @OnClick(R.id.wifi_connect_button)
     void onClickWifiConnect() {
+        mController.onWifiConnect();
     }
 
     void onCompleted() {

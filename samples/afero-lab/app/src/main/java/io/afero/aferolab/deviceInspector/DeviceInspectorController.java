@@ -7,6 +7,8 @@ package io.afero.aferolab.deviceInspector;
 import android.view.View;
 
 import io.afero.aferolab.R;
+import io.afero.aferolab.wifiSetup.WifiSetupView;
+import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.softhub.DeviceWifiSetup;
@@ -20,12 +22,15 @@ class DeviceInspectorController {
 
     private final DeviceInspectorView mView;
     private final DeviceCollection mDeviceCollection;
+    private final AferoClient mAferoClient;
     private Subscription mDeviceUpdateSubscription;
     private DeviceModel mDeviceModel;
+    private WifiSetupView mWifiSetupView;
 
-    DeviceInspectorController(DeviceInspectorView view, DeviceCollection deviceCollection) {
+    DeviceInspectorController(DeviceInspectorView view, DeviceCollection deviceCollection, AferoClient aferoClient) {
         mView = view;
         mDeviceCollection = deviceCollection;
+        mAferoClient = aferoClient;
     }
 
     void start(DeviceModel deviceModel) {
@@ -99,5 +104,10 @@ class DeviceInspectorController {
         mView.setDeviceStatusText(statusResId);
 
         mView.enableWifiSetup(isAvailable);
+    }
+
+    void onWifiConnect() {
+        mWifiSetupView = WifiSetupView.create(mView);
+        mWifiSetupView.start(mDeviceModel, mAferoClient);
     }
 }
