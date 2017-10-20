@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String mUserId;
 
-    private final Observer<AferoSofthub> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<>();
+    private final Observer<AferoSofthub> mAferoSofthubStartObserver = new RxUtils.IgnoreResponseObserver<>();
 
     @BindView(R.id.root_view)
     ViewGroup mRootView;
@@ -235,8 +235,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
+        getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }
 
@@ -340,10 +339,10 @@ public class MainActivity extends AppCompatActivity {
     private void hideNoNetworkView() {
     }
 
-    private void startHubby() {
+    private void startSofthub() {
         if (!mAferoSofthub.isRunning()) {
             mAferoSofthub.start()
-                .subscribe(mHubbyHelperStartObserver);
+                .subscribe(mAferoSofthubStartObserver);
         }
     }
 
@@ -457,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onDeviceEventStreamConnectComplete() {
         mDeviceEventStreamSubscription = null;
-        startHubby();
+        startSofthub();
     }
 
     private void onDeviceEventStreamConnectError(Throwable e) {

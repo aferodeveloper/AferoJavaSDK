@@ -9,6 +9,7 @@ import android.view.View;
 import io.afero.aferolab.R;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
+import io.afero.sdk.softhub.DeviceWifiSetup;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observer;
 import rx.Subscription;
@@ -40,6 +41,8 @@ class DeviceInspectorController {
                 });
 
         onDeviceUpdate(deviceModel);
+
+        mView.showWifiSetup(DeviceWifiSetup.isWifiSetupCapable(deviceModel));
 
         mView.setVisibility(View.VISIBLE);
     }
@@ -85,12 +88,16 @@ class DeviceInspectorController {
      * @param deviceModel
      */
     private void onDeviceUpdate(DeviceModel deviceModel) {
+        final boolean isAvailable = deviceModel.isAvailable();
+
         mView.setDeviceNameText(deviceModel.getName());
 
         int statusResId = R.string.device_status_offline;
-        if (deviceModel.isAvailable()) {
+        if (isAvailable) {
             statusResId = deviceModel.isRunning() ? R.string.device_status_active : R.string.device_status_idle;
         }
         mView.setDeviceStatusText(statusResId);
+
+        mView.enableWifiSetup(isAvailable);
     }
 }

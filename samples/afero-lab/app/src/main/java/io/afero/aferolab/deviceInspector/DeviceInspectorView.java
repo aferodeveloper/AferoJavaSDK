@@ -15,7 +15,10 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import butterknife.BindView;
@@ -54,6 +57,19 @@ public class DeviceInspectorView extends FrameLayout {
 
     @BindView(R.id.device_inspector_progress)
     ProgressSpinnerView mProgressView;
+
+    @BindView(R.id.device_info_extra_open)
+    ImageButton mDeviceInfoOpenButton;
+
+    @BindView(R.id.device_info_extra_close)
+    ImageButton mDeviceInfoCloseButton;
+
+    @BindView(R.id.device_info_extra_container)
+    ViewGroup mDeviceInfoContainer;
+
+    @BindView(R.id.wifi_connect_button)
+    Button mWifiConnectButton;
+
 
     private static final int TRANSITION_DURATION = 200;
 
@@ -136,7 +152,21 @@ public class DeviceInspectorView extends FrameLayout {
         mDeviceStatusText.setText(statusResId);
     }
 
-    @OnClick(R.id.device_delete)
+    @OnClick(R.id.device_info_extra_open)
+    void onClickDeviceInfoOpen() {
+        mDeviceInfoContainer.setVisibility(VISIBLE);
+        mDeviceInfoOpenButton.setVisibility(GONE);
+        mDeviceInfoCloseButton.setVisibility(VISIBLE);
+    }
+
+    @OnClick(R.id.device_info_extra_close)
+    void onClickDeviceInfoClose() {
+        mDeviceInfoContainer.setVisibility(GONE);
+        mDeviceInfoOpenButton.setVisibility(VISIBLE);
+        mDeviceInfoCloseButton.setVisibility(GONE);
+    }
+
+    @OnClick(R.id.device_delete_button)
     void onClickDelete() {
         new AlertDialog.Builder(getContext())
                 .setMessage(R.string.dialog_message_remove_device)
@@ -148,6 +178,10 @@ public class DeviceInspectorView extends FrameLayout {
                     }
                 })
                 .show();
+    }
+
+    @OnClick(R.id.wifi_connect_button)
+    void onClickWifiConnect() {
     }
 
     void onCompleted() {
@@ -192,4 +226,11 @@ public class DeviceInspectorView extends FrameLayout {
         view.start(deviceModel, attribute);
     }
 
+    public void showWifiSetup(boolean isVisible) {
+        mWifiConnectButton.setVisibility(isVisible ? VISIBLE : GONE);
+    }
+
+    public void enableWifiSetup(boolean isEnabled) {
+        mWifiConnectButton.setEnabled(isEnabled);
+    }
 }
