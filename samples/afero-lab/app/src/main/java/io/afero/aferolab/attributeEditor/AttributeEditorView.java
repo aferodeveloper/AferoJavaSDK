@@ -21,7 +21,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
@@ -33,11 +32,12 @@ import butterknife.OnClick;
 import butterknife.OnEditorAction;
 import io.afero.aferolab.R;
 import io.afero.aferolab.widget.AferoEditText;
+import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 
 
-public class AttributeEditorView extends FrameLayout {
+public class AttributeEditorView extends ScreenView {
 
     public enum ValueEditorType {
         NONE,
@@ -149,6 +149,8 @@ public class AttributeEditorView extends FrameLayout {
 
     public void start(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
         if (!isStarted()) {
+            pushOnBackStack();
+
             mAttributeValueEditText.setEnabled(false);
             mAttributeValueEditText.setVisibility(VISIBLE);
             mAttributeValueSeekBar.setVisibility(View.GONE);

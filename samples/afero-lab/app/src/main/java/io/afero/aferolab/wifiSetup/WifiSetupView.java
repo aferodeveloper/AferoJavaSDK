@@ -9,6 +9,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -33,6 +34,12 @@ public class WifiSetupView extends ScreenView {
 
     @BindView(R.id.network_list_empty_container)
     View mEmptyListContainer;
+
+    @BindView(R.id.wifi_setup_title_label)
+    TextView mTitleText;
+
+    @BindView(R.id.wifi_setup_message_label)
+    TextView mMessageText;
 
     @BindView(R.id.network_error)
     View mErrorContainer;
@@ -70,6 +77,8 @@ public class WifiSetupView extends ScreenView {
     }
 
     public void start(DeviceModel deviceModel, AferoClient aferoClient) {
+        pushOnBackStack();
+
         mPresenter = new WifiSetupController(this, deviceModel, aferoClient);
         mPresenter.start();
 
@@ -105,6 +114,7 @@ public class WifiSetupView extends ScreenView {
         mListContainer.setVisibility(View.GONE);
         mErrorContainer.setVisibility(GONE);
         mProgressView.show();
+        mMessageText.setText(R.string.wifi_looking_for_device);
     }
 
     public void showConnectProgress() {
@@ -112,6 +122,7 @@ public class WifiSetupView extends ScreenView {
         mListContainer.setVisibility(View.GONE);
         mErrorContainer.setVisibility(GONE);
         mProgressView.show();
+        mMessageText.setText(R.string.wifi_connecting_to_device);
     }
 
     public void hideProgress() {
@@ -130,6 +141,7 @@ public class WifiSetupView extends ScreenView {
         mListContainer.setVisibility(View.GONE);
         mErrorContainer.setVisibility(VISIBLE);
         mProgressView.hide();
+        mMessageText.setText(getResources().getString(R.string.wifi_cant_connect_to_device));
     }
 
     public void showListView() {
