@@ -15,8 +15,11 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import io.afero.aferolab.R;
+import io.afero.aferolab.helper.BackStack;
 
-public class ScreenView extends FrameLayout {
+public class ScreenView extends FrameLayout implements BackStack.Stackable {
+
+    private static BackStack<ScreenView> sBackStack;
 
     public ScreenView(@NonNull Context context) {
         super(context);
@@ -30,12 +33,29 @@ public class ScreenView extends FrameLayout {
         super(context, attrs, defStyleAttr);
     }
 
+    public static void setBackStack(BackStack<ScreenView> bs) {
+        sBackStack = bs;
+    }
+
     /**
      * @return true if the backPress was handled by the ScreenView,
      *         false if the ScreenView should be stopped
      */
+    @Override
     public boolean onBackPressed() {
         return false;
+    }
+
+    public void pushOnBackStack() {
+        if (sBackStack != null) {
+            sBackStack.push(this);
+        }
+    }
+
+    public void removeFromBackStack() {
+        if (sBackStack != null) {
+            sBackStack.remove(this);
+        }
     }
 
     public void stop() {

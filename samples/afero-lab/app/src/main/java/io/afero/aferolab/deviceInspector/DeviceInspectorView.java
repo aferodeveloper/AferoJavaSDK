@@ -18,7 +18,6 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -28,7 +27,7 @@ import butterknife.OnClick;
 import io.afero.aferolab.R;
 import io.afero.aferolab.attributeEditor.AttributeEditorView;
 import io.afero.aferolab.widget.ProgressSpinnerView;
-import io.afero.aferolab.wifiSetup.WifiSetupView;
+import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
@@ -38,7 +37,7 @@ import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 
 
-public class DeviceInspectorView extends FrameLayout {
+public class DeviceInspectorView extends ScreenView {
 
     @BindView(R.id.device_name_text)
     TextView mDeviceNameText;
@@ -82,7 +81,6 @@ public class DeviceInspectorView extends FrameLayout {
     private DeviceInspectorController mController;
     private final AttributeAdapter mAttributeAdapter = new AttributeAdapter();
     private PublishSubject<DeviceInspectorView> mViewSubject;
-    private WifiSetupView mWifiSetupView;
 
     public DeviceInspectorView(@NonNull Context context) {
         super(context);
@@ -125,6 +123,8 @@ public class DeviceInspectorView extends FrameLayout {
             return;
         }
 
+        pushOnBackStack();
+
         if (mController == null) {
             mController = new DeviceInspectorController(this, deviceCollection, aferoClient);
         }
@@ -145,6 +145,7 @@ public class DeviceInspectorView extends FrameLayout {
         startEnterTransition();
     }
 
+    @Override
     public void stop() {
         if (isStarted()) {
             mController.stop();
@@ -152,6 +153,8 @@ public class DeviceInspectorView extends FrameLayout {
 
             startExitTransition();
         }
+
+        removeFromBackStack();
     }
 
     public boolean isStarted() {

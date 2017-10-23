@@ -51,4 +51,7 @@
     <string name="wifi_unable_to_authenticate">We couldn’t authenticate to your Wi-Fi network. Try re-typing your password, or try another network name.</string>
     <string name="wifi_unable_to_reach_afero">We couldn’t reach the Afero Cloud from your Wi-Fi network. Please check your internet connection, or try another network name.</string>
     <string name="wifi_your_device_is_now_connected">Your device is now connected to Afero.</string>
+    <string name="wifi_looking_for_device">Looking for device…</string>
+    <string name="wifi_connecting_to_device">Connecting to device…</string>
+    <string name="wifi_cant_connect_to_device">CAN’T CONNECT TO THE DEVICE</string>
 </resources>

@@ -25,7 +25,6 @@ class DeviceInspectorController {
     private final AferoClient mAferoClient;
     private Subscription mDeviceUpdateSubscription;
     private DeviceModel mDeviceModel;
-    private WifiSetupView mWifiSetupView;
 
     DeviceInspectorController(DeviceInspectorView view, DeviceCollection deviceCollection, AferoClient aferoClient) {
         mView = view;
@@ -107,7 +106,6 @@ class DeviceInspectorController {
     }
 
     void onWifiConnect() {
-        mWifiSetupView = WifiSetupView.create(mView);
-        mWifiSetupView.start(mDeviceModel, mAferoClient);
+        WifiSetupView.create(mView).start(mDeviceModel, mAferoClient);
     }
 }

@@ -6,7 +6,49 @@
 <io.afero.aferolab.wifiSetup.WifiSetupView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimary">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="100dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/wifi_setup_message_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="30dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="30dp"
+            android:fontFamily="medium"
+            android:gravity="center"
+            android:text=""
+            android:textSize="20sp"
+            />
+
+        <TextView
+            android:id="@+id/wifi_setup_title_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="0dp"
+            android:layout_marginEnd="50dp"
+            android:layout_marginStart="50dp"
+            android:layout_marginTop="20dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="2"
+            android:text=""
+            android:textSize="30sp"
+            />
+
+        <include
+            android:id="@+id/wifi_setup_progress"
+            layout="@layout/view_progress"
+            />
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/network_error"
@@ -189,10 +231,5 @@
         </LinearLayout>
 
     </FrameLayout>
-
-    <include
-        android:id="@+id/wifi_setup_progress"
-        layout="@layout/view_progress"
-        />
 
 </io.afero.aferolab.wifiSetup.WifiSetupView>
