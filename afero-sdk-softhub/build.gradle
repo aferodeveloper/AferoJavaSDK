@@ -41,13 +41,35 @@ dependencies {
 
     compile project(path: ':afero-sdk-core')
 
-    embedded "io.afero.sdk:hubby:1.0.515@aar"
+    embedded "io.afero.sdk:hubby:1.0.547@aar"
 
     compile 'com.android.support:support-annotations:25.3.1'
 
     // https://github.com/robolectric/robolectric
     testCompile 'org.robolectric:robolectric:3.3.1'
     testCompile 'junit:junit:4.12'
+}
+
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath = files(android.getBootClasspath())
+
+    android.libraryVariants.all { variant ->
+        classpath += files(variant.javaCompile.classpath.files)
+    }
+
+    options {
+        links "http://docs.oracle.com/javase/8/docs/api/"
+        linksOffline "http://d.android.com/reference", "${android.sdkDirectory}/docs/reference"
+    }
+
+    exclude '**/BuildConfig.java'
+    exclude '**/R.java'
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
 }
 
 publishing {
@@ -58,6 +80,7 @@ publishing {
             groupId rootProject.group
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+            artifact androidJavadocsJar
 
             List<String> embedList = new ArrayList<>();
             Map<String, ResolvedDependency> depList = new LinkedHashMap<>();
@@ -108,31 +131,5 @@ publishing {
                 }
             }
         }
-    }
-}
-
-android.libraryVariants.all { variant ->
-    task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
-        title = "${rootProject.name} - ${rootProject.version}"
-        description "Generates Javadoc for $variant.name."
-
-        source = variant.javaCompile.source
-        destinationDir = project.file("$project.buildDir/javadoc/${project.getName()}")
-        classpath = files(variant.javaCompile.classpath.files, project.android.getBootClasspath())
-
-        options {
-            links "http://docs.oracle.com/javase/8/docs/api/"
-            linksOffline "http://d.android.com/reference", "${android.sdkDirectory}/docs/reference"
-        }
-
-        exclude '**/BuildConfig.java'
-        exclude '**/R.java'
-    }
-
-    task("bundle${variant.name.capitalize()}Javadoc", type: Jar) {
-        baseName = "${rootProject.name} - ($version)"
-        description "Bundles Javadoc into zip for $variant.name."
-        classifier = "javadoc"
-        from tasks["generate${variant.name.capitalize()}Javadoc"]
     }
 }
