@@ -19,6 +19,7 @@ import io.afero.aferolab.widget.ProgressSpinnerView;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceModel;
+import rx.Observable;
 import rx.subjects.PublishSubject;
 
 public class WifiSetupView extends ScreenView {
@@ -76,7 +77,7 @@ public class WifiSetupView extends ScreenView {
         ButterKnife.bind(this);
     }
 
-    public void start(DeviceModel deviceModel, AferoClient aferoClient) {
+    public WifiSetupView start(DeviceModel deviceModel, AferoClient aferoClient) {
         pushOnBackStack();
 
         mPresenter = new WifiSetupController(this, deviceModel, aferoClient);
@@ -88,6 +89,8 @@ public class WifiSetupView extends ScreenView {
                 mPresenter.onClickRefresh();
             }
         });
+
+        return this;
     }
 
     @Override
@@ -97,6 +100,10 @@ public class WifiSetupView extends ScreenView {
 //        mWifiPasswordSubscription = RxUtils.safeUnSubscribe(mWifiPasswordSubscription);
 
         super.stop();
+    }
+
+    public Observable<WifiSetupView> getObservable() {
+        return mViewSubject;
     }
 
     public void setAdapter(WifiSSIDListAdapter adapter) {
@@ -210,6 +217,7 @@ public class WifiSetupView extends ScreenView {
     }
 
     public void onCompleted() {
+        mViewSubject.onNext(this);
         mViewSubject.onCompleted();
     }
 
@@ -229,11 +237,11 @@ public class WifiSetupView extends ScreenView {
 
     }
 
-    public void onTryAgain() {
+    public void onWifiConnectTryAgain() {
 
     }
 
-    public void onTryAgainPassword() {
+    public void onWifiConnectTryAgainPassword() {
 
     }
 
@@ -241,11 +249,11 @@ public class WifiSetupView extends ScreenView {
 
     }
 
-//    @OnClick(R.id.wifi_error_cancel_button)
-//    void onClickCancel() {
-//        mPresenter.onClickCancel();
-//    }
-//
+    @OnClick(R.id.wifi_error_cancel_button)
+    void onClickCancel() {
+        mPresenter.onClickCancel();
+    }
+
 //    @OnClick({ R.id.manual_wifi_button, R.id.empty_manual_wifi_button })
 //    void onClickManualSSID() {
 //        mPresenter.onClickManualSSID();

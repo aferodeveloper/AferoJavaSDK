@@ -53,7 +53,9 @@ import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.functions.Func0;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -164,15 +166,6 @@ public class MainActivity extends AppCompatActivity {
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, "appId: " + BuildConfig.APPLICATION_ID);
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
-        if (mAferoClient.getToken() != null) {
-            // listen for token refresh failures
-            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new TokenObserver(this));
-
-            startDeviceStream();
-        }
-
         mDeviceListView.start(mDeviceCollection);
         mDeviceListView.getDeviceOnClick()
                 .subscribe(new Action1<DeviceModel>() {
@@ -193,6 +186,15 @@ public class MainActivity extends AppCompatActivity {
                         });
                     }
                 });
+
+        if (mAferoClient.getToken() != null) {
+            // listen for token refresh failures
+            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
+
+            startDeviceStream();
+        }
 
         setupViews();
 
@@ -265,7 +267,6 @@ public class MainActivity extends AppCompatActivity {
         addDeviceView.getObservable().subscribe(new Observer<AddDeviceView>() {
             @Override
             public void onCompleted() {
-                mBackStack.remove(addDeviceView);
                 addDeviceView.stop();
             }
 

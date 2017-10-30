@@ -1,6 +1,7 @@
 package io.afero.aferolab.wifiSetup;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +33,6 @@ class WifiSSIDListAdapter extends ArrayAdapter<WifiSSIDEntry> {
         ImageView networkConnectedIndicator;
         TextView networkNameView;
         WifiBarsView networkBarsView;
-        int barsIconResId;
     }
 
     public WifiSSIDListAdapter(Context context, DeviceWifiSetup ws) {
@@ -82,29 +82,33 @@ class WifiSSIDListAdapter extends ArrayAdapter<WifiSSIDEntry> {
         mGetWifiSSIDListSubscription = RxUtils.safeUnSubscribe(mGetWifiSSIDListSubscription);
     }
 
+    @NonNull
     @Override
-    public View getView(int position, View view, ViewGroup parent) {
+    public View getView(int position, View view, @NonNull ViewGroup parent) {
         if (view == null) {
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
             view = inflater.inflate(R.layout.view_wifi_ssid, parent, false);
         }
 
-        WifiSSIDEntry entry = getItem(position);
-        ViewHolder vh = getViewHolder(view, entry);
+        ViewHolder vh = getViewHolder(view);
 
         vh.topItemDivider.setVisibility(position == 0 ? View.VISIBLE : View.GONE);
 
-
-        vh.networkNameView.setText(entry.getSSID());
-
-        vh.networkConnectedIndicator.setVisibility(entry.isConnected() ? View.VISIBLE : View.GONE);
-
-        vh.networkBarsView.setStatus(entry.getRSSI(), entry.isSecure());
+        WifiSSIDEntry entry = getItem(position);
+        if (entry != null) {
+            vh.networkNameView.setText(entry.getSSID());
+            vh.networkConnectedIndicator.setVisibility(entry.isConnected() ? View.VISIBLE : View.GONE);
+            vh.networkBarsView.setStatus(entry.getRSSI(), entry.isSecure());
+        } else {
+            vh.networkNameView.setText("<null>");
+            vh.networkConnectedIndicator.setVisibility(View.GONE);
+            vh.networkBarsView.setStatus(0, false);
+        }
 
         return view;
     }
 
-    private ViewHolder getViewHolder(View view, WifiSSIDEntry entry) {
+    private ViewHolder getViewHolder(View view) {
         ViewHolder vh = (ViewHolder)view.getTag();
 
         if (vh == null) {

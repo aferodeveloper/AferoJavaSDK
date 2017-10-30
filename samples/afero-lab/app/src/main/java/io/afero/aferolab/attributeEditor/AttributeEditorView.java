@@ -173,6 +173,8 @@ public class AttributeEditorView extends ScreenView {
             mPopupMenu = null;
             startExitTransition();
         }
+
+        removeFromBackStack();
     }
 
     public boolean isStarted() {

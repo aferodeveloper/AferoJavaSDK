@@ -41,7 +41,7 @@
     <string name="delete_device">DELETE DEVICE</string>
     <string name="connect_to_wifi">CONNECT TO WIFI</string>
     <string name="wifi_select_network">Select a Wi-Fi Network</string>
-    <string name="wifi_select_network_prompt">Connect your device to your local network.\\n Pull down to refresh.</string>
+    <string name="wifi_select_network_prompt">Connect your device to your local network.\nPull down to refresh.</string>
     <string name="wifi_manual_button_title">OTHER NETWORK</string>
     <string name="wifi_refresh_button_title">REFRESH</string>
     <string name="wifi_cant_find_wifi">CAN’T FIND WI-FI</string>

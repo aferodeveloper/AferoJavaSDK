@@ -17,7 +17,7 @@
 
     <include
         android:id="@+id/add_device_progress"
-        layout="@layout/view_progress"
+        layout="@layout/view_progress_dark"
         />
 
 </io.afero.aferolab.addDevice.AddDeviceView>
