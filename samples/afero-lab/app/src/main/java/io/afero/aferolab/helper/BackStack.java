@@ -24,7 +24,7 @@ public class BackStack<T extends BackStack.Stackable> {
     }
 
     public T pop() {
-        return mStack.pop();
+        return mStack.isEmpty() ? null : mStack.pop();
     }
 
     public T remove(T s) {

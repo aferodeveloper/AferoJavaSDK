@@ -192,7 +192,7 @@ class WifiSetupController {
     }
 
     private void attemptWifiConnection(String ssid, String password) {
-//        mWifiSetup.sendWifiCredential(ssid, password);
+        mWifiSetup.sendWifiCredential(ssid, password);
 //        mView.startWifiConnect(mWifiSetup, ssid, password)
 //                .subscribe(new Observer<WifiConnectPresenter.Event>() {
 //                    @Override
@@ -229,7 +229,7 @@ class WifiSetupController {
 //                });
     }
 
-    public void onClickCancel() {
+    void onClickCancel() {
         mView.onCompleted();
     }
 
@@ -255,18 +255,18 @@ class WifiSetupController {
         mView.onSuccess();
     }
 
-    public void onClickTryAgain() {
+    public void onClickWifiConnectTryAgain() {
         if (mWifiState != null) {
             switch (mWifiState) {
                 case SSID_NOT_FOUND:
                 case UNKNOWN_FAILURE:
                 case ASSOCIATION_FAILED:
                 case ECHO_FAILED:
-                    mView.onTryAgain();
+                    mView.onWifiConnectTryAgain();
                     break;
 
                 case HANDSHAKE_FAILED:
-                    mView.onTryAgainPassword();
+                    mView.onWifiConnectTryAgainPassword();
                     break;
 
                 default:

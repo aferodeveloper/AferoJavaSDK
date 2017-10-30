@@ -59,6 +59,8 @@ public class ScreenView extends FrameLayout implements BackStack.Stackable {
     }
 
     public void stop() {
+        removeFromBackStack();
+
         if (getParent() != null) {
             ((ViewGroup) getParent()).removeView(this);
         }

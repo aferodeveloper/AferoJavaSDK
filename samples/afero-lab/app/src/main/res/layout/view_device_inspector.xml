@@ -4,9 +4,9 @@
   -->
 
 <io.afero.aferolab.deviceInspector.DeviceInspectorView
+    android:id="@+id/device_inspector"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/device_inspector"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@null"
@@ -173,7 +173,7 @@
 
     <include
         android:id="@+id/device_inspector_progress"
-        layout="@layout/view_progress"
+        layout="@layout/view_progress_dark"
         />
 
 </io.afero.aferolab.deviceInspector.DeviceInspectorView>

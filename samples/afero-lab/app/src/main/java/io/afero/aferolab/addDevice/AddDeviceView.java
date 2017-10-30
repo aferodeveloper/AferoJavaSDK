@@ -105,10 +105,7 @@ public class AddDeviceView extends ScreenView implements ZXingScannerView.Result
             mController.stop();
         }
 
-        ViewParent view = getParent();
-        if (view != null) {
-            ((ViewGroup) view).removeView(this);
-        }
+        super.stop();
     }
 
     public Observable<AddDeviceView> getObservable() {

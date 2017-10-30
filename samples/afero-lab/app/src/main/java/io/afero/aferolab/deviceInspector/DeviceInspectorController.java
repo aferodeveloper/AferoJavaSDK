@@ -106,6 +106,22 @@ class DeviceInspectorController {
     }
 
     void onWifiConnect() {
-        WifiSetupView.create(mView).start(mDeviceModel, mAferoClient);
+        WifiSetupView.create(mView)
+                .start(mDeviceModel, mAferoClient)
+                .getObservable()
+                .subscribe(new Observer<WifiSetupView>() {
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+
+                    @Override
+                    public void onNext(WifiSetupView wifiSetupView) {
+                        wifiSetupView.stop();
+                    }
+                });
     }
 }
