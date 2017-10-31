@@ -18,7 +18,6 @@ import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;

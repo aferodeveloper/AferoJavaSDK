@@ -78,7 +78,8 @@ class WifiSetupController {
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(new Observer<DeviceModel>() {
                             @Override
-                            public void onCompleted() {}
+                            public void onCompleted() {
+                            }
 
                             @Override
                             public void onError(Throwable e) {
@@ -171,29 +172,45 @@ class WifiSetupController {
         }
     }
 
-    private void startWifiPassword(WifiSSIDEntry ssidEntry) {
-//        mView.startWifiPassword(ssidEntry)
-//                .subscribe(new Observer<WifiPasswordPresenter.WifiCredentials>() {
-//                    @Override
-//                    public void onCompleted() {
-//                        mView.stopWifiPassword();
-//                    }
-//
-//                    @Override
-//                    public void onError(Throwable e) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onNext(WifiPasswordPresenter.WifiCredentials wc) {
-//                        attemptWifiConnection(wc.ssid, wc.password);
-//                    }
-//                });
+    private void startWifiPassword(final WifiSSIDEntry ssidEntry) {
+        mView.startWifiPassword()
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(String password) {
+                        attemptWifiConnection(ssidEntry.getSSID(), password);
+                    }
+                });
     }
 
     private void attemptWifiConnection(String ssid, String password) {
-        mWifiSetup.sendWifiCredential(ssid, password);
-//        mView.startWifiConnect(mWifiSetup, ssid, password)
+        mView.startWifiConnect();
+        mWifiSetup.sendWifiCredential(ssid, password)
+                .subscribe(new Observer<SetupWifiCallback.SetupWifiState>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(SetupWifiCallback.SetupWifiState setupWifiState) {
+                        onNextSetupWifiState(setupWifiState);
+                    }
+                });
+
 //                .subscribe(new Observer<WifiConnectPresenter.Event>() {
 //                    @Override
 //                    public void onCompleted() {
