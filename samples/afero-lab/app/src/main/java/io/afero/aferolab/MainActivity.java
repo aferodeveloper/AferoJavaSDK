@@ -53,9 +53,7 @@ import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func0;
 import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 

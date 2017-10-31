@@ -8,13 +8,16 @@ import android.support.annotation.StringRes;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.AttributeSet;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.OnItemClick;
 import io.afero.aferolab.R;
+import io.afero.aferolab.widget.PasswordDialog;
 import io.afero.aferolab.widget.ProgressSpinnerView;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
@@ -51,7 +54,7 @@ public class WifiSetupView extends ScreenView {
 //    @BindView(R.id.wifi_password_view)
 //    WifiPasswordView mWifiPasswordView;
 
-    private WifiSetupController mPresenter;
+    private WifiSetupController mController;
     private PublishSubject<WifiSetupView> mViewSubject = PublishSubject.create();
 
 
@@ -80,13 +83,13 @@ public class WifiSetupView extends ScreenView {
     public WifiSetupView start(DeviceModel deviceModel, AferoClient aferoClient) {
         pushOnBackStack();
 
-        mPresenter = new WifiSetupController(this, deviceModel, aferoClient);
-        mPresenter.start();
+        mController = new WifiSetupController(this, deviceModel, aferoClient);
+        mController.start();
 
         mListRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mPresenter.onClickRefresh();
+                mController.onClickRefresh();
             }
         });
 
@@ -95,7 +98,7 @@ public class WifiSetupView extends ScreenView {
 
     @Override
     public void stop() {
-        mPresenter.stop();
+        mController.stop();
 
 //        mWifiPasswordSubscription = RxUtils.safeUnSubscribe(mWifiPasswordSubscription);
 
@@ -158,38 +161,11 @@ public class WifiSetupView extends ScreenView {
         mErrorContainer.setVisibility(GONE);
     }
 
-//    public Observable<WifiPasswordPresenter.WifiCredentials> startWifiPassword(WifiSSIDEntry ssidEntry) {
-//        mWifiPasswordView.start(ssidEntry);
-//        return mWifiPasswordView.getObservable()
-//                .doOnCompleted(new Action0() {
-//                    @Override
-//                    public void call() {
-//                        mWifiPasswordView.stop();
-//                        mWifiPasswordSubscription = RxUtils.safeUnSubscribe(mWifiPasswordSubscription);
-//                    }
-//                });
-//    }
-//
-//    public void stopWifiPassword() {
-//        if (mWifiPasswordView.isActive()) {
-//            mWifiPasswordView.stop();
-//        }
-//    }
-
-//    public Observable<WifiConnectPresenter.Event> startWifiConnect(DeviceWifiSetup wifiSetup, String ssid, String password) {
-//        mWifiConnectView = WifiConnectGenericView.newInstance(this);
-//        mWifiConnectView.start(wifiSetup, ssid, password);
-//        return mWifiConnectView.getObservable()
-//                .observeOn(AndroidSchedulers.mainThread());
-//    }
+    public void startWifiConnect() {
+        showConnectProgress();
+    }
 
     public void stopWifiConnect() {
-//        if (mWifiConnectView != null) {
-//            mWifiConnectView.stop();
-//            mWifiConnectView = null;
-//        }
-//
-//        mWifiConnectSubscription = RxUtils.safeUnSubscribe(mWifiConnectSubscription);
     }
 
     @Override
@@ -213,7 +189,12 @@ public class WifiSetupView extends ScreenView {
 
     @OnClick({ R.id.refresh_button, R.id.empty_refresh_button, R.id.wifi_error_try_again_button })
     void onClickRefresh(View view) {
-        mPresenter.onClickRefresh();
+        mController.onClickRefresh();
+    }
+
+    @OnItemClick(R.id.network_list)
+    public void onNetworkListItemClick(AdapterView<?> parent, View view, int position, long id) {
+        mController.onNetworkListItemClick(position);
     }
 
     public void onCompleted() {
@@ -226,11 +207,21 @@ public class WifiSetupView extends ScreenView {
     }
 
     public void showError() {
+        mMessageText.setText(getResources().getString(R.string.wifi_cant_connect_to_device));
 
+        mEmptyListContainer.setVisibility(View.GONE);
+        mListContainer.setVisibility(View.GONE);
+        mProgressView.setVisibility(VISIBLE);
+        mErrorContainer.setVisibility(View.VISIBLE);
     }
 
     public void showError(@StringRes int resId) {
+        mMessageText.setText(resId);
 
+        mEmptyListContainer.setVisibility(View.GONE);
+        mListContainer.setVisibility(View.GONE);
+        mProgressView.hide();
+        mErrorContainer.setVisibility(View.VISIBLE);
     }
 
     public void onSuccess() {
@@ -246,17 +237,22 @@ public class WifiSetupView extends ScreenView {
     }
 
     public void showSuccess() {
-
+        mProgressView.hide();
+        mMessageText.setText(R.string.wifi_your_device_is_now_connected);
     }
 
     @OnClick(R.id.wifi_error_cancel_button)
     void onClickCancel() {
-        mPresenter.onClickCancel();
+        mController.onClickCancel();
+    }
+
+    public Observable<String> startWifiPassword() {
+        return new PasswordDialog(this, R.string.wifi_password_dialog_title).start();
     }
 
 //    @OnClick({ R.id.manual_wifi_button, R.id.empty_manual_wifi_button })
 //    void onClickManualSSID() {
-//        mPresenter.onClickManualSSID();
+//        mController.onClickManualSSID();
 //    }
 
 }

@@ -54,4 +54,6 @@
     <string name="wifi_looking_for_device">Looking for device…</string>
     <string name="wifi_connecting_to_device">Connecting to device…</string>
     <string name="wifi_cant_connect_to_device">CAN’T CONNECT TO THE DEVICE</string>
+    <string name="wifi_password_dialog_title">Type Wi-Fi Password</string>
+    <string name="password_hint">Password</string>
 </resources>
