@@ -9,6 +9,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -51,8 +52,14 @@ public class WifiSetupView extends ScreenView {
     @BindView(R.id.wifi_setup_progress)
     ProgressSpinnerView mProgressView;
 
-//    @BindView(R.id.wifi_password_view)
-//    WifiPasswordView mWifiPasswordView;
+    @BindView(R.id.wifi_setup_success)
+    View mWifiSetupSuccessView;
+
+    @BindView(R.id.wifi_send_creds_try_again_button)
+    Button mTryAgainSendWifiCredsButton;
+
+    @BindView(R.id.wifi_scan_try_again_button)
+    Button mTryAgainWifiScanButton;
 
     private WifiSetupController mController;
     private PublishSubject<WifiSetupView> mViewSubject = PublishSubject.create();
@@ -96,149 +103,124 @@ public class WifiSetupView extends ScreenView {
         return this;
     }
 
-    @Override
-    public void stop() {
-        mController.stop();
-
-//        mWifiPasswordSubscription = RxUtils.safeUnSubscribe(mWifiPasswordSubscription);
-
-        super.stop();
-    }
-
     public Observable<WifiSetupView> getObservable() {
         return mViewSubject;
     }
 
-    public void setAdapter(WifiSSIDListAdapter adapter) {
-        mListView.setAdapter(adapter);
-    }
+    @Override
+    public void stop() {
+        mController.stop();
 
-    public void askUserToTurnOnBluetooth(DeviceModel mDeviceModel) {
-    }
-
-    public void stopBluetoothNeeded() {
-    }
-
-    public void showLookingProgress() {
-        mEmptyListContainer.setVisibility(View.GONE);
-        mListContainer.setVisibility(View.GONE);
-        mErrorContainer.setVisibility(GONE);
-        mProgressView.show();
-        mMessageText.setText(R.string.wifi_looking_for_device);
-    }
-
-    public void showConnectProgress() {
-        mEmptyListContainer.setVisibility(View.GONE);
-        mListContainer.setVisibility(View.GONE);
-        mErrorContainer.setVisibility(GONE);
-        mProgressView.show();
-        mMessageText.setText(R.string.wifi_connecting_to_device);
-    }
-
-    public void hideProgress() {
-        mListRefresh.setRefreshing(false);
-        mProgressView.hide();
-    }
-
-    public void showEmptyView() {
-        mEmptyListContainer.setVisibility(View.VISIBLE);
-        mListContainer.setVisibility(View.GONE);
-        mProgressView.hide();
-    }
-
-    public void showErrorView() {
-        mEmptyListContainer.setVisibility(View.GONE);
-        mListContainer.setVisibility(View.GONE);
-        mErrorContainer.setVisibility(VISIBLE);
-        mProgressView.hide();
-        mMessageText.setText(getResources().getString(R.string.wifi_cant_connect_to_device));
-    }
-
-    public void showListView() {
-        mEmptyListContainer.setVisibility(View.GONE);
-        mListContainer.setVisibility(View.VISIBLE);
-        mProgressView.hide();
-        mErrorContainer.setVisibility(GONE);
-    }
-
-    public void startWifiConnect() {
-        showConnectProgress();
-    }
-
-    public void stopWifiConnect() {
+        super.stop();
     }
 
     @Override
     public boolean onBackPressed() {
-//        if (mBluetoothNeededView != null) {
-//            stopBluetoothNeeded();
-//        }
-//
-//        if (mWifiPasswordView.isActive()) {
-//            stopWifiPassword();
-//            return true;
-//        }
-//
-//        if (mWifiConnectView != null) {
-//            stopWifiConnect();
-//            return true;
-//        }
-
         return false;
     }
 
-    @OnClick({ R.id.refresh_button, R.id.empty_refresh_button, R.id.wifi_error_try_again_button })
+    void setAdapter(WifiSSIDListAdapter adapter) {
+        mListView.setAdapter(adapter);
+    }
+
+    void askUserToTurnOnBluetooth(DeviceModel mDeviceModel) {
+    }
+
+    void stopBluetoothNeeded() {
+    }
+
+    void showLookingProgress() {
+        mMessageText.setText(R.string.wifi_looking_for_device);
+
+        mEmptyListContainer.setVisibility(GONE);
+        mListContainer.setVisibility(GONE);
+        mErrorContainer.setVisibility(GONE);
+        mProgressView.show();
+    }
+
+    void showConnectProgress() {
+        mMessageText.setText(R.string.wifi_connecting_to_device);
+
+        mEmptyListContainer.setVisibility(GONE);
+        mListContainer.setVisibility(GONE);
+        mErrorContainer.setVisibility(GONE);
+        mProgressView.show();
+    }
+
+    void hideProgress() {
+        mListRefresh.setRefreshing(false);
+        mProgressView.hide();
+    }
+
+    void showEmptyView() {
+        mEmptyListContainer.setVisibility(VISIBLE);
+        mListContainer.setVisibility(GONE);
+        mProgressView.hide();
+    }
+
+    void showListView() {
+        mEmptyListContainer.setVisibility(GONE);
+        mListContainer.setVisibility(VISIBLE);
+        mErrorContainer.setVisibility(GONE);
+        mProgressView.hide();
+    }
+
+    void showWifiConnectProgress() {
+        mMessageText.setText(R.string.wifi_please_wait);
+
+        mEmptyListContainer.setVisibility(GONE);
+        mListContainer.setVisibility(GONE);
+        mErrorContainer.setVisibility(GONE);
+        mProgressView.show();
+    }
+
+    void showWifiScanError() {
+        mMessageText.setText(R.string.wifi_cant_connect_to_device);
+        mTryAgainSendWifiCredsButton.setVisibility(GONE);
+        mTryAgainWifiScanButton.setVisibility(VISIBLE);
+        showErrorContainer();
+    }
+
+    void showSendWifiCredsError() {
+        showSendWifiCredsError(R.string.wifi_cant_connect_to_device);
+    }
+
+    void showSendWifiCredsError(@StringRes int resId) {
+        mMessageText.setText(resId);
+        mTryAgainSendWifiCredsButton.setVisibility(VISIBLE);
+        mTryAgainWifiScanButton.setVisibility(GONE);
+        showErrorContainer();
+    }
+
+    private void showErrorContainer() {
+        mEmptyListContainer.setVisibility(GONE);
+        mListContainer.setVisibility(GONE);
+        mErrorContainer.setVisibility(VISIBLE);
+        mProgressView.hide();
+    }
+
+    void showSuccess() {
+        mMessageText.setText(R.string.wifi_your_device_is_now_connected);
+
+        mWifiSetupSuccessView.setVisibility(VISIBLE);
+        mListContainer.setVisibility(GONE);
+        mErrorContainer.setVisibility(GONE);
+        mProgressView.hide();
+    }
+
+    void onCompleted() {
+        mViewSubject.onNext(this);
+        mViewSubject.onCompleted();
+    }
+
+    @OnClick({ R.id.refresh_button, R.id.empty_refresh_button })
     void onClickRefresh(View view) {
         mController.onClickRefresh();
     }
 
     @OnItemClick(R.id.network_list)
-    public void onNetworkListItemClick(AdapterView<?> parent, View view, int position, long id) {
+    void onNetworkListItemClick(AdapterView<?> parent, View view, int position, long id) {
         mController.onNetworkListItemClick(position);
-    }
-
-    public void onCompleted() {
-        mViewSubject.onNext(this);
-        mViewSubject.onCompleted();
-    }
-
-    public void showConnecting() {
-
-    }
-
-    public void showError() {
-        mMessageText.setText(getResources().getString(R.string.wifi_cant_connect_to_device));
-
-        mEmptyListContainer.setVisibility(View.GONE);
-        mListContainer.setVisibility(View.GONE);
-        mProgressView.setVisibility(VISIBLE);
-        mErrorContainer.setVisibility(View.VISIBLE);
-    }
-
-    public void showError(@StringRes int resId) {
-        mMessageText.setText(resId);
-
-        mEmptyListContainer.setVisibility(View.GONE);
-        mListContainer.setVisibility(View.GONE);
-        mProgressView.hide();
-        mErrorContainer.setVisibility(View.VISIBLE);
-    }
-
-    public void onSuccess() {
-
-    }
-
-    public void onWifiConnectTryAgain() {
-
-    }
-
-    public void onWifiConnectTryAgainPassword() {
-
-    }
-
-    public void showSuccess() {
-        mProgressView.hide();
-        mMessageText.setText(R.string.wifi_your_device_is_now_connected);
     }
 
     @OnClick(R.id.wifi_error_cancel_button)
@@ -246,7 +228,22 @@ public class WifiSetupView extends ScreenView {
         mController.onClickCancel();
     }
 
-    public Observable<String> startWifiPassword() {
+    @OnClick(R.id.wifi_scan_try_again_button)
+    void onClickWifiScanTryAgain() {
+        mController.onClickWifiScanTryAgain();
+    }
+
+    @OnClick(R.id.wifi_send_creds_try_again_button)
+    void onClickSendCredsTryAgain() {
+        mController.onClickWifiConnectTryAgain();
+    }
+
+    @OnClick(R.id.wifi_setup_done_button)
+    void onClickDone() {
+        onCompleted();
+    }
+
+    Observable<String> askUserForWifiPassword() {
         return new PasswordDialog(this, R.string.wifi_password_dialog_title).start();
     }
 

@@ -13,6 +13,7 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.softhub.DeviceWifiSetup;
 import io.afero.sdk.utils.RxUtils;
+import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -35,6 +36,7 @@ class WifiSetupController {
     private DeviceWifiSetup.WifiState mWifiState;
     private Subscription mWifiSetupStateSubscription;
 
+
     WifiSetupController(WifiSetupView wifiSetupView, DeviceModel deviceModel, AferoClient aferoClient) {
         mView = wifiSetupView;
         mDeviceModel = deviceModel;
@@ -55,8 +57,8 @@ class WifiSetupController {
         mDeviceUpdateSubscription = RxUtils.safeUnSubscribe(mDeviceUpdateSubscription);
         mWifiSetup.stop();
         mWifiNetworkListAdapter.stop();
+
 //        mView.stopWifiPassword();
-        mView.stopWifiConnect();
         mView.stopBluetoothNeeded();
     }
 
@@ -130,9 +132,8 @@ class WifiSetupController {
         AfLog.d("WifiNetworkListPresenter.onWifiScanError");
         e.printStackTrace();
         mWifiScanSubscription = null;
-        mView.hideProgress();
 
-        mView.showErrorView();
+        mView.showWifiScanError();
     }
 
     private void onWifiScanComplete() {
@@ -155,25 +156,48 @@ class WifiSetupController {
         startScan();
     }
 
-    public void onClickManualSSID() {
-        startWifiPassword(null);
+    void onClickWifiScanTryAgain() {
+        onClickRefresh();
     }
 
-    public void onNetworkListItemClick(int position) {
+    void onNetworkListItemClick(int position) {
         WifiSSIDEntry ssidEntry = mWifiNetworkListAdapter.getItem(position);
         mPickedSSIDEntry = ssidEntry;
 
         if (ssidEntry != null) {
             if (ssidEntry.isSecure()) {
-                startWifiPassword(ssidEntry);
+                askUserForWifiPassword(ssidEntry);
             } else {
-                attemptWifiConnection(ssidEntry.getSSID(), "");
+                sendWifiCredential(ssidEntry.getSSID(), "");
             }
         }
     }
 
-    private void startWifiPassword(final WifiSSIDEntry ssidEntry) {
-        mView.startWifiPassword()
+    void onClickWifiConnectTryAgain() {
+        if (mWifiState != null) {
+            switch (mWifiState) {
+                case SSID_NOT_FOUND:
+                case UNKNOWN_FAILURE:
+                case ASSOCIATION_FAILED:
+                case ECHO_FAILED:
+                    mView.showListView();
+                    break;
+
+                case HANDSHAKE_FAILED:
+                    mView.askUserForWifiPassword();
+                    break;
+
+                default:
+                    mView.onCompleted();
+                    break;
+            }
+        } else {
+            mView.showListView();
+        }
+    }
+
+    private void askUserForWifiPassword(final WifiSSIDEntry ssidEntry) {
+        mView.askUserForWifiPassword()
                 .subscribe(new Observer<String>() {
                     @Override
                     public void onCompleted() {
@@ -186,14 +210,15 @@ class WifiSetupController {
 
                     @Override
                     public void onNext(String password) {
-                        attemptWifiConnection(ssidEntry.getSSID(), password);
+                        sendWifiCredential(ssidEntry.getSSID(), password);
                     }
                 });
     }
 
-    private void attemptWifiConnection(String ssid, String password) {
-        mView.startWifiConnect();
+    private void sendWifiCredential(String ssid, String password) {
+        mView.showWifiConnectProgress();
         mWifiSetup.sendWifiCredential(ssid, password)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<SetupWifiCallback.SetupWifiState>() {
                     @Override
                     public void onCompleted() {
@@ -206,54 +231,20 @@ class WifiSetupController {
                     }
 
                     @Override
-                    public void onNext(SetupWifiCallback.SetupWifiState setupWifiState) {
-                        onNextSetupWifiState(setupWifiState);
+                    public void onNext(SetupWifiCallback.SetupWifiState state) {
+                        onNextSendWifiCredentialState(state);
                     }
                 });
-
-//                .subscribe(new Observer<WifiConnectPresenter.Event>() {
-//                    @Override
-//                    public void onCompleted() {
-//                        mView.stopWifiConnect();
-//                    }
-//
-//                    @Override
-//                    public void onError(Throwable e) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onNext(WifiConnectPresenter.Event event) {
-//
-//                        switch (event) {
-//                            case SUCCESS:
-//                                mView.stopWifiConnect();
-//                                mEventSubject.onCompleted();
-//                                break;
-//
-//                            case TRY_AGAIN:
-//                                mView.stopWifiConnect();
-//                                break;
-//
-//                            case TRY_AGAIN_PASSWORD:
-//                                mView.stopWifiConnect();
-//                                if (mPickedSSIDEntry != null) {
-//                                    startWifiPassword(mPickedSSIDEntry);
-//                                }
-//                                break;
-//                        }
-//                    }
-//                });
     }
 
     void onClickCancel() {
         mView.onCompleted();
     }
 
-    private void onNextSetupWifiState(SetupWifiCallback.SetupWifiState setupWifiState) {
-        switch (setupWifiState) {
+    private void onNextSendWifiCredentialState(SetupWifiCallback.SetupWifiState state) {
+        switch (state) {
             case START:
-                mView.showConnecting();
+                mView.showWifiConnectProgress();
                 startListeningToWifiSetupState();
                 break;
 
@@ -263,44 +254,25 @@ class WifiSetupController {
             case CANCELLED:
             case TIMED_OUT:
             case FAILED:
-                mView.showError();
+                mView.showSendWifiCredsError();
                 break;
-        }
-    }
-
-    public void onClickNext() {
-        mView.onSuccess();
-    }
-
-    public void onClickWifiConnectTryAgain() {
-        if (mWifiState != null) {
-            switch (mWifiState) {
-                case SSID_NOT_FOUND:
-                case UNKNOWN_FAILURE:
-                case ASSOCIATION_FAILED:
-                case ECHO_FAILED:
-                    mView.onWifiConnectTryAgain();
-                    break;
-
-                case HANDSHAKE_FAILED:
-                    mView.onWifiConnectTryAgainPassword();
-                    break;
-
-                default:
-                    mView.onSuccess();
-                    break;
-            }
-        } else {
-//            startConnection(mWifiStateObservable);
         }
     }
 
     private void startListeningToWifiSetupState() {
         mWifiSetupStateSubscription = mWifiSetup.observeSetupState()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<DeviceWifiSetup.WifiState>() {
+                .subscribe(new Observer<DeviceWifiSetup.WifiState>() {
                     @Override
-                    public void call(DeviceWifiSetup.WifiState wifiState) {
+                    public void onCompleted() {}
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onNext(DeviceWifiSetup.WifiState wifiState) {
                         onWifiSetupStateChange(wifiState);
                     }
                 });
@@ -346,6 +318,6 @@ class WifiSetupController {
 
     private void onWifiSetupFailure(@StringRes int failMessageResId) {
         stopListeningToWifiSetupState();
-        mView.showError(failMessageResId);
+        mView.showSendWifiCredsError(failMessageResId);
     }
 }
