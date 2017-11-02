@@ -81,11 +81,20 @@
                 android:layout_height="1dp"/>
 
             <Button
-                android:id="@+id/wifi_error_try_again_button"
+                android:id="@+id/wifi_scan_try_again_button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/wifi_try_again"
+                />
+
+            <Button
+                android:id="@+id/wifi_send_creds_try_again_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wifi_try_again"
+                android:visibility="gone"
                 />
 
         </LinearLayout>
@@ -127,8 +136,7 @@
             android:id="@+id/network_list_refresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            >
+            android:layout_weight="1">
 
             <ListView
                 android:id="@+id/network_list"
@@ -210,8 +218,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:layout_margin="10dp"
-            android:orientation="horizontal"
-            >
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/empty_manual_wifi_button"
@@ -232,6 +239,24 @@
                 android:layout_weight="1"
                 android:text="@string/wifi_refresh_button_title"/>
         </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/wifi_setup_success"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:padding="20dp"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/wifi_setup_done_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:text="@string/wifi_refresh_button_title"
+                />
+
+        </FrameLayout>
 
     </FrameLayout>
 

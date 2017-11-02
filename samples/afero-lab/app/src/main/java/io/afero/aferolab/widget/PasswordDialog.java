@@ -48,10 +48,12 @@ public class PasswordDialog {
 
                 mPasswordEditText.addTextChangedListener(new TextWatcher() {
                     @Override
-                    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+                    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    }
 
                     @Override
-                    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+                    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    }
 
                     @Override
                     public void afterTextChanged(Editable editable) {
@@ -69,6 +71,8 @@ public class PasswordDialog {
                                 String password = mPasswordEditText.getText().toString();
 
                                 if (!password.isEmpty()) {
+                                    mPasswordEditText.hideKeyboard();
+
                                     emitter.onNext(password);
                                     emitter.onCompleted();
 
@@ -79,12 +83,21 @@ public class PasswordDialog {
                         .setNegativeButton(R.string.button_title_cancel, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
+                                mPasswordEditText.hideKeyboard();
                                 emitter.onCompleted();
 
                                 dialogInterface.cancel();
                             }
                         })
-                        .show();
+                        .create();
+
+                mAlertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                    @Override
+                    public void onShow(DialogInterface dialogInterface) {
+                        mPasswordEditText.showKeyboard();
+                    }
+                });
+                mAlertDialog.show();
 
                 mPositiveButton = mAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
                 mPositiveButton.setEnabled(false);

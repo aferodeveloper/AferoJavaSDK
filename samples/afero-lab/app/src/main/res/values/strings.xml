@@ -56,4 +56,5 @@
     <string name="wifi_cant_connect_to_device">CAN’T CONNECT TO THE DEVICE</string>
     <string name="wifi_password_dialog_title">Type Wi-Fi Password</string>
     <string name="password_hint">Password</string>
+    <string name="wifi_please_wait">Please wait.\nThis may take a moment…</string>
 </resources>
