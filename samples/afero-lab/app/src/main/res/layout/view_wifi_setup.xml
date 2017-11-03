@@ -100,6 +100,26 @@
         </LinearLayout>
     </LinearLayout>
 
+    <FrameLayout
+        android:id="@+id/wifi_setup_success"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/wifi_setup_done_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            android:text="@string/wifi_done"
+            />
+
+    </FrameLayout>
+
     <LinearLayout
         android:id="@+id/network_list_container"
         android:layout_width="match_parent"
@@ -239,24 +259,6 @@
                 android:layout_weight="1"
                 android:text="@string/wifi_refresh_button_title"/>
         </LinearLayout>
-
-        <FrameLayout
-            android:id="@+id/wifi_setup_success"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:padding="20dp"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/wifi_setup_done_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|center_horizontal"
-                android:text="@string/wifi_refresh_button_title"
-                />
-
-        </FrameLayout>
 
     </FrameLayout>
 
