@@ -123,7 +123,7 @@ public class WifiSetupView extends ScreenView {
         mListView.setAdapter(adapter);
     }
 
-    public void askUserToTurnOnBluetooth(DeviceModel deviceModel) {
+    void askUserToTurnOnBluetooth(DeviceModel deviceModel) {
     }
 
     void stopBluetoothNeeded() {
