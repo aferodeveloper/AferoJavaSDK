@@ -1,0 +1,21 @@
+[
+    {
+        "id": "device-001",
+        "profileId": "profile-001",
+        "currentSeq": 123,
+        "createdTimeStamp": 456789,
+        "attributes": [
+            { "id": 100, "value": "123" }
+        ],
+        "deviceTags": [
+
+        ],
+        "status": {
+            "available": true,
+            "visible": true
+        },
+        "virtual": false,
+        "friendlyName": "device-name",
+        "requestId": 123
+    }
+]

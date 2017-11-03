@@ -6,12 +6,14 @@ package io.afero.sdk.client.mock;
 
 import java.io.IOException;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
@@ -102,6 +104,18 @@ public class MockAferoClient implements AferoClient {
     @Override
     public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
         return null;
+    }
+
+    @Override
+    public Observable<DeviceTag> postDeviceTag(String deviceId, String tagValue) {
+        DeviceTag tag = new DeviceTag(tagValue);
+        tag.deviceTagId = UUID.randomUUID().toString();
+        return Observable.just(tag);
+    }
+
+    @Override
+    public Observable<Void> deleteDeviceTag(String deviceId, String tagId) {
+        return Observable.just(null);
     }
 
     @Override
