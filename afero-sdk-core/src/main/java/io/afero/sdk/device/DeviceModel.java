@@ -9,11 +9,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
@@ -129,6 +132,10 @@ public final class DeviceModel {
 
     private OnNextDeviceRequest mOnNextDeviceRequestResponse;
     private OnErrorDeviceRequest mOnErrorDeviceRequestResponse;
+
+    private HashMap<String, Tag> mTags;
+    private static final String TAG_SELECTED_GROUP = "selected-group-id";
+
 
     private DeviceModel() {
         mId = null;
@@ -386,7 +393,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<DeviceModel> getUpdateObservable() {
+    public Observable<DeviceModel> getUpdateObservable() {
         return mUpdateObservable;
     }
 
@@ -398,7 +405,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<DeviceSync> getDeviceSyncPreUpdateObservable() {
+    public Observable<DeviceSync> getDeviceSyncPreUpdateObservable() {
         return mDeviceSyncPreUpdateSubject;
     }
 
@@ -422,7 +429,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<AferoError> getErrorObservable() {
+    public Observable<AferoError> getErrorObservable() {
         return mErrorSubject.onBackpressureBuffer();
     }
 
@@ -436,7 +443,7 @@ public final class DeviceModel {
      * @see <a href="https://developer.afero.io/docs/en/?target=Publish.html">Profile Editor: Publish Your Project</a>
      */
     @JsonIgnore
-    public rx.Observable<DeviceModel> getProfileObservable() {
+    public Observable<DeviceModel> getProfileObservable() {
         return mProfileUpdateSubject;
     }
 
@@ -628,13 +635,172 @@ public final class DeviceModel {
         return false;
     }
 
-    public void putTag(String key, String value) {
-        HashMap<String,String> tags = getTags();
-        tags.put(key, value);
+    /**
+     * This class represents a key/value object that can be attached to a {@link DeviceModel}.
+     * @see #saveTag(String, String)
+     */
+    public class Tag {
+        public String key;
+        public String value;
+
+        private String deviceTagId;
+
+        public Tag() {}
+
+        Tag(String k, String v) {
+            key = k;
+            value = v;
+        }
+
+        Tag(String tagData) throws IOException {
+            Tag tag = JSONUtils.readValue(tagData, Tag.class);
+            key = tag.key;
+            value = tag.value;
+        }
+
+        private String serialize() throws JsonProcessingException {
+            return JSONUtils.writeValueAsString(this);
+        }
     }
 
+    /**
+     * Attaches a tag key/value to this device persistently via the Afero Cloud. The tag is removed
+     * if the device is disassociated from the account.
+     *
+     * @param key String specifying a unique identifier for the new tag
+     * @param value String containing arbitrary value for the new tag
+     * @return Observable that emits the new {@link Tag}
+     */
+    public Observable<Tag> saveTag(String key, String value) {
+
+        return Observable.just(new Tag(key, value))
+
+                .flatMap(new Func1<Tag, Observable<Tag>>() {
+                    @Override
+                    public Observable<Tag> call(Tag tag) {
+                        try {
+                            return mAferoClient.postDeviceTag(getId(), tag.serialize())
+                                    .flatMap(new Func1<DeviceTag, Observable<Tag>>() {
+                                        @Override
+                                        public Observable<Tag> call(DeviceTag deviceTag) {
+                                            try {
+                                                Tag newTag = new Tag(deviceTag.value);
+                                                newTag.deviceTagId = deviceTag.deviceTagId;
+                                                return Observable.just(newTag);
+                                            } catch (IOException e) {
+                                                return Observable.error(e);
+                                            }
+                                        }
+                                    });
+                        } catch (JsonProcessingException e) {
+                            return Observable.error(e);
+                        }
+                    }
+                })
+
+                .flatMap(new Func1<Tag, Observable<Tag>>() {
+                    @Override
+                    public Observable<Tag> call(Tag tag) {
+                        Observable<Tag> tagObservable = Observable.just(tag);
+                        Tag oldTag = getTags().get(tag.key);
+
+                        // store the new tag in the local collection
+                        getTags().put(tag.key, tag);
+
+                        // if there's an existing persistent tag, attempt to delete it ignoring errors
+                        if (oldTag != null && oldTag.deviceTagId != null) {
+                            tagObservable = mAferoClient.deleteDeviceTag(getId(), tag.deviceTagId)
+                                .flatMap(new RxUtils.FlatMapper<Void, Tag>(tagObservable))
+                                .onErrorResumeNext(tagObservable);
+                        }
+
+                        return tagObservable;
+                    }
+                });
+    }
+
+    /**
+     * Attaches a temporary key/value tag to this DeviceModel.
+     * The tag does *not* persist across sessions.
+     * Replacing an existing persistent tag with this method,
+     * also only lasts for the current session.
+     *
+     * @param key String specifying a unique identifier for the new tag
+     * @param value String containing arbitrary value for the new tag
+     * @see #saveTag(String, String)
+     */
+    public void putTag(String key, String value) {
+        getTags().put(key, new Tag(key, value));
+    }
+
+    /**
+     * Deletes a tag from both local and persistent cloud storage.
+     *
+     * @param key Unique indentifier of the tag.
+     * @return {@link Tag} object that was removed; null if no such tag was found.
+     */
+    public Tag deleteTag(String key) {
+        Tag tag = getTags().remove(key);
+        if (tag != null && tag.deviceTagId != null) {
+            mAferoClient.deleteDeviceTag(getId(), tag.deviceTagId)
+                .subscribe(new RxUtils.IgnoreResponseObserver<Void>());
+        }
+        return tag;
+    }
+
+    /**
+     * Retrieves the value of a tag attached to this device via {@link #putTag(String, String)}
+     * or {@link #saveTag(String, String)}
+     *
+     * @param key Unique indentifier of the tag.
+     * @return String containing the value of the tag.
+     * @see #saveTag(String, String)
+     * @see #putTag(String, String)
+     */
     public String getTag(String key) {
-        return getTags().get(key);
+        return getTags().get(key).value;
+    }
+
+    /**
+     * @return Observable that emits all tags currently attached to the device.
+     */
+    @JsonIgnore
+    public Observable<Tag> getAllTags() {
+        return Observable.from(getTags().values());
+    }
+
+    /**
+     * Setter for DeviceTags during DeviceModel JSON deserialization
+     *
+     * @param deviceTags Array of {@link DeviceTag} objects attached to this DeviceModel
+     */
+    @JsonProperty
+    public void setDeviceTags(DeviceTag[] deviceTags) {
+        if (deviceTags.length == 0) {
+            if (mTags != null) {
+                mTags.clear();
+            }
+            return;
+        }
+
+        HashMap<String, Tag> tags = getTags();
+
+        for (DeviceTag dt : deviceTags) {
+            Tag tag = null;
+
+            try {
+                tag = new Tag(dt.value);
+            } catch (IOException e) {
+                // ignore
+            }
+
+            if (tag == null) {
+                tag = new Tag(dt.deviceTagId, dt.value);
+            }
+            tag.deviceTagId = dt.deviceTagId;
+
+            tags.put(tag.key, tag);
+        }
     }
 
     @JsonProperty("attributes")
@@ -822,9 +988,7 @@ public final class DeviceModel {
         }
 
         if (deviceSync.tags != null) {
-            for (DeviceTag tag : deviceSync.tags) {
-                putTag(tag.deviceTagId, tag.value);
-            }
+            setDeviceTags(deviceSync.tags);
         }
 
         if (deviceSync.timezone != null && deviceSync.timezone.timezone != null) {
@@ -1099,10 +1263,7 @@ public final class DeviceModel {
         return data;
     }
 
-    private HashMap<String,String> mTags;
-    private static final String TAG_SELECTED_GROUP = "selected-group-id";
-
-    private HashMap<String,String> getTags() {
+    private HashMap<String, Tag> getTags() {
         if (mTags == null) {
             mTags = new HashMap<>();
         }

@@ -16,6 +16,7 @@ import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.mock.MockAferoClient;
+import io.afero.sdk.client.mock.MockDeviceEventSource;
 import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.conclave.models.DeviceSync;
 import rx.Observer;
@@ -348,6 +349,69 @@ public class DeviceModelTest extends AferoTest {
             public void onNext(TimeZone tz) {
                 timeZone = tz;
             }
+        }
+    }
+
+    private class TagTester {
+        static final String PATH_PREFIX = "resources/deviceModel/";
+        final ResourceLoader resourceLoader = new ResourceLoader(PATH_PREFIX);
+        final MockAferoClient aferoClient = new MockAferoClient(PATH_PREFIX);
+        final MockDeviceEventSource deviceEventSource = new MockDeviceEventSource();
+        final DeviceCollection deviceCollection;
+
+        Throwable thrown;
+        DeviceModel deviceModelReturnedFromAddDevice;
+
+        TagTester() {
+            deviceCollection = new DeviceCollection(deviceEventSource, aferoClient);
+        }
+
+        TagTester deviceCollectionStartWithNoDevices() {
+            aferoClient.setFileGetDevices("getDevicesEmpty.json");
+            deviceCollection.start().subscribe(new Observer<DeviceCollection>() {
+                @Override
+                public void onCompleted() {
+
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    thrown = e;
+                }
+
+                @Override
+                public void onNext(DeviceCollection deviceCollection) {
+
+                }
+            });
+
+            return this;
+        }
+
+
+        TagTester deviceCollectionStop() {
+            deviceCollection.stop();
+            return this;
+        }
+
+        TagTester deviceCollectionStopWithCatch() {
+            try {
+                deviceCollection.stop();
+            } catch (Throwable t) {
+                thrown = t;
+            }
+            return this;
+        }
+
+        TagTester deviceCollectionAddDevice() {
+            deviceCollection.addDevice("genericDevice", false)
+                    .subscribe(new Action1<DeviceModel>() {
+                        @Override
+                        public void call(DeviceModel deviceModel) {
+                            deviceModelReturnedFromAddDevice = deviceModel;
+                        }
+                    });
+            return this;
         }
     }
 }
