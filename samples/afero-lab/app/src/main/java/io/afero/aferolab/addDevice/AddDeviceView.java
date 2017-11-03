@@ -18,9 +18,6 @@ import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.view.ViewParent;
-import android.widget.FrameLayout;
-import android.widget.ProgressBar;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
@@ -31,6 +28,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.afero.aferolab.R;
 import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.log.AfLog;
@@ -38,7 +36,7 @@ import me.dm7.barcodescanner.zxing.ZXingScannerView;
 import rx.Observable;
 import rx.subjects.PublishSubject;
 
-public class AddDeviceView extends FrameLayout implements ZXingScannerView.ResultHandler {
+public class AddDeviceView extends ScreenView implements ZXingScannerView.ResultHandler {
 
     @BindView(R.id.scanner_view_container)
     ViewGroup mScannerViewContainer;
@@ -91,6 +89,8 @@ public class AddDeviceView extends FrameLayout implements ZXingScannerView.Resul
     }
 
     public void start(DeviceCollection deviceCollection, AferoClient aferoClient) {
+        pushOnBackStack();
+
         mController = new AddDeviceController(this, deviceCollection, aferoClient);
         mController.start();
 
@@ -104,10 +104,7 @@ public class AddDeviceView extends FrameLayout implements ZXingScannerView.Resul
             mController.stop();
         }
 
-        ViewParent view = getParent();
-        if (view != null) {
-            ((ViewGroup) view).removeView(this);
-        }
+        super.stop();
     }
 
     public Observable<AddDeviceView> getObservable() {

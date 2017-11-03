@@ -4,6 +4,7 @@
 
 package io.afero.aferolab.deviceInspector;
 
+import android.animation.LayoutTransition;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -15,7 +16,9 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.FrameLayout;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import butterknife.BindView;
@@ -24,6 +27,8 @@ import butterknife.OnClick;
 import io.afero.aferolab.R;
 import io.afero.aferolab.attributeEditor.AttributeEditorView;
 import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.aferolab.widget.ScreenView;
+import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
@@ -32,7 +37,7 @@ import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 
 
-public class DeviceInspectorView extends FrameLayout {
+public class DeviceInspectorView extends ScreenView {
 
     @BindView(R.id.device_name_text)
     TextView mDeviceNameText;
@@ -44,16 +49,32 @@ public class DeviceInspectorView extends FrameLayout {
     RecyclerView mAttributeListView;
 
     @BindView(R.id.device_info_card)
-    View mDeviceInfoCard;
+    ViewGroup mDeviceInfoCard;
 
     @BindView(R.id.attributes_card)
-    View mAttributesCard;
+    ViewGroup mAttributesCard;
 
     @BindView(R.id.view_scrim)
     View mScrimView;
 
     @BindView(R.id.device_inspector_progress)
     ProgressSpinnerView mProgressView;
+
+    @BindView(R.id.device_info_extra_open)
+    ImageButton mDeviceInfoOpenButton;
+
+    @BindView(R.id.device_info_extra_close)
+    ImageButton mDeviceInfoCloseButton;
+
+    @BindView(R.id.device_info_container)
+    ViewGroup mDeviceInfoContainer;
+
+    @BindView(R.id.device_info_extra_container)
+    ViewGroup mDeviceInfoExtraContainer;
+
+    @BindView(R.id.wifi_connect_button)
+    Button mWifiConnectButton;
+
 
     private static final int TRANSITION_DURATION = 200;
 
@@ -78,18 +99,34 @@ public class DeviceInspectorView extends FrameLayout {
         super.onFinishInflate();
         ButterKnife.bind(this);
 
+        LayoutTransition lt = mDeviceInfoCard.getLayoutTransition();
+        if (lt != null) {
+            lt.enableTransitionType(LayoutTransition.CHANGING);
+            lt.setStartDelay(LayoutTransition.CHANGING, 0);
+            lt.setStartDelay(LayoutTransition.CHANGE_APPEARING, 0);
+            lt.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0);
+        }
+
+        lt = mAttributesCard.getLayoutTransition();
+        if (lt != null) {
+            lt.enableTransitionType(LayoutTransition.CHANGING);
+            lt.setStartDelay(LayoutTransition.CHANGING, 0);
+        }
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mAttributeListView.setLayoutManager(layoutManager);
         mAttributeListView.setAdapter(mAttributeAdapter);
     }
 
-    public void start(DeviceModel deviceModel, DeviceCollection deviceCollection) {
+    public void start(DeviceModel deviceModel, DeviceCollection deviceCollection, AferoClient aferoClient) {
         if (isStarted()) {
             return;
         }
 
+        pushOnBackStack();
+
         if (mController == null) {
-            mController = new DeviceInspectorController(this, deviceCollection);
+            mController = new DeviceInspectorController(this, deviceCollection, aferoClient);
         }
         mController.start(deviceModel);
 
@@ -108,6 +145,7 @@ public class DeviceInspectorView extends FrameLayout {
         startEnterTransition();
     }
 
+    @Override
     public void stop() {
         if (isStarted()) {
             mController.stop();
@@ -115,6 +153,8 @@ public class DeviceInspectorView extends FrameLayout {
 
             startExitTransition();
         }
+
+        removeFromBackStack();
     }
 
     public boolean isStarted() {
@@ -136,7 +176,21 @@ public class DeviceInspectorView extends FrameLayout {
         mDeviceStatusText.setText(statusResId);
     }
 
-    @OnClick(R.id.device_delete)
+    @OnClick(R.id.device_info_extra_open)
+    void onClickDeviceInfoOpen() {
+        mDeviceInfoExtraContainer.setVisibility(VISIBLE);
+        mDeviceInfoOpenButton.setVisibility(GONE);
+        mDeviceInfoCloseButton.setVisibility(VISIBLE);
+    }
+
+    @OnClick(R.id.device_info_extra_close)
+    void onClickDeviceInfoClose() {
+        mDeviceInfoExtraContainer.setVisibility(GONE);
+        mDeviceInfoOpenButton.setVisibility(VISIBLE);
+        mDeviceInfoCloseButton.setVisibility(GONE);
+    }
+
+    @OnClick(R.id.device_delete_button)
     void onClickDelete() {
         new AlertDialog.Builder(getContext())
                 .setMessage(R.string.dialog_message_remove_device)
@@ -148,6 +202,11 @@ public class DeviceInspectorView extends FrameLayout {
                     }
                 })
                 .show();
+    }
+
+    @OnClick(R.id.wifi_connect_button)
+    void onClickWifiConnect() {
+        mController.onWifiConnect();
     }
 
     void onCompleted() {
@@ -192,4 +251,11 @@ public class DeviceInspectorView extends FrameLayout {
         view.start(deviceModel, attribute);
     }
 
+    public void showWifiSetup(boolean isVisible) {
+        mWifiConnectButton.setVisibility(isVisible ? VISIBLE : GONE);
+    }
+
+    public void enableWifiSetup(boolean isEnabled) {
+        mWifiConnectButton.setEnabled(isEnabled);
+    }
 }

@@ -16,7 +16,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,9 +31,11 @@ import io.afero.aferolab.addDevice.AddDeviceView;
 import io.afero.aferolab.attributeEditor.AttributeEditorView;
 import io.afero.aferolab.deviceInspector.DeviceInspectorView;
 import io.afero.aferolab.deviceList.DeviceListView;
+import io.afero.aferolab.helper.BackStack;
 import io.afero.aferolab.helper.PermissionsHelper;
 import io.afero.aferolab.helper.PrefsHelper;
 import io.afero.aferolab.widget.AferoEditText;
+import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.android.clock.AndroidClock;
 import io.afero.sdk.android.log.AndroidLog;
 import io.afero.sdk.client.retrofit2.AferoClientRetrofit2;
@@ -70,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String mUserId;
 
-    private final Observer<AferoSofthub> mHubbyHelperStartObserver = new RxUtils.IgnoreResponseObserver<>();
+    private final Observer<AferoSofthub> mAferoSofthubStartObserver = new RxUtils.IgnoreResponseObserver<>();
 
     @BindView(R.id.root_view)
     ViewGroup mRootView;
@@ -105,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.text_network_status)
     TextView mNetworkStatus;
 
-    private AddDeviceView mAddDeviceView;
+    private BackStack<ScreenView> mBackStack = new BackStack<>();
 
 
     @Override
@@ -113,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+
+        ScreenView.setBackStack(mBackStack);
 
         setSupportActionBar(mAppToolbar);
 
@@ -161,21 +164,12 @@ public class MainActivity extends AppCompatActivity {
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, "appId: " + BuildConfig.APPLICATION_ID);
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
 
-        if (mAferoClient.getToken() != null) {
-            // listen for token refresh failures
-            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new TokenObserver(this));
-
-            startDeviceStream();
-        }
-
         mDeviceListView.start(mDeviceCollection);
         mDeviceListView.getDeviceOnClick()
                 .subscribe(new Action1<DeviceModel>() {
                     @Override
                     public void call(DeviceModel deviceModel) {
-                        mDeviceInspectorView.start(deviceModel, mDeviceCollection);
+                        mDeviceInspectorView.start(deviceModel, mDeviceCollection, mAferoClient);
                         mDeviceInspectorView.getObservable().subscribe(new Observer<DeviceInspectorView>() {
                             @Override
                             public void onCompleted() {
@@ -190,6 +184,15 @@ public class MainActivity extends AppCompatActivity {
                         });
                     }
                 });
+
+        if (mAferoClient.getToken() != null) {
+            // listen for token refresh failures
+            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
+
+            startDeviceStream();
+        }
 
         setupViews();
 
@@ -235,8 +238,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
+        getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }
 
@@ -258,21 +260,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void onActionAddDevice() {
-        if (mAddDeviceView == null) {
-            mAddDeviceView = AddDeviceView.create(mRootView);
-            mAddDeviceView.start(mDeviceCollection, mAferoClient);
-            mAddDeviceView.getObservable().subscribe(new Observer<AddDeviceView>() {
-                @Override
-                public void onCompleted() {
-                    stopAddDeviceView();                }
+        final AddDeviceView addDeviceView = AddDeviceView.create(mRootView);
+        addDeviceView.start(mDeviceCollection, mAferoClient);
+        addDeviceView.getObservable().subscribe(new Observer<AddDeviceView>() {
+            @Override
+            public void onCompleted() {
+                addDeviceView.stop();
+            }
 
-                @Override
-                public void onError(Throwable e) {}
+            @Override
+            public void onError(Throwable e) {}
 
-                @Override
-                public void onNext(AddDeviceView addDeviceView) {}
-            });
-        }
+            @Override
+            public void onNext(AddDeviceView addDeviceView) {}
+        });
     }
 
     /**
@@ -285,28 +286,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (mAttributeEditorView.isStarted()) {
-            mAttributeEditorView.stop();
-            return;
-        }
-
-        if (mDeviceInspectorView.isStarted()) {
-            stopDeviceInspector();
-            return;
-        }
-
-        if (mAddDeviceView != null) {
-            stopAddDeviceView();
-            return;
-        }
-
-        super.onBackPressed();
-    }
-
-    private void stopAddDeviceView() {
-        if (mAddDeviceView != null) {
-            mAddDeviceView.stop();
-            mAddDeviceView = null;
+        ScreenView view = mBackStack.onBackPressed();
+        if (view != null) {
+            view.stop();
+        } else {
+            super.onBackPressed();
         }
     }
 
@@ -340,10 +324,10 @@ public class MainActivity extends AppCompatActivity {
     private void hideNoNetworkView() {
     }
 
-    private void startHubby() {
+    private void startSofthub() {
         if (!mAferoSofthub.isRunning()) {
             mAferoSofthub.start()
-                .subscribe(mHubbyHelperStartObserver);
+                .subscribe(mAferoSofthubStartObserver);
         }
     }
 
@@ -416,8 +400,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void onSignOut() {
 
-        mDeviceInspectorView.stop();
-        mAttributeEditorView.stop();
+        for (ScreenView view = mBackStack.pop(); view != null; view = mBackStack.pop()) {
+            view.stop();
+        }
 
         mTokenRefreshSubscription = RxUtils.safeUnSubscribe(mTokenRefreshSubscription);
 
@@ -457,7 +442,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onDeviceEventStreamConnectComplete() {
         mDeviceEventStreamSubscription = null;
-        startHubby();
+        startSofthub();
     }
 
     private void onDeviceEventStreamConnectError(Throwable e) {

@@ -7,8 +7,11 @@ package io.afero.aferolab.deviceInspector;
 import android.view.View;
 
 import io.afero.aferolab.R;
+import io.afero.aferolab.wifiSetup.WifiSetupView;
+import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
+import io.afero.sdk.softhub.DeviceWifiSetup;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observer;
 import rx.Subscription;
@@ -19,12 +22,14 @@ class DeviceInspectorController {
 
     private final DeviceInspectorView mView;
     private final DeviceCollection mDeviceCollection;
+    private final AferoClient mAferoClient;
     private Subscription mDeviceUpdateSubscription;
     private DeviceModel mDeviceModel;
 
-    DeviceInspectorController(DeviceInspectorView view, DeviceCollection deviceCollection) {
+    DeviceInspectorController(DeviceInspectorView view, DeviceCollection deviceCollection, AferoClient aferoClient) {
         mView = view;
         mDeviceCollection = deviceCollection;
+        mAferoClient = aferoClient;
     }
 
     void start(DeviceModel deviceModel) {
@@ -40,6 +45,8 @@ class DeviceInspectorController {
                 });
 
         onDeviceUpdate(deviceModel);
+
+        mView.showWifiSetup(DeviceWifiSetup.isWifiSetupCapable(deviceModel));
 
         mView.setVisibility(View.VISIBLE);
     }
@@ -85,12 +92,36 @@ class DeviceInspectorController {
      * @param deviceModel
      */
     private void onDeviceUpdate(DeviceModel deviceModel) {
+        final boolean isAvailable = deviceModel.isAvailable();
+
         mView.setDeviceNameText(deviceModel.getName());
 
         int statusResId = R.string.device_status_offline;
-        if (deviceModel.isAvailable()) {
+        if (isAvailable) {
             statusResId = deviceModel.isRunning() ? R.string.device_status_active : R.string.device_status_idle;
         }
         mView.setDeviceStatusText(statusResId);
+
+        mView.enableWifiSetup(isAvailable);
+    }
+
+    void onWifiConnect() {
+        WifiSetupView.create(mView)
+                .start(mDeviceModel, mAferoClient)
+                .getObservable()
+                .subscribe(new Observer<WifiSetupView>() {
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+
+                    @Override
+                    public void onNext(WifiSetupView wifiSetupView) {
+                        wifiSetupView.stop();
+                    }
+                });
     }
 }
