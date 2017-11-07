@@ -14,20 +14,6 @@
         { "id": 800, "value": "12345.12345" },
         { "id": 900, "value": "123456.12345678" }
     ],
-    "tags": [
-        {
-            "deviceTagId": "tag-id-1",
-            "deviceTagType": "tag-type",
-            "localizationKey": "tag-locale-key",
-            "value": "tag-1"
-        },
-        {
-            "deviceTagId": "tag-id-2",
-            "deviceTagType": "tag-type",
-            "localizationKey": "tag-locale-key",
-            "value": "tag-2"
-        }
-    ],
     "status": {
         "available": true,
         "visible": true

@@ -48,6 +48,9 @@ public class DeviceTag {
         value = tagValue;
     }
 
+    public DeviceTag() {
+    }
+
     @Override
     public String toString() {
         return "{ " +
