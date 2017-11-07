@@ -186,6 +186,13 @@ public interface AferoClientAPI {
             @Body DeviceTag tag
     );
 
+    @PUT(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag")
+    Observable<DeviceTag> putDeviceTag(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId,
+            @Body DeviceTag tag
+    );
+
     @DELETE(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag/{deviceTag}")
     Observable<Void> deleteDeviceTag(
             @Path("accountId") String accountId,

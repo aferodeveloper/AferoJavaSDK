@@ -40,6 +40,8 @@ public interface AferoClient {
 
     Observable<DeviceTag> postDeviceTag(String deviceId, String tagValue);
 
+    Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagValue);
+
     Observable<Void> deleteDeviceTag(String deviceId, String tagId);
 
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified);

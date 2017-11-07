@@ -51,6 +51,11 @@ public class DeviceTag {
     public DeviceTag() {
     }
 
+    public DeviceTag(String tagId, String tagValue) {
+        deviceTagId = tagId;
+        value = tagValue;
+    }
+
     @Override
     public String toString() {
         return "{ " +

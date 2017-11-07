@@ -698,48 +698,36 @@ public final class DeviceModel {
      */
     public Observable<Tag> saveTag(String key, String value) {
 
-        return Observable.just(new Tag(key, value))
+        Tag tag = tagMap().get(key);
+        Observable<DeviceTag> tagObservable;
 
-                .flatMap(new Func1<Tag, Observable<Tag>>() {
+        try {
+            if (tag == null) {
+                tag = new Tag(key, value);
+                tagObservable = mAferoClient.postDeviceTag(getId(), tag.serialize());
+            } else {
+                Tag newTag = new Tag(key, value);
+                tagObservable = mAferoClient.putDeviceTag(getId(), tag.getDeviceTagId(), newTag.serialize());
+            }
+        } catch (JsonProcessingException e) {
+            return Observable.error(e);
+        }
+
+        return tagObservable.flatMap(
+                new Func1<DeviceTag, Observable<Tag>>() {
                     @Override
-                    public Observable<Tag> call(Tag tag) {
+                    public Observable<Tag> call(DeviceTag deviceTag) {
                         try {
-                            return mAferoClient.postDeviceTag(getId(), tag.serialize())
-                                    .flatMap(new Func1<DeviceTag, Observable<Tag>>() {
-                                        @Override
-                                        public Observable<Tag> call(DeviceTag deviceTag) {
-                                            try {
-                                                Tag newTag = new Tag(deviceTag.value);
-                                                newTag.setDeviceTagId(deviceTag.deviceTagId);
-                                                return Observable.just(newTag);
-                                            } catch (IOException e) {
-                                                return Observable.error(e);
-                                            }
-                                        }
-                                    });
-                        } catch (JsonProcessingException e) {
+                            Tag newTag = new Tag(deviceTag.value);
+                            newTag.setDeviceTagId(deviceTag.deviceTagId);
+
+                            // store the new tag in the local collection
+                            tagMap().put(newTag.getKey(), newTag);
+
+                            return Observable.just(newTag);
+                        } catch (IOException e) {
                             return Observable.error(e);
                         }
-                    }
-                })
-
-                .flatMap(new Func1<Tag, Observable<Tag>>() {
-                    @Override
-                    public Observable<Tag> call(Tag tag) {
-                        Observable<Tag> tagObservable = Observable.just(tag);
-                        Tag oldTag = tagMap().get(tag.getKey());
-
-                        // store the new tag in the local collection
-                        tagMap().put(tag.getKey(), tag);
-
-                        // if there's an existing persistent tag, attempt to delete it ignoring errors
-                        if (oldTag != null && oldTag.getDeviceTagId() != null) {
-                            tagObservable = mAferoClient.deleteDeviceTag(getId(), oldTag.getDeviceTagId())
-                                .flatMap(new RxUtils.FlatMapper<Void, Tag>(tagObservable))
-                                .onErrorResumeNext(tagObservable);
-                        }
-
-                        return tagObservable;
                     }
                 });
     }
