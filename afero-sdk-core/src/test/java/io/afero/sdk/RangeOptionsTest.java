@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 
 import io.afero.sdk.device.DeviceProfile;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 

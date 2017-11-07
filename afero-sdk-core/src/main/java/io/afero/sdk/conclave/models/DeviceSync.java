@@ -60,7 +60,7 @@ public class DeviceSync {
     public String profileId;
     public int seq;
     public long createdTimestamp;
-    public DeviceTag[] tags;
+    public DeviceTag[] deviceTags;
     public boolean virtual;
     public AttributeEntry[] attributes;
     public AttributeEntry attribute;
@@ -110,6 +110,10 @@ public class DeviceSync {
         return deviceId;
     }
 
+    public void setTags(DeviceTag[] tags) {
+        deviceTags = tags;
+    }
+
     @Override
     public String toString() {
         return "{ " +
@@ -117,7 +121,7 @@ public class DeviceSync {
                 ", profileId='" + profileId + '\'' +
                 ", seq=" + seq +
                 ", createdTimeStamp=" + createdTimestamp +
-                ", tags=" + Arrays.toString(tags) +
+                ", deviceTags=" + Arrays.toString(deviceTags) +
                 ", virtual=" + virtual +
                 ", attributes=" + Arrays.toString(attributes) +
                 ", attribute=" + attribute +
