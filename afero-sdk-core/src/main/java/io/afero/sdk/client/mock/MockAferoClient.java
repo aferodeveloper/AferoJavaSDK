@@ -111,6 +111,31 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
+    public Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagValue) {
+        return Observable.fromCallable(new Callable<DeviceTag>() {
+
+            DeviceTag tag;
+
+            Callable<DeviceTag> init(String tagId, String tagValue) {
+                tag = new DeviceTag(tagId, tagValue);
+                return this;
+            }
+
+            @Override
+            public DeviceTag call() throws Exception {
+                DeviceTag oldTag = mDeviceTags.get(tag.deviceTagId);
+                if (oldTag == null) {
+                    throw new HTTPException(404);
+                }
+
+                oldTag.value = tag.value;
+
+                return oldTag;
+            }
+        }.init(tagId, tagValue));
+    }
+
+    @Override
     public Observable<DeviceTag> postDeviceTag(String deviceId, final String tagValue) {
         return Observable.fromCallable(new Callable<DeviceTag>() {
             @Override
