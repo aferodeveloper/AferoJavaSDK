@@ -512,6 +512,13 @@ public class DeviceCollection {
                                 case "timezone":
                                     deviceModel.invalidateTimeZone();
                                     break;
+
+                                case "tags":
+                                    String action = im.json.get("actionString").asText();
+                                    String deviceTagId = im.json.get("deviceTagId").asText();
+                                    String deviceTagValue = im.json.get("deviceTagValue").asText();
+                                    deviceModel.invalidateTag(action, deviceTagId, deviceTagValue);
+                                    break;
                             }
                         } catch (Exception e) {
                             AfLog.e("Unable to parse invalidate json: " + e);

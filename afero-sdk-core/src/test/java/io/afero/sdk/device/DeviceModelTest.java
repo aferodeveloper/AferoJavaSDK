@@ -423,7 +423,7 @@ public class DeviceModelTest extends AferoTest {
 
         Throwable thrown;
         DeviceModel deviceModel;
-        DeviceModel.Tag deletedTag;
+        DeviceTagCollection.Tag deletedTag;
 
         TagTester() {
             deviceCollection = new DeviceCollection(deviceEventSource, aferoClient);
@@ -502,7 +502,7 @@ public class DeviceModelTest extends AferoTest {
             assertNotEquals(0, deviceSyncs[0].deviceTags.length);
 
             for (DeviceTag dt : deviceSyncs[0].deviceTags) {
-                DeviceModel.Tag tag = deviceModel.getTagById(dt.deviceTagId);
+                DeviceTagCollection.Tag tag = deviceModel.getTagById(dt.deviceTagId);
                 assertNotNull(tag);
             }
 
@@ -517,7 +517,7 @@ public class DeviceModelTest extends AferoTest {
         }
 
         TagTester verifyTagWasSaved(final String key, String value) throws JsonProcessingException {
-            DeviceModel.Tag tag = deviceModel.getTagInternal(key);
+            DeviceTagCollection.Tag tag = deviceModel.getTagInternal(key);
             assertNotNull(tag);
             assertEquals(value, tag.getValue());
 
@@ -529,7 +529,7 @@ public class DeviceModelTest extends AferoTest {
         }
 
         TagTester verifyTagWasNotSaved(final String key, String value) throws JsonProcessingException {
-            DeviceModel.Tag tag = deviceModel.getTagInternal(key);
+            DeviceTagCollection.Tag tag = deviceModel.getTagInternal(key);
             assertNotNull(tag);
             assertEquals(value, tag.getValue());
 
