@@ -632,6 +632,14 @@ public final class DeviceModel {
     }
 
     /**
+     * @return {@link Observable} that emits appropriate {@link DeviceTagCollection.TagEvent} objects
+     * when a {@link DeviceTagCollection.Tag} is added, updated, or removed from the DeviceModel.
+     */
+    public Observable<DeviceTagCollection.TagEvent> getTagObservable() {
+        return getDeviceTagCollection().getTagEventObservable();
+    }
+
+    /**
      * Attaches a tag key/value to this device persistently via the Afero Cloud. The tag is removed
      * if the device is disassociated from the account.
      *
