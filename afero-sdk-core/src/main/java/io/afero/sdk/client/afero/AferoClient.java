@@ -9,6 +9,7 @@ import java.util.TimeZone;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.WriteRequest;
@@ -36,6 +37,12 @@ public interface AferoClient {
     Observable<Location> putDeviceLocation(String deviceId, Location location);
 
     Observable<Location> getDeviceLocation(DeviceModel deviceModel);
+
+    Observable<DeviceTag> postDeviceTag(String deviceId, String tagValue);
+
+    Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagValue);
+
+    Observable<Void> deleteDeviceTag(String deviceId, String tagId);
 
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified);
 

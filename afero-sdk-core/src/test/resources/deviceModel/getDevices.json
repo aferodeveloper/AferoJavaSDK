@@ -1,0 +1,51 @@
+[
+    {
+        "id": "device-001",
+        "profileId": "profile-001",
+        "createdTimeStamp": 456789,
+        "attributes": [
+            { "id": 100, "value": "123" }
+        ],
+        "tags": [
+            {
+                "deviceTagId": "tag-id-1",
+                "value": "{\"k\":\"tag-key-1\",\"v\":\"tag-value-1\"}"
+            },
+            {
+                "deviceTagId": "tag-id-2",
+                "value": "{\"k\":\"tag-key-2\",\"v\":\"tag-value-2\"}"
+            },
+            {
+                "deviceTagId": "tag-id-3",
+                "value": "{\"k\":\"tag-key-3\",\"v\":\"tag-value-3\"}"
+            }
+        ],
+        "virtual": false,
+        "friendlyName": "device-name",
+        "deviceState":     {
+            "status": {
+                "available": true,
+                "visible": true
+            }
+        },
+        "profile": {
+            "profileId": "profile-001",
+            "schemaVersion": 1,
+            "profileVersion": 1,
+            "partnerId": "kiban-839f59e6-18a3-4d82-818d-42df5cc0c3cf",
+            "services": [
+                {
+                    "id": 100,
+                    "attributes": [
+                        {
+                            "id": 100,
+                            "dataType": "sint8",
+                            "semanticType": "byte",
+                            "operations": ["read","write"]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

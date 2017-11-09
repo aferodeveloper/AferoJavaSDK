@@ -5,16 +5,21 @@
 package io.afero.sdk.client.mock;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Callable;
+
+import javax.xml.ws.http.HTTPException;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.WriteRequest;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
@@ -30,6 +35,7 @@ public class MockAferoClient implements AferoClient {
     private Observable<WriteResponse[]> postBatchAttributeWriteResponse;
     private TimeZone mDeviceTimeZone;
     private int mRequestId;
+    private HashMap<String,DeviceTag> mDeviceTags = new HashMap<>();
 
     public MockAferoClient() {
         mLoader = new ResourceLoader();
@@ -102,6 +108,57 @@ public class MockAferoClient implements AferoClient {
     @Override
     public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
         return null;
+    }
+
+    @Override
+    public Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagValue) {
+        return Observable.fromCallable(new Callable<DeviceTag>() {
+
+            DeviceTag tag;
+
+            Callable<DeviceTag> init(String tagId, String tagValue) {
+                tag = new DeviceTag(tagId, tagValue);
+                return this;
+            }
+
+            @Override
+            public DeviceTag call() throws Exception {
+                DeviceTag oldTag = mDeviceTags.get(tag.deviceTagId);
+                if (oldTag == null) {
+                    throw new HTTPException(404);
+                }
+
+                oldTag.value = tag.value;
+
+                return oldTag;
+            }
+        }.init(tagId, tagValue));
+    }
+
+    @Override
+    public Observable<DeviceTag> postDeviceTag(String deviceId, final String tagValue) {
+        return Observable.fromCallable(new Callable<DeviceTag>() {
+            @Override
+            public DeviceTag call() throws Exception {
+                DeviceTag tag = new DeviceTag(tagValue);
+                tag.deviceTagId = UUID.randomUUID().toString();
+                mDeviceTags.put(tag.deviceTagId, tag);
+                return tag;
+            }
+        });
+    }
+
+    @Override
+    public Observable<Void> deleteDeviceTag(String deviceId, final String tagId) {
+        return Observable.fromCallable(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                if (mDeviceTags.remove(tagId) == null) {
+                    throw new HTTPException(404);
+                }
+                return null;
+            }
+        });
     }
 
     @Override
@@ -189,5 +246,9 @@ public class MockAferoClient implements AferoClient {
 
     public void setDeviceTimeZone(TimeZone tz) {
         mDeviceTimeZone = tz;
+    }
+
+    public DeviceTag getTagById(String deviceTagId) {
+        return mDeviceTags.get(deviceTagId);
     }
 }

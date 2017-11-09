@@ -130,6 +130,9 @@ public final class DeviceModel {
     private OnNextDeviceRequest mOnNextDeviceRequestResponse;
     private OnErrorDeviceRequest mOnErrorDeviceRequestResponse;
 
+    private DeviceTagCollection mTags;
+
+
     private DeviceModel() {
         mId = null;
         mAferoClient = null;
@@ -386,7 +389,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<DeviceModel> getUpdateObservable() {
+    public Observable<DeviceModel> getUpdateObservable() {
         return mUpdateObservable;
     }
 
@@ -398,7 +401,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<DeviceSync> getDeviceSyncPreUpdateObservable() {
+    public Observable<DeviceSync> getDeviceSyncPreUpdateObservable() {
         return mDeviceSyncPreUpdateSubject;
     }
 
@@ -422,7 +425,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<AferoError> getErrorObservable() {
+    public Observable<AferoError> getErrorObservable() {
         return mErrorSubject.onBackpressureBuffer();
     }
 
@@ -436,7 +439,7 @@ public final class DeviceModel {
      * @see <a href="https://developer.afero.io/docs/en/?target=Publish.html">Profile Editor: Publish Your Project</a>
      */
     @JsonIgnore
-    public rx.Observable<DeviceModel> getProfileObservable() {
+    public Observable<DeviceModel> getProfileObservable() {
         return mProfileUpdateSubject;
     }
 
@@ -628,13 +631,71 @@ public final class DeviceModel {
         return false;
     }
 
-    public void putTag(String key, String value) {
-        HashMap<String,String> tags = getTags();
-        tags.put(key, value);
+    /**
+     * Attaches a tag key/value to this device persistently via the Afero Cloud. The tag is removed
+     * if the device is disassociated from the account.
+     *
+     * @param key String specifying a unique identifier for the new tag
+     * @param value String containing arbitrary value for the new tag
+     * @return Observable that emits the new {@link DeviceTagCollection.Tag}
+     */
+    public Observable<DeviceTagCollection.Tag> saveTag(String key, String value) {
+        return getDeviceTagCollection().saveTag(key, value);
     }
 
+    /**
+     * Attaches a temporary key/value tag to this DeviceModel.
+     * The tag does *not* persist across sessions.
+     * Replacing an existing persistent tag with this method,
+     * also only lasts for the current session.
+     *
+     * @param key String specifying a unique identifier for the new tag
+     * @param value String containing arbitrary value for the new tag
+     * @see #saveTag(String, String)
+     */
+    public void putTag(String key, String value) {
+        getDeviceTagCollection().putTag(key, value);
+    }
+
+    /**
+     * Deletes a tag from both local and persistent cloud storage.
+     *
+     * @param key Unique indentifier of the tag.
+     * @return {@link DeviceTagCollection.Tag} object that was removed; null if no such tag was found.
+     */
+    public DeviceTagCollection.Tag deleteTag(String key) {
+        return getDeviceTagCollection().deleteTag(key);
+    }
+
+    /**
+     * Retrieves the value of a tag attached to this device via {@link #putTag(String, String)}
+     * or {@link #saveTag(String, String)}
+     *
+     * @param key Unique indentifier of the tag.
+     * @return String containing the value of the tag.
+     * @see #saveTag(String, String)
+     * @see #putTag(String, String)
+     */
     public String getTag(String key) {
-        return getTags().get(key);
+        return getDeviceTagCollection().getTag(key);
+    }
+
+    /**
+     * @return {@link Iterable} for the collection of tags currently attached to the device.
+     */
+    @JsonIgnore
+    public Iterable<DeviceTagCollection.Tag> getTags() {
+        return getDeviceTagCollection().getTags();
+    }
+
+    /**
+     * Setter for DeviceTags during DeviceModel JSON deserialization
+     *
+     * @param deviceTags Array of {@link DeviceTag} objects attached to this DeviceModel
+     */
+    @JsonProperty
+    public void setDeviceTags(DeviceTag[] deviceTags) {
+        getDeviceTagCollection().setDeviceTags(deviceTags);
     }
 
     @JsonProperty("attributes")
@@ -687,6 +748,18 @@ public final class DeviceModel {
 
 
     // non-public ------------------------------------------------------------------
+
+    AferoClient getAferoClient() {
+        return mAferoClient;
+    }
+
+    DeviceTagCollection.Tag getTagInternal(String key) {
+        return getDeviceTagCollection().getTagInternal(key);
+    }
+
+    DeviceTagCollection.Tag getTagById(String deviceTagId) {
+        return getDeviceTagCollection().getTagById(deviceTagId);
+    }
 
     void setProfile(DeviceProfile newProfile) {
         DeviceProfile oldProfile = mProfile;
@@ -821,10 +894,8 @@ public final class DeviceModel {
             mIsVirtual = deviceSync.virtual;
         }
 
-        if (deviceSync.tags != null) {
-            for (DeviceTag tag : deviceSync.tags) {
-                putTag(tag.deviceTagId, tag.value);
-            }
+        if (deviceSync.deviceTags != null) {
+            setDeviceTags(deviceSync.deviceTags);
         }
 
         if (deviceSync.timezone != null && deviceSync.timezone.timezone != null) {
@@ -870,6 +941,10 @@ public final class DeviceModel {
     void invalidateTimeZone() {
         mTimeZoneValue.invalidate();
         mUpdateSubject.onNext(this);
+    }
+
+    void invalidateTag(String actionString, String deviceTagId, String deviceTagValue) {
+        getDeviceTagCollection().invalidateTag(actionString, deviceTagId, deviceTagValue);
     }
 
     void onOTA(OTAInfo otaInfo) {
@@ -1099,13 +1174,11 @@ public final class DeviceModel {
         return data;
     }
 
-    private HashMap<String,String> mTags;
-    private static final String TAG_SELECTED_GROUP = "selected-group-id";
-
-    private HashMap<String,String> getTags() {
+    private DeviceTagCollection getDeviceTagCollection() {
         if (mTags == null) {
-            mTags = new HashMap<>();
+            mTags = new DeviceTagCollection(this);
         }
+
         return mTags;
     }
 

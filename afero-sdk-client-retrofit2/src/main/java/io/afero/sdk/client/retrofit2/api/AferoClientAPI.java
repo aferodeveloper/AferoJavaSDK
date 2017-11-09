@@ -9,6 +9,7 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.WriteRequest;
@@ -96,7 +97,7 @@ public interface AferoClientAPI {
             @Body DeviceAssociateBody body
     );
 
-    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone")
+    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone%2Ctags")
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(
             @Path("accountId") String accountId,
             @Body DeviceAssociateBody body,
@@ -104,7 +105,7 @@ public interface AferoClientAPI {
             @Query("imageSize") String imageSize
     );
 
-    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone&verified=true")
+    @POST(V1 + "accounts/{accountId}/devices?expansions=state%2Cprofile%2Cattributes%2Ctimezone%2Ctags&verified=true")
     Observable<DeviceAssociateResponse> deviceAssociateVerified(
             @Path("accountId") String accountId,
             @Body DeviceAssociateBody body,
@@ -173,8 +174,29 @@ public interface AferoClientAPI {
             @Body WriteRequest[] body
     );
 
-    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone")
+    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone%2Ctags")
     Observable<DeviceSync[]> getDevicesWithState(
             @Path("accountId") String accountId
+    );
+
+    @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag")
+    Observable<DeviceTag> postDeviceTag(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId,
+            @Body DeviceTag tag
+    );
+
+    @PUT(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag")
+    Observable<DeviceTag> putDeviceTag(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId,
+            @Body DeviceTag tag
+    );
+
+    @DELETE(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag/{deviceTag}")
+    Observable<Void> deleteDeviceTag(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId,
+            @Path("deviceTag") String deviceTagId
     );
 }
