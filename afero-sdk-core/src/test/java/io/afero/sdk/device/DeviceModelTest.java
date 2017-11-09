@@ -133,19 +133,15 @@ public class DeviceModelTest extends AferoTest {
     }
 
     private static class WriteAttributeTester {
-        final ResourceLoader resourceLoader = new ResourceLoader("resources/");
+        final ResourceLoader resourceLoader = new ResourceLoader(PATH_PREFIX);
         final DeviceProfile deviceProfile;
         final MockAferoClient aferoClient = new MockAferoClient();
         final DeviceModel deviceModel;
         TreeMap<Integer, AttributeWriter.Result> writeResults = new TreeMap<>();
 
         WriteAttributeTester() throws IOException {
-            deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
+            deviceProfile = resourceLoader.createObjectFromJSONResource("deviceModelTestProfile.json", DeviceProfile.class);
             deviceModel = new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
-        }
-
-        DeviceProfile loadDeviceProfile(String path) throws IOException {
-            return resourceLoader.createObjectFromJSONResource(path, DeviceProfile.class);
         }
 
         WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
@@ -256,12 +252,8 @@ public class DeviceModelTest extends AferoTest {
         final TimeZoneObserver setTimeZoneObserver = new TimeZoneObserver();
 
         TimeZoneTester() throws IOException {
-            deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
+            deviceProfile = resourceLoader.createObjectFromJSONResource("deviceModelTestProfile.json", DeviceProfile.class);
             deviceModel = new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
-        }
-
-        DeviceProfile loadDeviceProfile(String path) throws IOException {
-            return resourceLoader.createObjectFromJSONResource(path, DeviceProfile.class);
         }
 
         TimeZoneTester setTimeZone() {
