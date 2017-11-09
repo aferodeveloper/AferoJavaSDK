@@ -24,7 +24,8 @@ import rx.subjects.PublishSubject;
 class DeviceTagCollection {
 
     /**
-     * This class represents a key/value object that can be attached to a {@link DeviceModel}.
+     * This class represents a collection of key/value object "tag" that can be attached
+     * to a {@link DeviceModel}.
      */
     public static class Tag {
         private String mKey;
@@ -103,7 +104,7 @@ class DeviceTagCollection {
     private final AferoClient mAferoClient;
 
     private final HashMap<String, Tag> mTags = new HashMap<>();
-    private final PublishSubject<TagEvent> mTagSubject = PublishSubject.create();
+    private final PublishSubject<TagEvent> mTagEventSubject = PublishSubject.create();
 
 
     DeviceTagCollection(DeviceModel deviceModel) {
@@ -111,15 +112,19 @@ class DeviceTagCollection {
         mAferoClient = deviceModel.getAferoClient();
     }
 
+    Observable<TagEvent> getTagEventObservable() {
+        return mTagEventSubject;
+    }
+
     /**
-     * Attaches a tag key/value to this device persistently via the Afero Cloud. The tag is removed
+     * Adds a tag key/value to the collection persistently via the Afero Cloud. The tag is removed
      * if the device is disassociated from the account.
      *
      * @param key String specifying a unique identifier for the new tag
      * @param value String containing arbitrary value for the new tag
      * @return Observable that emits the new {@link Tag}
      */
-    public Observable<Tag> saveTag(String key, String value) {
+    Observable<Tag> saveTag(String key, String value) {
 
         Tag tag = mTags.get(key);
         Observable<DeviceTag> tagObservable;
@@ -151,7 +156,7 @@ class DeviceTagCollection {
     }
 
     /**
-     * Attaches a temporary key/value tag to this DeviceModel.
+     * Adds a temporary key/value tag to the collection.
      * The tag does *not* persist across sessions.
      * Replacing an existing persistent tag with this method,
      * also only lasts for the current session.
@@ -160,7 +165,7 @@ class DeviceTagCollection {
      * @param value String containing arbitrary value for the new tag
      * @see #saveTag(String, String)
      */
-    public void putTag(String key, String value) {
+    void putTag(String key, String value) {
         mTags.put(key, new Tag(key, value));
     }
 
@@ -170,7 +175,7 @@ class DeviceTagCollection {
      * @param key Unique indentifier of the tag.
      * @return {@link Tag} object that was removed; null if no such tag was found.
      */
-    public Tag deleteTag(String key) {
+    Tag deleteTag(String key) {
         Tag tag = mTags.remove(key);
         if (tag != null && tag.getDeviceTagId() != null) {
             mAferoClient.deleteDeviceTag(mDeviceModel.getId(), tag.getDeviceTagId())
@@ -180,15 +185,14 @@ class DeviceTagCollection {
     }
 
     /**
-     * Retrieves the value of a tag attached to this device via {@link #putTag(String, String)}
-     * or {@link #saveTag(String, String)}
+     * Retrieves the value of a tag
      *
      * @param key Unique indentifier of the tag.
      * @return String containing the value of the tag.
      * @see #saveTag(String, String)
      * @see #putTag(String, String)
      */
-    public String getTag(String key) {
+    String getTag(String key) {
         Tag tag = mTags.get(key);
         return tag != null ? tag.getValue() : null;
     }
@@ -196,7 +200,6 @@ class DeviceTagCollection {
     /**
      * @return {@link Iterable} for the collection of tags currently attached to the device.
      */
-    @JsonIgnore
     public Iterable<Tag> getTags() {
         return mTags.values();
     }
@@ -206,16 +209,11 @@ class DeviceTagCollection {
      *
      * @param deviceTags Array of {@link DeviceTag} objects attached to this DeviceModel
      */
-    @JsonProperty
-    public void setDeviceTags(DeviceTag[] deviceTags) {
+    void setDeviceTags(DeviceTag[] deviceTags) {
         if (deviceTags.length == 0) {
-            if (mTags != null) {
-                mTags.clear();
-            }
+            mTags.clear();
             return;
         }
-
-        HashMap<String, Tag> tags = mTags;
 
         for (DeviceTag dt : deviceTags) {
             Tag tag = null;
@@ -232,7 +230,7 @@ class DeviceTagCollection {
             }
             tag.setDeviceTagId(dt.deviceTagId);
 
-            tags.put(tag.getKey(), tag);
+            mTags.put(tag.getKey(), tag);
         }
     }
 
@@ -277,7 +275,7 @@ class DeviceTagCollection {
         // store the new tag in the local collection
         mTags.put(newTag.getKey(), newTag);
 
-        mTagSubject.onNext(new TagEvent(TagAction.ADD, newTag));
+        mTagEventSubject.onNext(new TagEvent(TagAction.ADD, newTag));
 
         return newTag;
     }
@@ -289,7 +287,7 @@ class DeviceTagCollection {
         // store the new tag in the local collection
         mTags.put(tag.getKey(), tag);
 
-        mTagSubject.onNext(new TagEvent(TagAction.UPDATE, tag));
+        mTagEventSubject.onNext(new TagEvent(TagAction.UPDATE, tag));
 
         return tag;
     }
@@ -300,7 +298,7 @@ class DeviceTagCollection {
             tag = mTags.remove(tag.getKey());
         }
 
-        mTagSubject.onNext(new TagEvent(TagAction.DELETE, tag));
+        mTagEventSubject.onNext(new TagEvent(TagAction.DELETE, tag));
 
         return tag;
     }
