@@ -38,9 +38,9 @@ public interface AferoClient {
 
     Observable<Location> getDeviceLocation(DeviceModel deviceModel);
 
-    Observable<DeviceTag> postDeviceTag(String deviceId, String tagValue);
+    Observable<DeviceTag> postDeviceTag(String deviceId, String tagKey, String tagValue);
 
-    Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagValue);
+    Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagKey, String tagValue);
 
     Observable<Void> deleteDeviceTag(String deviceId, String tagId);
 

@@ -492,17 +492,15 @@ public class DeviceCollection {
                     @Override
                     public void call(InvalidateMessage im) {
                         try {
-                            String deviceId = im.json.get("deviceId").asText();
-                            DeviceModel deviceModel = getDevice(deviceId);
+                            DeviceModel deviceModel = getDevice(im.deviceId);
                             if (deviceModel == null) {
-                                AfLog.e("Got invalidate on unknown deviceId: " + deviceId);
+                                AfLog.e("Got invalidate on unknown deviceId: " + im.deviceId);
                                 return;
                             }
 
                             switch (im.kind.toLowerCase(Locale.ROOT)) {
                                 case "profiles":
-                                    String profileId = im.json.get("profileId").asText();
-                                    updateDeviceProfile(deviceModel, profileId);
+                                    updateDeviceProfile(deviceModel, im.profileId);
                                     break;
 
                                 case "location":
@@ -514,10 +512,7 @@ public class DeviceCollection {
                                     break;
 
                                 case "tags":
-                                    String action = im.json.get("actionString").asText();
-                                    String deviceTagId = im.json.get("deviceTagId").asText();
-                                    String deviceTagValue = im.json.get("deviceTagValue").asText();
-                                    deviceModel.invalidateTag(action, deviceTagId, deviceTagValue);
+                                    deviceModel.invalidateTag(im.deviceTagAction, im.deviceTag);
                                     break;
                             }
                         } catch (Exception e) {
