@@ -21,6 +21,11 @@ public class DeviceTag {
     public String deviceTagId;
 
     /**
+     * A free form field that can be used by clients for organizational purposes. Optional.
+     */
+    public String key;
+
+    /**
      * This is the value of the tag. This is just a simple character string, so that it can be used
      * alone, or with a delimiter of the developers' choice to create a key/value pair.
      */
@@ -39,20 +44,18 @@ public class DeviceTag {
      */
     public String localizationKey;
 
-    /**
-     * Constructor for quick creation of a DeviceTag with a value.
-     *
-     * @param tagValue String that will be stored in the value of the tag.
-     */
-    public DeviceTag(String tagValue) {
-        value = tagValue;
-    }
 
     public DeviceTag() {
     }
 
-    public DeviceTag(String tagId, String tagValue) {
+    public DeviceTag(String tagKey, String tagValue) {
+        key = tagKey;
+        value = tagValue;
+    }
+
+    public DeviceTag(String tagId, String tagKey, String tagValue) {
         deviceTagId = tagId;
+        key = tagKey;
         value = tagValue;
     }
 
@@ -60,6 +63,7 @@ public class DeviceTag {
     public String toString() {
         return "{ " +
                 "deviceTagId='" + deviceTagId + '\'' +
+                ", key='" + key + '\'' +
                 ", value='" + value + '\'' +
                 " }";
     }

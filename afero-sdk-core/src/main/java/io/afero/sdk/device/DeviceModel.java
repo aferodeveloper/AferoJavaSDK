@@ -951,8 +951,8 @@ public final class DeviceModel {
         mUpdateSubject.onNext(this);
     }
 
-    void invalidateTag(String actionString, String deviceTagId, String deviceTagValue) {
-        getDeviceTagCollection().invalidateTag(actionString, deviceTagId, deviceTagValue);
+    void invalidateTag(String deviceTagAction, DeviceTag deviceTag) {
+        getDeviceTagCollection().invalidateTag(deviceTagAction, deviceTag);
     }
 
     void onOTA(OTAInfo otaInfo) {

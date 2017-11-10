@@ -296,7 +296,8 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
                 mSnapshotSubject.onNext(deviceSync);
             }
             else if (event.equals("invalidate")) {
-                mInvalidateSubject.onNext(new InvalidateMessage(data.get("kind").asText(), data));
+                InvalidateMessage invalidateMessage = mapper.treeToValue(data, InvalidateMessage.class);
+                mInvalidateSubject.onNext(invalidateMessage);
             }
             else if (event.equals("status_change")) {
                 DeviceState state = mapper.treeToValue(data, DeviceState.class);

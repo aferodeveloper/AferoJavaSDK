@@ -7,6 +7,8 @@ package io.afero.sdk.conclave.models;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.afero.sdk.client.afero.models.DeviceTag;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InvalidateMessage {
 
@@ -14,9 +16,15 @@ public class InvalidateMessage {
 
     public InvalidateMessage(String t, JsonNode j) {
         kind = t;
-        json = j;
     }
 
     public String kind;
-    public JsonNode json;
+
+    public String deviceId;
+
+    // kind: profiles
+    public String profileId;
+
+    public String deviceTagAction;
+    public DeviceTag deviceTag;
 }
