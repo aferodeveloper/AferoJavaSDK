@@ -182,7 +182,8 @@ public class DeviceTagCollectionTest {
 
             DeviceTag deviceTag = aferoClient.getTagById(tag.getDeviceTagId());
             assertNotNull(deviceTag);
-            assertEquals(tag.serialize(), deviceTag.value);
+            assertEquals(tag.getKey(), deviceTag.key);
+            assertEquals(tag.getValue(), deviceTag.value);
 
             return this;
         }
@@ -245,27 +246,27 @@ public class DeviceTagCollectionTest {
         }
 
         TagTester invalidateTagAdd(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTagCollection.Tag tag = new DeviceTagCollection.Tag(key, value);
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.ADD.toString(), deviceTagId, tag.serialize());
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.ADD.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagUpdate(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTagCollection.Tag tag = new DeviceTagCollection.Tag(key, value);
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.UPDATE.toString(), deviceTagId, tag.serialize());
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.UPDATE.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagDelete(String deviceTagId) throws JsonProcessingException {
             DeviceTagCollection.Tag tag = deviceTagCollection.getTagById(deviceTagId);
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), tag.getDeviceTagId(), null);
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, tag.getKey(), tag.getValue());
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), deviceTag);
             return this;
         }
 
         TagTester addDeviceTag(String deviceTagId, String key, String value) {
-            deviceTagCollection.putTag(key, value);
-            DeviceTagCollection.Tag tag = deviceTagCollection.getTagInternal(key);
-            tag.setDeviceTagId(deviceTagId);
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            deviceTagCollection.addTag(deviceTag);
             return this;
         }
 

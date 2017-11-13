@@ -5,7 +5,6 @@
 package io.afero.sdk.device;
 
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -186,10 +185,7 @@ class DeviceTagCollection {
      * @param deviceTags Array of {@link DeviceTag} objects attached to this DeviceModel
      */
     void setDeviceTags(DeviceTag[] deviceTags) {
-        if (deviceTags.length == 0) {
-            mTags.clear();
-            return;
-        }
+        mTags.clear();
 
         for (DeviceTag dt : deviceTags) {
             Tag tag = new Tag(dt);
@@ -208,7 +204,7 @@ class DeviceTagCollection {
                     updateTag(deviceTag);
                     break;
                 case DELETE:
-                    deleteTag(deviceTag.deviceTagId);
+                    deleteTagById(deviceTag.deviceTagId);
                     break;
             }
         } catch (Exception e) {
@@ -231,7 +227,7 @@ class DeviceTagCollection {
         return null;
     }
 
-    private Tag addTag(DeviceTag deviceTag) {
+    Tag addTag(DeviceTag deviceTag) {
         Tag newTag = new Tag(deviceTag);
 
         // store the new tag in the local collection

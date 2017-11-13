@@ -25,6 +25,7 @@ public class InvalidateMessage {
     // kind: profiles
     public String profileId;
 
+    // kind: tags
     public String deviceTagAction;
     public DeviceTag deviceTag;
 }
