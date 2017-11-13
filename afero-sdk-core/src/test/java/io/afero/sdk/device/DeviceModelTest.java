@@ -515,7 +515,8 @@ public class DeviceModelTest extends AferoTest {
 
             DeviceTag deviceTag = aferoClient.getTagById(tag.getDeviceTagId());
             assertNotNull(deviceTag);
-            assertEquals(tag.serialize(), deviceTag.value);
+            assertEquals(tag.getKey(), deviceTag.key);
+            assertEquals(tag.getValue(), deviceTag.value);
 
             return this;
         }

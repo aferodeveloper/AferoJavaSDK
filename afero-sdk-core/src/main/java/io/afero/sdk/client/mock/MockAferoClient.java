@@ -111,41 +111,53 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagValue) {
+    public Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagKey, String tagValue) {
+        DeviceTag tag = new DeviceTag(tagId, tagKey, tagValue);
+
         return Observable.fromCallable(new Callable<DeviceTag>() {
 
-            DeviceTag tag;
+            DeviceTag deviceTag;
 
-            Callable<DeviceTag> init(String tagId, String tagValue) {
-                tag = new DeviceTag(tagId, tagValue);
+            Callable<DeviceTag> init(DeviceTag tag) {
+                deviceTag = tag;
                 return this;
             }
 
             @Override
             public DeviceTag call() throws Exception {
-                DeviceTag oldTag = mDeviceTags.get(tag.deviceTagId);
+                DeviceTag oldTag = mDeviceTags.get(deviceTag.deviceTagId);
                 if (oldTag == null) {
                     throw new HTTPException(404);
                 }
 
-                oldTag.value = tag.value;
+                oldTag.key = deviceTag.key;
+                oldTag.value = deviceTag.value;
 
                 return oldTag;
             }
-        }.init(tagId, tagValue));
+        }.init(tag));
     }
 
     @Override
-    public Observable<DeviceTag> postDeviceTag(String deviceId, final String tagValue) {
+    public Observable<DeviceTag> postDeviceTag(String deviceId, String tagKey, String tagValue) {
+        DeviceTag tag = new DeviceTag(tagKey, tagValue);
+
         return Observable.fromCallable(new Callable<DeviceTag>() {
+
+            DeviceTag deviceTag;
+
+            Callable<DeviceTag> init(DeviceTag tag) {
+                deviceTag = tag;
+                return this;
+            }
+
             @Override
             public DeviceTag call() throws Exception {
-                DeviceTag tag = new DeviceTag(tagValue);
-                tag.deviceTagId = UUID.randomUUID().toString();
-                mDeviceTags.put(tag.deviceTagId, tag);
-                return tag;
+                deviceTag.deviceTagId = UUID.randomUUID().toString();
+                mDeviceTags.put(deviceTag.deviceTagId, deviceTag);
+                return deviceTag;
             }
-        });
+        }.init(tag));
     }
 
     @Override
