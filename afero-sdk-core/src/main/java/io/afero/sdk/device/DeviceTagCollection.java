@@ -15,7 +15,7 @@ import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-class DeviceTagCollection {
+public class DeviceTagCollection {
 
     /**
      * This class represents a collection of key/value object "tag" that can be attached
