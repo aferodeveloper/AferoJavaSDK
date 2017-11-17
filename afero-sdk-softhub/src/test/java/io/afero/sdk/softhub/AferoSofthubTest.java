@@ -65,6 +65,25 @@ public class AferoSofthubTest {
     }
 
     @Test
+    public void startWithDeviceAssociateFailure() throws Exception {
+        makeHubbyHelperTester()
+
+                .startHubbyWithDeviceAssociateFailure()
+                .waitUntilStartedCalled()
+
+                .verifyHubbyIsStarting()
+                .verifyHubbyNotRunning()
+
+                .hubbyCallbackAssociationNeeded("aferoSofthubTest")
+
+                .verifyHubbyNotStarting()
+                .verifyHubbyNotRunning()
+
+                .verifyStartError()
+        ;
+    }
+
+    @Test
     public void stop() throws Exception {
         makeHubbyHelperTester()
 
@@ -266,6 +285,12 @@ public class AferoSofthubTest {
             return this;
         }
 
+        HubbyHelperTester startHubbyWithDeviceAssociateFailure() {
+            aferoClient.failNextCall(new IllegalStateException("Simulated deviceAssociate error"));
+            aferoSofthub.start().subscribe(startObserver);
+            return this;
+        }
+
         HubbyHelperTester startHubbyCompletely() {
             return startHubby()
                     .waitUntilStartedCalled()
@@ -397,6 +422,11 @@ public class AferoSofthubTest {
             assertEquals(deviceId, onNextAssociation.mDeviceId);
             return this;
         }
+
+        HubbyHelperTester verifyStartError() {
+            assertNotNull(startObserver.error);
+            return this;
+        }
     }
 
     private class MockHubbyImpl implements AferoSofthub.HubbyImpl {
@@ -469,6 +499,7 @@ public class AferoSofthubTest {
 
         boolean isCompleted;
         final Object completedLock = new Object();
+        Throwable error;
 
         @Override
         public void onCompleted() {
@@ -480,7 +511,7 @@ public class AferoSofthubTest {
 
         @Override
         public void onError(Throwable e) {
-            assertTrue(false);
+            error = e;
         }
 
         @Override
