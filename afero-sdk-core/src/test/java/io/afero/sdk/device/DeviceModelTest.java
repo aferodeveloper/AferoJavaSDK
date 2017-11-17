@@ -469,12 +469,12 @@ public class DeviceModelTest extends AferoTest {
         }
 
         TagTester putTag(String key, String value) {
-            deviceModel.putTag(key, value).subscribe();
+            deviceModel.addTag(key, value).subscribe();
             return this;
         }
 
         TagTester deleteTag(String key) {
-            deviceModel.deleteTag(key).subscribe(
+            deviceModel.removeTag(deviceModel.getTags(key).iterator().next()).subscribe(
                     new Observer<DeviceTagCollection.Tag>() {
                         @Override
                         public void onCompleted() {
@@ -496,7 +496,7 @@ public class DeviceModelTest extends AferoTest {
         }
 
         TagTester verifyTag(String key, String value) {
-            assertEquals(value, deviceModel.getTag(key));
+            assertEquals(value, deviceModel.getTags(key).iterator().next().getKey());
             return this;
         }
 
@@ -514,7 +514,7 @@ public class DeviceModelTest extends AferoTest {
         }
 
         TagTester verifyTagWasDeleted(String key) {
-            assertNull(deviceModel.getTag(key));
+            assertFalse(deviceModel.getTags(key).iterator().hasNext());
             assertNotNull(deletedTag);
             assertEquals(key, deletedTag.getKey());
             return this;
