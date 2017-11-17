@@ -26,6 +26,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.afero.aferolab.R;
 import io.afero.aferolab.attributeEditor.AttributeEditorView;
+import io.afero.aferolab.deviceTag.DeviceTagsView;
 import io.afero.aferolab.widget.ProgressSpinnerView;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
@@ -188,6 +189,12 @@ public class DeviceInspectorView extends ScreenView {
         mDeviceInfoExtraContainer.setVisibility(GONE);
         mDeviceInfoOpenButton.setVisibility(VISIBLE);
         mDeviceInfoCloseButton.setVisibility(GONE);
+    }
+
+    @OnClick(R.id.device_tag_button)
+    void onClickTagsButton() {
+        DeviceTagsView tagsView = DeviceTagsView.create(this);
+        tagsView.start(mController.getDeviceModel());
     }
 
     @OnClick(R.id.device_delete_button)

@@ -5,74 +5,69 @@
 package io.afero.sdk.device;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import java.io.IOException;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Vector;
+import java.util.concurrent.Callable;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.DeviceTag;
-import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-class DeviceTagCollection {
+public class DeviceTagCollection {
 
     /**
-     * This class represents a key/value object that can be attached to a {@link DeviceModel}.
+     * This class represents a collection of key/value object "tag" that can be attached
+     * to a {@link DeviceModel}.
      */
-    public static class Tag {
-        private String mKey;
-        private String mValue;
-        private String mDeviceTagId;
+    public static class Tag implements Comparable<Tag> {
 
-        private Tag() {}
+        private final DeviceTag mDeviceTag;
 
-        Tag(String k, String v) {
-            mKey = k;
-            mValue = v;
+        private Tag() {
+            mDeviceTag = new DeviceTag();
         }
 
-        Tag(String tagData) throws IOException {
-            Tag tag = JSONUtils.readValue(tagData, Tag.class);
-            mKey = tag.mKey;
-            mValue = tag.mValue;
+        Tag(DeviceTag dt) {
+            mDeviceTag = dt;
         }
 
-        @JsonProperty("k")
+        Tag(String key, String value) {
+            mDeviceTag = new DeviceTag(key, value);
+        }
+
         public String getKey() {
-            return mKey;
+            return mDeviceTag.key;
         }
 
-        void setKey(String k) {
-            mKey = k;
+        public boolean hasKey() {
+            return getKey() != null;
         }
 
-        @JsonProperty("v")
         public String getValue() {
-            return mValue;
+            return mDeviceTag.value;
         }
 
-        void setValue(String v) {
-            mValue = v;
+        public String getId() {
+            return mDeviceTag.deviceTagId;
         }
 
-        @JsonIgnore
-        String getDeviceTagId() {
-            return mDeviceTagId;
-        }
 
-        void setDeviceTagId(String id) {
-            mDeviceTagId = id;
-        }
+        @Override
+        public int compareTo(Tag thatTag) {
+            final String thisKey = this.getKey();
+            final String thatKey = thatTag.getKey();
 
-        String serialize() throws JsonProcessingException {
-            return JSONUtils.writeValueAsString(this);
+            if (thisKey == null) {
+                return thatKey == null ? 0 : -1;
+            } else if (thatKey == null) {
+                return 1;
+            }
+
+            return thisKey.compareTo(thatKey);
         }
     }
 
@@ -102,8 +97,9 @@ class DeviceTagCollection {
     private final DeviceModel mDeviceModel;
     private final AferoClient mAferoClient;
 
-    private final HashMap<String, Tag> mTags = new HashMap<>();
-    private final PublishSubject<TagEvent> mTagSubject = PublishSubject.create();
+    private final Vector<Tag> mTags = new Vector<>();
+
+    private final PublishSubject<TagEvent> mTagEventSubject = PublishSubject.create();
 
 
     DeviceTagCollection(DeviceModel deviceModel) {
@@ -111,57 +107,77 @@ class DeviceTagCollection {
         mAferoClient = deviceModel.getAferoClient();
     }
 
+    Observable<TagEvent> getTagEventObservable() {
+        return mTagEventSubject;
+    }
+
     /**
-     * Attaches a tag key/value to this device persistently via the Afero Cloud. The tag is removed
+     * Adds a tag key/value to the collection persistently via the Afero Cloud. The tag is removed
      * if the device is disassociated from the account.
      *
-     * @param key String specifying a unique identifier for the new tag
+     * @param key   String specifying a unique identifier for the new tag
      * @param value String containing arbitrary value for the new tag
      * @return Observable that emits the new {@link Tag}
      */
-    public Observable<Tag> saveTag(String key, String value) {
+    Observable<Tag> saveTag(String key, String value) {
 
-        Tag tag = mTags.get(key);
-        Observable<DeviceTag> tagObservable;
-
-        try {
-            if (tag == null) {
-                tag = new Tag(key, value);
-                tagObservable = mAferoClient.postDeviceTag(mDeviceModel.getId(), tag.serialize());
-            } else {
-                Tag newTag = new Tag(key, value);
-                tagObservable = mAferoClient.putDeviceTag(mDeviceModel.getId(), tag.getDeviceTagId(), newTag.serialize());
-            }
-        } catch (JsonProcessingException e) {
-            return Observable.error(e);
-        }
+        Tag tag = getTagInternal(key);
+        Observable<DeviceTag> tagObservable = tag != null
+                ? mAferoClient.putDeviceTag(mDeviceModel.getId(), tag.getId(), key, value)
+                : mAferoClient.postDeviceTag(mDeviceModel.getId(), key, value);
 
         return tagObservable.flatMap(
                 new Func1<DeviceTag, Observable<Tag>>() {
                     @Override
                     public Observable<Tag> call(DeviceTag deviceTag) {
-                        try {
-                            Tag newTag = addTagById(deviceTag.deviceTagId, deviceTag.value);
-                            return Observable.just(newTag);
-                        } catch (IOException e) {
-                            return Observable.error(e);
-                        }
+                        return Observable.just(addTag(deviceTag));
                     }
                 });
     }
 
     /**
-     * Attaches a temporary key/value tag to this DeviceModel.
+     * Adds a temporary key/value tag to the collection.
      * The tag does *not* persist across sessions.
      * Replacing an existing persistent tag with this method,
      * also only lasts for the current session.
      *
-     * @param key String specifying a unique identifier for the new tag
+     * @param key   String specifying a unique identifier for the new tag
      * @param value String containing arbitrary value for the new tag
      * @see #saveTag(String, String)
      */
-    public void putTag(String key, String value) {
-        mTags.put(key, new Tag(key, value));
+    void putTag(String key, String value) {
+        addTagInternal(new Tag(key, value));
+    }
+
+    /**
+     * Deletes a tag from both local and persistent cloud storage.
+     *
+     * @param tag {@link Tag} to be deleted
+     */
+    private Observable<Tag> deleteTag(Tag tag) {
+
+        final Observable<Tag> removeLocalTag = Observable.fromCallable(
+                new Callable<Tag>() {
+                    Tag mTag;
+
+                    Callable<Tag> init(Tag tag) {
+                        mTag = tag;
+                        return this;
+                    }
+
+                    @Override
+                    public Tag call() throws Exception {
+                        mTags.remove(mTag);
+                        return mTag;
+                    }
+                }.init(tag));
+
+        if (tag.getId() != null) {
+            return mAferoClient.deleteDeviceTag(mDeviceModel.getId(), tag.getId())
+                    .flatMap(new RxUtils.FlatMapper<Void, Tag>(removeLocalTag));
+        }
+
+        return removeLocalTag;
     }
 
     /**
@@ -170,35 +186,33 @@ class DeviceTagCollection {
      * @param key Unique indentifier of the tag.
      * @return {@link Tag} object that was removed; null if no such tag was found.
      */
-    public Tag deleteTag(String key) {
-        Tag tag = mTags.remove(key);
-        if (tag != null && tag.getDeviceTagId() != null) {
-            mAferoClient.deleteDeviceTag(mDeviceModel.getId(), tag.getDeviceTagId())
-                    .subscribe(new RxUtils.IgnoreResponseObserver<Void>());
+    Observable<Tag> deleteTag(String key) {
+        Tag tag = getTagInternal(key);
+        if (tag != null) {
+            return deleteTag(tag);
         }
-        return tag;
+
+        return Observable.error(new IllegalArgumentException("Not tag with key '" + key + "' found"));
     }
 
     /**
-     * Retrieves the value of a tag attached to this device via {@link #putTag(String, String)}
-     * or {@link #saveTag(String, String)}
+     * Retrieves the value of a tag
      *
      * @param key Unique indentifier of the tag.
      * @return String containing the value of the tag.
      * @see #saveTag(String, String)
      * @see #putTag(String, String)
      */
-    public String getTag(String key) {
-        Tag tag = mTags.get(key);
+    String getTag(String key) {
+        Tag tag = getTagInternal(key);
         return tag != null ? tag.getValue() : null;
     }
 
     /**
      * @return {@link Iterable} for the collection of tags currently attached to the device.
      */
-    @JsonIgnore
     public Iterable<Tag> getTags() {
-        return mTags.values();
+        return mTags;
     }
 
     /**
@@ -206,48 +220,26 @@ class DeviceTagCollection {
      *
      * @param deviceTags Array of {@link DeviceTag} objects attached to this DeviceModel
      */
-    @JsonProperty
-    public void setDeviceTags(DeviceTag[] deviceTags) {
-        if (deviceTags.length == 0) {
-            if (mTags != null) {
-                mTags.clear();
-            }
-            return;
-        }
-
-        HashMap<String, Tag> tags = mTags;
+    void setDeviceTags(DeviceTag[] deviceTags) {
+        mTags.clear();
 
         for (DeviceTag dt : deviceTags) {
-            Tag tag = null;
-
-            try {
-                tag = new Tag(dt.value);
-            } catch (IOException e) {
-                e.printStackTrace();
-                // ignore
-            }
-
-            if (tag == null) {
-                tag = new Tag(dt.deviceTagId, dt.value);
-            }
-            tag.setDeviceTagId(dt.deviceTagId);
-
-            tags.put(tag.getKey(), tag);
+            addTagInternal(new Tag(dt));
         }
     }
 
-    void invalidateTag(String actionString, String deviceTagId, String deviceTagValue) {
+    void invalidateTag(String deviceTagAction, DeviceTag deviceTag) {
         try {
-            TagAction action = TagAction.valueOf(actionString.toUpperCase(Locale.ROOT));
+            TagAction action = TagAction.valueOf(deviceTagAction.toUpperCase(Locale.ROOT));
             switch (action) {
                 case ADD:
-                    addTagById(deviceTagId, deviceTagValue);
+                    addTag(deviceTag);
                     break;
                 case UPDATE:
-                    updateTagById(deviceTagId, deviceTagValue);
+                    updateTag(deviceTag);
                     break;
                 case DELETE:
-                    deleteTagById(deviceTagId);
+                    deleteTagById(deviceTag.deviceTagId);
                     break;
             }
         } catch (Exception e) {
@@ -256,13 +248,18 @@ class DeviceTagCollection {
     }
 
     Tag getTagInternal(String key) {
-        return mTags.get(key);
+        int tagIndex = Collections.binarySearch(mTags, new Tag(key, null));
+        if (tagIndex >= 0) {
+            return mTags.get(tagIndex);
+        }
+
+        return null;
     }
 
     Tag getTagById(String deviceTagId) {
 
-        for (Tag tag : mTags.values()) {
-            if (tag.getDeviceTagId() != null && tag.getDeviceTagId().equals(deviceTagId)) {
+        for (Tag tag : mTags) {
+            if (tag.getId() != null && tag.getId().equals(deviceTagId)) {
                 return tag;
             }
         }
@@ -270,37 +267,47 @@ class DeviceTagCollection {
         return null;
     }
 
-    private Tag addTagById(String deviceTagId, String deviceTagData) throws IOException {
-        Tag newTag = new Tag(deviceTagData);
-        newTag.setDeviceTagId(deviceTagId);
+    Tag addTag(DeviceTag deviceTag) {
+        Tag newTag = new Tag(deviceTag);
 
-        // store the new tag in the local collection
-        mTags.put(newTag.getKey(), newTag);
+        addTagInternal(newTag);
 
-        mTagSubject.onNext(new TagEvent(TagAction.ADD, newTag));
+        mTagEventSubject.onNext(new TagEvent(TagAction.ADD, newTag));
 
         return newTag;
     }
 
-    private Tag updateTagById(String deviceTagId, String deviceTagData) throws IOException {
-        Tag tag = new Tag(deviceTagData);
-        tag.setDeviceTagId(deviceTagId);
+    private Tag addTagInternal(Tag tag) {
 
-        // store the new tag in the local collection
-        mTags.put(tag.getKey(), tag);
+        int tagIndex = Collections.binarySearch(mTags, tag);
+        if (tagIndex < 0) {
+            tagIndex = -tagIndex - 1;
+        } else {
+            mTags.remove(tagIndex);
+        }
 
-        mTagSubject.onNext(new TagEvent(TagAction.UPDATE, tag));
+        mTags.add(tagIndex, tag);
 
         return tag;
     }
 
-    private Tag deleteTagById(String deviceTagId) throws IOException {
+    private Tag updateTag(DeviceTag deviceTag) {
+        Tag tag = new Tag(deviceTag);
+
+        addTagInternal(tag);
+
+        mTagEventSubject.onNext(new TagEvent(TagAction.UPDATE, tag));
+
+        return tag;
+    }
+
+    private Tag deleteTagById(String deviceTagId) {
         Tag tag = getTagById(deviceTagId);
         if (tag != null) {
-            tag = mTags.remove(tag.getKey());
+            mTags.remove(tag);
         }
 
-        mTagSubject.onNext(new TagEvent(TagAction.DELETE, tag));
+        mTagEventSubject.onNext(new TagEvent(TagAction.DELETE, tag));
 
         return tag;
     }

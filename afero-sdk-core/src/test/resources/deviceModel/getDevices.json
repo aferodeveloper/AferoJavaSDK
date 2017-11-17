@@ -9,15 +9,18 @@
         "tags": [
             {
                 "deviceTagId": "tag-id-1",
-                "value": "{\"k\":\"tag-key-1\",\"v\":\"tag-value-1\"}"
+                "key": "tag-key-1",
+                "value": "tag-value-1"
             },
             {
                 "deviceTagId": "tag-id-2",
-                "value": "{\"k\":\"tag-key-2\",\"v\":\"tag-value-2\"}"
+                "key": "tag-key-2",
+                "value": "tag-value-2"
             },
             {
                 "deviceTagId": "tag-id-3",
-                "value": "{\"k\":\"tag-key-3\",\"v\":\"tag-value-3\"}"
+                "key": "tag-key-3",
+                "value": "tag-value-3"
             }
         ],
         "virtual": false,

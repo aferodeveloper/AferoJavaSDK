@@ -13,6 +13,7 @@ import java.io.IOException;
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.ResourceLoader;
+import rx.Observer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -30,36 +31,21 @@ public class DeviceTagCollectionTest {
     public void saveTag() throws Exception {
         makeTagTester()
                 .saveTag(KEY, VALUE)
+                .verifyTag(KEY, VALUE)
                 .verifyTagWasSavedToCloud(KEY, VALUE)
         ;
     }
 
     @Test
-    public void putTag() throws Exception {
-        makeTagTester()
-                .putTag(KEY, VALUE)
-                .verifyTag(KEY, VALUE)
-                .verifyTagWasNotSaved(KEY, VALUE)
-        ;
-    }
-
-    @Test
     public void deleteTag() throws Exception {
-        final String KEY_LOCAL = "key-local";
-        final String KEY_CLOUD = "key-cloud";
 
         makeTagTester()
-                .putTag(KEY_LOCAL, VALUE)
-                .saveTag(KEY_CLOUD, VALUE)
+                .saveTag(KEY, VALUE)
+                .verifyTag(KEY, VALUE)
+                .verifyTagWasSavedToCloud(KEY, VALUE)
 
-                .verifyTag(KEY_LOCAL, VALUE)
-                .verifyTagWasSavedToCloud(KEY_CLOUD, VALUE)
-
-                .deleteTag(KEY_LOCAL)
-                .verifyTagWasDeletedLocally(KEY_LOCAL)
-
-                .deleteTag(KEY_CLOUD)
-                .verifyTagWasDeletedLocally(KEY_CLOUD)
+                .deleteTag(KEY)
+                .verifyTagWasDeletedLocally(KEY)
                 .verifyTagWasDeletedFromCloud()
         ;
     }
@@ -67,7 +53,7 @@ public class DeviceTagCollectionTest {
     @Test
     public void getTag() throws Exception {
         makeTagTester()
-                .putTag(KEY, VALUE)
+                .saveTag(KEY, VALUE)
 
                 .getTag(KEY)
                 .verifyGetTagReturnValue(VALUE)
@@ -80,11 +66,11 @@ public class DeviceTagCollectionTest {
     @Test
     public void getTags() throws Exception {
         makeTagTester()
-                .putTag("key-1", VALUE)
-                .putTag("key-2", VALUE)
-                .putTag("key-3", VALUE)
-                .putTag("key-4", VALUE)
-                .putTag("key-5", VALUE)
+                .saveTag("key-1", VALUE)
+                .saveTag("key-2", VALUE)
+                .saveTag("key-3", VALUE)
+                .saveTag("key-4", VALUE)
+                .saveTag("key-5", VALUE)
 
                 .verifyGetTagsCount(5)
         ;
@@ -154,12 +140,24 @@ public class DeviceTagCollectionTest {
         }
 
         TagTester deleteTag(String key) {
-            deletedTag = deviceTagCollection.deleteTag(key);
-            return this;
-        }
+            deviceTagCollection.deleteTag(key).subscribe(
+                    new Observer<DeviceTagCollection.Tag>() {
+                        @Override
+                        public void onCompleted() {
 
-        TagTester putTag(String key, String value) {
-            deviceTagCollection.putTag(key, value);
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+
+                        }
+
+                        @Override
+                        public void onNext(DeviceTagCollection.Tag tag) {
+                            deletedTag = tag;
+                        }
+                    }
+            );
             return this;
         }
 
@@ -180,9 +178,10 @@ public class DeviceTagCollectionTest {
             assertNotNull(tag);
             assertEquals(value, tag.getValue());
 
-            DeviceTag deviceTag = aferoClient.getTagById(tag.getDeviceTagId());
+            DeviceTag deviceTag = aferoClient.getTagById(tag.getId());
             assertNotNull(deviceTag);
-            assertEquals(tag.serialize(), deviceTag.value);
+            assertEquals(tag.getKey(), deviceTag.key);
+            assertEquals(tag.getValue(), deviceTag.value);
 
             return this;
         }
@@ -192,7 +191,7 @@ public class DeviceTagCollectionTest {
             assertNotNull(tag);
             assertEquals(value, tag.getValue());
 
-            DeviceTag deviceTag = aferoClient.getTagById(tag.getDeviceTagId());
+            DeviceTag deviceTag = aferoClient.getTagById(tag.getId());
             assertNull(deviceTag);
 
             return this;
@@ -210,7 +209,7 @@ public class DeviceTagCollectionTest {
 
         TagTester verifyTagWasDeletedFromCloud() {
             assertNotNull(deletedTag);
-            DeviceTag deviceTag = aferoClient.getTagById(deletedTag.getDeviceTagId());
+            DeviceTag deviceTag = aferoClient.getTagById(deletedTag.getId());
             assertNull(deviceTag);
 
             return null;
@@ -245,27 +244,27 @@ public class DeviceTagCollectionTest {
         }
 
         TagTester invalidateTagAdd(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTagCollection.Tag tag = new DeviceTagCollection.Tag(key, value);
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.ADD.toString(), deviceTagId, tag.serialize());
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.ADD.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagUpdate(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTagCollection.Tag tag = new DeviceTagCollection.Tag(key, value);
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.UPDATE.toString(), deviceTagId, tag.serialize());
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.UPDATE.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagDelete(String deviceTagId) throws JsonProcessingException {
             DeviceTagCollection.Tag tag = deviceTagCollection.getTagById(deviceTagId);
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), tag.getDeviceTagId(), null);
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, tag.getKey(), tag.getValue());
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), deviceTag);
             return this;
         }
 
         TagTester addDeviceTag(String deviceTagId, String key, String value) {
-            deviceTagCollection.putTag(key, value);
-            DeviceTagCollection.Tag tag = deviceTagCollection.getTagInternal(key);
-            tag.setDeviceTagId(deviceTagId);
+            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            deviceTagCollection.addTag(deviceTag);
             return this;
         }
 

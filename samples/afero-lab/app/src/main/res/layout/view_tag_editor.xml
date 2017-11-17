@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+  -->
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="15dp">
+
+    <io.afero.aferolab.widget.AferoEditText
+        android:id="@+id/tag_key_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:hint="@string/tag_key_hint"
+        android:maxLines="1"
+        />
+
+    <io.afero.aferolab.widget.AferoEditText
+        android:id="@+id/tag_value_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:hint="@string/tag_value_hint"
+        android:maxLines="1"
+        />
+
+</LinearLayout>

@@ -301,6 +301,7 @@ public final class DeviceModel {
     /**
      * @return the {@link TimeZone} in which the device resides.
      */
+    @JsonIgnore
     public Observable<TimeZone> getTimeZone() {
 
         if (mTimeZoneValue.getState().equals(TimeZoneValue.State.SET)) {
@@ -639,22 +640,8 @@ public final class DeviceModel {
      * @param value String containing arbitrary value for the new tag
      * @return Observable that emits the new {@link DeviceTagCollection.Tag}
      */
-    public Observable<DeviceTagCollection.Tag> saveTag(String key, String value) {
+    public Observable<DeviceTagCollection.Tag> putTag(String key, String value) {
         return getDeviceTagCollection().saveTag(key, value);
-    }
-
-    /**
-     * Attaches a temporary key/value tag to this DeviceModel.
-     * The tag does *not* persist across sessions.
-     * Replacing an existing persistent tag with this method,
-     * also only lasts for the current session.
-     *
-     * @param key String specifying a unique identifier for the new tag
-     * @param value String containing arbitrary value for the new tag
-     * @see #saveTag(String, String)
-     */
-    public void putTag(String key, String value) {
-        getDeviceTagCollection().putTag(key, value);
     }
 
     /**
@@ -663,17 +650,15 @@ public final class DeviceModel {
      * @param key Unique indentifier of the tag.
      * @return {@link DeviceTagCollection.Tag} object that was removed; null if no such tag was found.
      */
-    public DeviceTagCollection.Tag deleteTag(String key) {
+    public Observable<DeviceTagCollection.Tag> deleteTag(String key) {
         return getDeviceTagCollection().deleteTag(key);
     }
 
     /**
-     * Retrieves the value of a tag attached to this device via {@link #putTag(String, String)}
-     * or {@link #saveTag(String, String)}
+     * Retrieves the value of a tag attached to this device via {@link #putTag(String, String)}.
      *
      * @param key Unique indentifier of the tag.
      * @return String containing the value of the tag.
-     * @see #saveTag(String, String)
      * @see #putTag(String, String)
      */
     public String getTag(String key) {
@@ -689,7 +674,16 @@ public final class DeviceModel {
     }
 
     /**
-     * Setter for DeviceTags during DeviceModel JSON deserialization
+     * @return {@link Observable} that emits appropriate {@link DeviceTagCollection.TagEvent} objects
+     * when a {@link DeviceTagCollection.Tag} is added, updated, or removed from the DeviceModel.
+     */
+    @JsonIgnore
+    public Observable<DeviceTagCollection.TagEvent> getTagObservable() {
+        return getDeviceTagCollection().getTagEventObservable();
+    }
+
+    /**
+     * Setter for DeviceTags used during DeviceModel JSON deserialization
      *
      * @param deviceTags Array of {@link DeviceTag} objects attached to this DeviceModel
      */
@@ -943,8 +937,8 @@ public final class DeviceModel {
         mUpdateSubject.onNext(this);
     }
 
-    void invalidateTag(String actionString, String deviceTagId, String deviceTagValue) {
-        getDeviceTagCollection().invalidateTag(actionString, deviceTagId, deviceTagValue);
+    void invalidateTag(String deviceTagAction, DeviceTag deviceTag) {
+        getDeviceTagCollection().invalidateTag(deviceTagAction, deviceTag);
     }
 
     void onOTA(OTAInfo otaInfo) {

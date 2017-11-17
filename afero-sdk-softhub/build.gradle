@@ -48,6 +48,7 @@ dependencies {
     // https://github.com/robolectric/robolectric
     testCompile 'org.robolectric:robolectric:3.3.1'
     testCompile 'junit:junit:4.12'
+    testCompile 'com.squareup.retrofit2:retrofit:2.3.0'
 }
 
 task androidJavadocs(type: Javadoc) {
