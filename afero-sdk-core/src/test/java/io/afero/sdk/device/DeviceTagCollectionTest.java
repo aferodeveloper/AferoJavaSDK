@@ -9,28 +9,39 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
 
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.ResourceLoader;
+import rx.Observable;
 import rx.Observer;
+import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class DeviceTagCollectionTest {
 
     private final static String KEY = "key";
     private final static String VALUE = "value";
+    private final static String VALUE_1 = "value-1";
+    private final static String VALUE_2 = "value-2";
+    private final static String VALUE_3 = "value-3";
+    private final static String VALUE_4 = "value-4";
+    private final static String VALUE_5 = "value-5";
     private final static String DEVICE_TAG_ID = "device-tag-id";
 
     @Test
-    public void saveTag() throws Exception {
+    public void addTag() throws Exception {
         makeTagTester()
-                .saveTag(KEY, VALUE)
+                .addTag(KEY, VALUE)
                 .verifyTag(KEY, VALUE)
                 .verifyTagWasSavedToCloud(KEY, VALUE)
         ;
@@ -40,7 +51,7 @@ public class DeviceTagCollectionTest {
     public void deleteTag() throws Exception {
 
         makeTagTester()
-                .saveTag(KEY, VALUE)
+                .addTag(KEY, VALUE)
                 .verifyTag(KEY, VALUE)
                 .verifyTagWasSavedToCloud(KEY, VALUE)
 
@@ -53,24 +64,34 @@ public class DeviceTagCollectionTest {
     @Test
     public void getTag() throws Exception {
         makeTagTester()
-                .saveTag(KEY, VALUE)
+                .addTag(KEY, VALUE_1)
+                .addTag(KEY, VALUE_2)
+                .addTag(KEY, VALUE_3)
+                .addTag(KEY, VALUE_4)
+                .addTag(KEY, VALUE_5)
 
-                .getTag(KEY)
-                .verifyGetTagReturnValue(VALUE)
+                .getTags(KEY)
+                .verifyGetTagReturnValue(new String[] {
+                        VALUE_1,
+                        VALUE_2,
+                        VALUE_3,
+                        VALUE_4,
+                        VALUE_5
+                })
 
-                .getTag("bogus")
-                .verifyGetTagReturnValue(null)
+                .getTags("bogus")
+                .verifyGetTagReturnValueIsEmpty()
         ;
     }
 
     @Test
     public void getTags() throws Exception {
         makeTagTester()
-                .saveTag("key-1", VALUE)
-                .saveTag("key-2", VALUE)
-                .saveTag("key-3", VALUE)
-                .saveTag("key-4", VALUE)
-                .saveTag("key-5", VALUE)
+                .addTag("key-1", VALUE)
+                .addTag("key-2", VALUE)
+                .addTag("key-3", VALUE)
+                .addTag("key-4", VALUE)
+                .addTag("key-5", VALUE)
 
                 .verifyGetTagsCount(5)
         ;
@@ -125,7 +146,7 @@ public class DeviceTagCollectionTest {
         final DeviceTag[] deviceTags;
 
         DeviceTagCollection.Tag deletedTag;
-        String valueReturnedFromGetTag;
+        Iterable<DeviceTagCollection.Tag> getTagResult;
 
         TagTester() throws IOException {
             DeviceProfile deviceProfile = resourceLoader.createObjectFromJSONResource("deviceProfile.json", DeviceProfile.class);
@@ -134,13 +155,13 @@ public class DeviceTagCollectionTest {
             deviceTagCollection = new DeviceTagCollection(deviceModel);
         }
 
-        TagTester saveTag(String key, String value) {
-            deviceTagCollection.saveTag(key, value).subscribe();
+        TagTester addTag(String key, String value) {
+            deviceTagCollection.addTag(key, value).subscribe();
             return this;
         }
 
         TagTester deleteTag(String key) {
-            deviceTagCollection.deleteTag(key).subscribe(
+            deviceTagCollection.removeTag(deviceTagCollection.getTags(key).iterator().next()).subscribe(
                     new Observer<DeviceTagCollection.Tag>() {
                         @Override
                         public void onCompleted() {
@@ -158,16 +179,17 @@ public class DeviceTagCollectionTest {
                         }
                     }
             );
+
             return this;
         }
 
         TagTester verifyTag(String key, String value) {
-            assertEquals(value, deviceTagCollection.getTag(key));
+            assertEquals(value, deviceTagCollection.getTags(key).iterator().next().getValue());
             return this;
         }
 
         TagTester verifyTagWasDeletedLocally(String key) {
-            assertNull(deviceTagCollection.getTag(key));
+            assertFalse(deviceTagCollection.getTags(key).iterator().hasNext());
             assertNotNull(deletedTag);
             assertEquals(key, deletedTag.getKey());
             return this;
@@ -197,13 +219,21 @@ public class DeviceTagCollectionTest {
             return this;
         }
 
-        TagTester getTag(String key) {
-            valueReturnedFromGetTag = deviceTagCollection.getTag(key);
+        TagTester getTags(String key) {
+            getTagResult = deviceTagCollection.getTags(key);
             return this;
         }
 
-        TagTester verifyGetTagReturnValue(String expectedValue) {
-            assertEquals(expectedValue, valueReturnedFromGetTag);
+        TagTester verifyGetTagReturnValue(String[] values) {
+            Iterator valueIter = Arrays.asList(values).iterator();
+            for (DeviceTagCollection.Tag tag : getTagResult) {
+                assertEquals(valueIter.next(), tag.getValue());
+            }
+            return this;
+        }
+
+        TagTester verifyGetTagReturnValueIsEmpty() {
+            assertFalse(getTagResult.iterator().hasNext());
             return this;
         }
 
