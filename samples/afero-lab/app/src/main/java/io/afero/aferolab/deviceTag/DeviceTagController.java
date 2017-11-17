@@ -4,7 +4,6 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceTagCollection;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 
 class DeviceTagController {
@@ -20,10 +19,10 @@ class DeviceTagController {
 
     void addTag() {
         mView.openTagEditor(null)
-                .flatMap(new Func1<TagEditor.Result, Observable<DeviceTagCollection.Tag>>() {
+                .flatMap(new Func1<DeviceTagEditor.Result, Observable<DeviceTagCollection.Tag>>() {
                     @Override
-                    public Observable<DeviceTagCollection.Tag> call(TagEditor.Result result) {
-                        return mDeviceModel.saveTag(result.key, result.value);
+                    public Observable<DeviceTagCollection.Tag> call(DeviceTagEditor.Result result) {
+                        return mDeviceModel.putTag(result.key, result.value);
                     }
                 })
                 .subscribe(new RxUtils.IgnoreResponseObserver<DeviceTagCollection.Tag>());
@@ -31,10 +30,10 @@ class DeviceTagController {
 
     void editTag(DeviceTagCollection.Tag tag) {
         mView.openTagEditor(tag)
-                .flatMap(new Func1<TagEditor.Result, Observable<DeviceTagCollection.Tag>>() {
+                .flatMap(new Func1<DeviceTagEditor.Result, Observable<DeviceTagCollection.Tag>>() {
                     @Override
-                    public Observable<DeviceTagCollection.Tag> call(TagEditor.Result result) {
-                        return mDeviceModel.saveTag(result.key, result.value);
+                    public Observable<DeviceTagCollection.Tag> call(DeviceTagEditor.Result result) {
+                        return mDeviceModel.putTag(result.key, result.value);
                     }
                 })
                 .subscribe(new RxUtils.IgnoreResponseObserver<DeviceTagCollection.Tag>());

@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Vector;
 
 import io.afero.aferolab.R;
@@ -23,8 +24,8 @@ import rx.subjects.PublishSubject;
 
 public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.ViewHolder> {
 
-    private final DeviceModel mDeviceModel;
     private final Vector<DeviceTagCollection.Tag> mTags = new Vector<>();
+    private final HashMap<String,DeviceTagCollection.Tag> mTagMap = new HashMap<>();
     private final PublishSubject<View> mOnClickViewSubject = PublishSubject.create();
     private final Func1<DeviceTagCollection.TagEvent, DeviceTagCollection.Tag> mTagEventToTag =
             new Func1<DeviceTagCollection.TagEvent, DeviceTagCollection.Tag>() {
@@ -38,6 +39,19 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
             new Comparator<DeviceTagCollection.Tag>() {
                 @Override
                 public int compare(DeviceTagCollection.Tag a, DeviceTagCollection.Tag b) {
+                    String aKey = a.getKey();
+                    String bKey = b.getKey();
+
+                    if (aKey == bKey) {
+                        return 0;
+                    }
+                    if (aKey == null) {
+                        return -1;
+                    }
+                    if (bKey == null) {
+                        return 1;
+                    }
+
                     return a.getKey().compareTo(b.getKey());
                 }
             };
@@ -50,9 +64,11 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
         @Override
         public void call(DeviceTagCollection.Tag tag) {
             synchronized (mTags) {
-                int i = mTags.indexOf(tag);
-                if (i != -1) {
-                    mTags.remove(i);
+
+                int tagIndex = indexOf(tag);
+
+                if (tagIndex != -1) {
+                    mTags.remove(tagIndex);
 
                     int newIndex = Collections.binarySearch(mTags, tag, mSortComparator);
                     if (newIndex < 0) {
@@ -60,27 +76,29 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
                     }
 
                     mTags.add(newIndex, tag);
+                    mTagMap.put(tag.getId(), tag);
 
-                    if (newIndex != i) {
-                        notifyItemMoved(i, newIndex);
+                    if (newIndex != tagIndex) {
+                        notifyItemMoved(tagIndex, newIndex);
                     } else {
-                        notifyItemChanged(i);
+                        notifyItemChanged(tagIndex);
                     }
                 } else {
-                    i = Collections.binarySearch(mTags, tag, mSortComparator);
-                    if (i < 0) {
-                        i = -i - 1;
+                    tagIndex = Collections.binarySearch(mTags, tag, mSortComparator);
+                    if (tagIndex < 0) {
+                        tagIndex = -tagIndex - 1;
                     }
 
-                    mTags.add(i, tag);
-                    notifyItemInserted(i);
+                    mTags.add(tagIndex, tag);
+                    mTagMap.put(tag.getId(), tag);
+
+                    notifyItemInserted(tagIndex);
                 }
             }
         }
     };
 
     DeviceTagAdapter(DeviceModel deviceModel) {
-        mDeviceModel = deviceModel;
 
         mUpdateSubscription = updateTags(Observable.from(deviceModel.getTags())
                 .concatWith(deviceModel.getTagObservable()
@@ -114,8 +132,9 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
         return mOnClickViewSubject;
     }
 
-    public int indexOf(DeviceTagCollection.Tag tag) {
-        return mTags.indexOf(tag);
+    private int indexOf(DeviceTagCollection.Tag tag) {
+        DeviceTagCollection.Tag t = mTagMap.get(tag.getId());
+        return t != null ? mTags.indexOf(t) : -1;
     }
 
     private Subscription updateTags(Observable<DeviceTagCollection.Tag> tags) {
@@ -133,15 +152,12 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
                             int i = indexOf(tag);
                             if (i != -1) {
                                 mTags.remove(i);
+                                mTagMap.remove(tag.getId());
                                 notifyItemRemoved(i);
                             }
                         }
                     }
                 });
-    }
-
-    private boolean isDevicePresentable(DeviceModel deviceModel) {
-        return deviceModel.getPresentation() != null;
     }
 
     @Override
