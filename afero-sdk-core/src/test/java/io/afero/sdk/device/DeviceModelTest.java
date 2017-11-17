@@ -361,7 +361,7 @@ public class DeviceModelTest extends AferoTest {
         makeTagTester()
                 .makeDeviceModel()
 
-                .saveTag("key", "value")
+                .putTag("key", "value")
                 .verifyTagWasSaved("key", "value")
         ;
     }
@@ -383,7 +383,7 @@ public class DeviceModelTest extends AferoTest {
         makeTagTester()
                 .makeDeviceModel()
 
-                .saveTag("key", "value")
+                .putTag("key", "value")
                 .verifyTag("key", "value")
 
                 .deleteTag("key")
@@ -396,10 +396,10 @@ public class DeviceModelTest extends AferoTest {
         makeTagTester()
                 .makeDeviceModel()
 
-                .saveTag("key", "value")
+                .putTag("key", "value")
                 .verifyTagWasSaved("key", "value")
 
-                .saveTag("key", "newValue")
+                .putTag("key", "newValue")
                 .verifyTagWasSaved("key", "newValue")
         ;
     }
@@ -468,18 +468,30 @@ public class DeviceModelTest extends AferoTest {
             return this;
         }
 
-        TagTester saveTag(String key, String value) {
-            deviceModel.saveTag(key, value).subscribe();
+        TagTester putTag(String key, String value) {
+            deviceModel.putTag(key, value).subscribe();
             return this;
         }
 
         TagTester deleteTag(String key) {
-            deletedTag = deviceModel.deleteTag(key);
-            return this;
-        }
+            deviceModel.deleteTag(key).subscribe(
+                    new Observer<DeviceTagCollection.Tag>() {
+                        @Override
+                        public void onCompleted() {
 
-        TagTester putTag(String key, String value) {
-            deviceModel.putTag(key, value);
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+
+                        }
+
+                        @Override
+                        public void onNext(DeviceTagCollection.Tag tag) {
+                            deletedTag = tag;
+                        }
+                    }
+            );
             return this;
         }
 
@@ -513,7 +525,7 @@ public class DeviceModelTest extends AferoTest {
             assertNotNull(tag);
             assertEquals(value, tag.getValue());
 
-            DeviceTag deviceTag = aferoClient.getTagById(tag.getDeviceTagId());
+            DeviceTag deviceTag = aferoClient.getTagById(tag.getId());
             assertNotNull(deviceTag);
             assertEquals(tag.getKey(), deviceTag.key);
             assertEquals(tag.getValue(), deviceTag.value);
@@ -526,7 +538,7 @@ public class DeviceModelTest extends AferoTest {
             assertNotNull(tag);
             assertEquals(value, tag.getValue());
 
-            DeviceTag deviceTag = aferoClient.getTagById(tag.getDeviceTagId());
+            DeviceTag deviceTag = aferoClient.getTagById(tag.getId());
             assertNull(deviceTag);
 
             return this;

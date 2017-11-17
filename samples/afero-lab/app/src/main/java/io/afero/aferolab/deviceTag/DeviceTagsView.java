@@ -104,8 +104,8 @@ public class DeviceTagsView extends ScreenView {
         mController.addTag();
     }
 
-    Observable<TagEditor.Result> openTagEditor(DeviceTagCollection.Tag tag) {
-        return new TagEditor(this, R.string.wifi_password_dialog_title).start(tag);
+    Observable<DeviceTagEditor.Result> openTagEditor(DeviceTagCollection.Tag tag) {
+        return new DeviceTagEditor(this, R.string.wifi_password_dialog_title).start(tag);
     }
 
 }
