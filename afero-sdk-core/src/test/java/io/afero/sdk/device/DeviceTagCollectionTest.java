@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.mock.MockAferoClient;
@@ -71,7 +72,7 @@ public class DeviceTagCollectionTest {
                 .addTag(KEY, VALUE_5)
 
                 .getTags(KEY)
-                .verifyGetTagReturnValue(new String[] {
+                .verifyGetTagReturnValue(new String[]{
                         VALUE_1,
                         VALUE_2,
                         VALUE_3,
@@ -156,7 +157,24 @@ public class DeviceTagCollectionTest {
         }
 
         TagTester addTag(String key, String value) {
-            deviceTagCollection.addTag(key, value).subscribe();
+            deviceTagCollection.addTag(key, value).subscribe(
+                    new Observer<DeviceTagCollection.Tag>() {
+                        @Override
+                        public void onCompleted() {
+
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            e.printStackTrace();
+                            assertTrue(false);
+                        }
+
+                        @Override
+                        public void onNext(DeviceTagCollection.Tag tag) {
+
+                        }
+                    });
             return this;
         }
 
@@ -225,10 +243,12 @@ public class DeviceTagCollectionTest {
         }
 
         TagTester verifyGetTagReturnValue(String[] values) {
-            Iterator valueIter = Arrays.asList(values).iterator();
+            List<String> tagList = Arrays.asList(values);
+
             for (DeviceTagCollection.Tag tag : getTagResult) {
-                assertEquals(valueIter.next(), tag.getValue());
+                assertTrue(tagList.contains(tag.getValue()));
             }
+
             return this;
         }
 
