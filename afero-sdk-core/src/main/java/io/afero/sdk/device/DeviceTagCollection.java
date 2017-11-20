@@ -134,7 +134,7 @@ public class DeviceTagCollection {
      * @param value String specifying the new value for the Tag
      * @return {@link Observable} that emits the updated Tag
      */
-    Observable<Tag> putTag(String tagId, String key, String value) {
+    Observable<Tag> updateTag(String tagId, String key, String value) {
         return mAferoClient.putDeviceTag(mDeviceModel.getId(), tagId, key, value)
                 .flatMap(new Func1<DeviceTag, Observable<Tag>>() {
                     @Override
@@ -188,10 +188,6 @@ public class DeviceTagCollection {
      * @return {@link Iterable} containing the tags that match the specified key, if any.
      */
     Iterable<Tag> getTags(String key) {
-        if (key == null) {
-            return getTags();
-        }
-
         final Tag tag = new Tag(key, null);
         int startIndex = BinarySearch.lowerBound(mTags, tag);
 

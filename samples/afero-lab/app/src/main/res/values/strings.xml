@@ -63,4 +63,6 @@
     <string name="tags_title">Tags</string>
     <string name="tag_key_hint">Key</string>
     <string name="tag_value_hint">Value</string>
+    <string name="tag_delete_confirmation">Are you sure you want to remove this tag?</string>
+    <string name="button_title_tag_remove">REMOVE</string>
 </resources>

@@ -645,6 +645,18 @@ public final class DeviceModel {
     }
 
     /**
+     * Updates the key & values of the {@link DeviceTagCollection.Tag} specified by tagId.
+     *
+     * @param tagId String containing the unique identifier of a specific Tag.
+     * @param key   String specifying the new key for the Tag.
+     * @param value String specifying the new value for the Tag
+     * @return {@link Observable} that emits the updated Tag
+     */
+    public Observable<DeviceTagCollection.Tag> updateTag(String tagId, String key, String value) {
+        return getDeviceTagCollection().updateTag(tagId, key, value);
+    }
+
+    /**
      * Deletes a tag from both local and persistent cloud storage.
      *
      * @param tag {@link DeviceTagCollection.Tag} to be removed from the collection.

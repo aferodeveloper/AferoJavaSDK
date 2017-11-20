@@ -49,6 +49,15 @@ public class DeviceTagCollectionTest {
     }
 
     @Test
+    public void addTagWithNullKey() throws Exception {
+        makeTagTester()
+                .addTag(null, VALUE)
+                .verifyTag(null, VALUE)
+                .verifyTagWasSavedToCloud(null, VALUE)
+        ;
+    }
+
+    @Test
     public void deleteTag() throws Exception {
 
         makeTagTester()
