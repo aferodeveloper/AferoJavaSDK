@@ -199,7 +199,7 @@ public class DeviceTagCollection {
             return EMPTY_TAG_LIST;
         }
 
-        int endIndex = BinarySearch.upperBound(mTags, tag);
+        int endIndex = BinarySearch.upperBound(mTags, tag) + 1;
 
         return mTags.subList(startIndex, endIndex);
     }
