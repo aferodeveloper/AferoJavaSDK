@@ -4,7 +4,9 @@
 
 package io.afero.aferolab.deviceTag;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -108,4 +110,28 @@ public class DeviceTagsView extends ScreenView {
         return new DeviceTagEditor(this, R.string.wifi_password_dialog_title).start(tag);
     }
 
+    void removeTag(final DeviceTagCollection.Tag tag) {
+        new AlertDialog.Builder(getContext())
+                .setCancelable(true)
+                .setMessage(R.string.tag_delete_confirmation)
+                .setPositiveButton(R.string.button_title_tag_remove, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        mAdapter.removeTag(tag);
+                        dialogInterface.dismiss();
+                    }
+                })
+                .setNegativeButton(R.string.button_title_cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                })
+                .show();
+
+    }
+
+    void updateTag(DeviceTagCollection.Tag tag) {
+        mAdapter.updateTag(tag);
+    }
 }

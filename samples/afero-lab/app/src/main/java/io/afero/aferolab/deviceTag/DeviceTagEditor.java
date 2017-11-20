@@ -53,6 +53,19 @@ class DeviceTagEditor {
     };
 
     public static class Result {
+
+        enum Event {
+            ADD,
+            UPDATE,
+            DELETE
+        }
+
+        Result(Event e) {
+            event = e;
+        }
+
+        public final Event event;
+        public DeviceTagCollection.Tag tag;
         public String key;
         public String value;
     }
@@ -89,27 +102,25 @@ class DeviceTagEditor {
                 mTagKeyEditText.addTextChangedListener(mTextWatcher);
                 mTagValueEditText.addTextChangedListener(mTextWatcher);
 
-                mAlertDialog = new AlertDialog.Builder(view.getContext())
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(view.getContext())
                         .setView(view)
                         .setCancelable(false)
                         .setTitle(mTitleResId)
                         .setPositiveButton(R.string.button_title_ok, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                String password = mTagKeyEditText.getText().toString();
+                                String key = mTagKeyEditText.getText().toString();
+                                mTagKeyEditText.hideKeyboard();
 
-                                if (!password.isEmpty()) {
-                                    mTagKeyEditText.hideKeyboard();
+                                Result result = new Result(mTag != null ? Result.Event.UPDATE : Result.Event.ADD);
+                                result.tag = mTag;
+                                result.key = key.isEmpty() ? null : key;
+                                result.value = mTagValueEditText.getText().toString();
 
-                                    Result result = new Result();
-                                    result.key = mTagKeyEditText.getText().toString();
-                                    result.value = mTagValueEditText.getText().toString();
+                                emitter.onNext(result);
+                                emitter.onCompleted();
 
-                                    emitter.onNext(result);
-                                    emitter.onCompleted();
-
-                                    dialogInterface.dismiss();
-                                }
+                                dialogInterface.dismiss();
                             }
                         })
                         .setNegativeButton(R.string.button_title_cancel, new DialogInterface.OnClickListener() {
@@ -120,8 +131,26 @@ class DeviceTagEditor {
 
                                 dialogInterface.cancel();
                             }
-                        })
-                        .create();
+                        });
+
+                if (mTag != null) {
+                    dialogBuilder.setNeutralButton(R.string.button_title_tag_remove, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            mTagKeyEditText.hideKeyboard();
+
+                            Result result = new Result(Result.Event.DELETE);
+                            result.tag = mTag;
+
+                            emitter.onNext(result);
+                            emitter.onCompleted();
+
+                            dialogInterface.dismiss();
+                        }
+                    });
+                }
+
+                mAlertDialog = dialogBuilder.create();
 
                 mAlertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
                     @Override

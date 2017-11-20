@@ -22,18 +22,11 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.ViewHolder> {
+class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.ViewHolder> {
 
     private final Vector<DeviceTagCollection.Tag> mTags = new Vector<>();
-    private final HashMap<String,DeviceTagCollection.Tag> mTagMap = new HashMap<>();
+    private final HashMap<String, DeviceTagCollection.Tag> mTagMap = new HashMap<>();
     private final PublishSubject<View> mOnClickViewSubject = PublishSubject.create();
-    private final Func1<DeviceTagCollection.TagEvent, DeviceTagCollection.Tag> mTagEventToTag =
-            new Func1<DeviceTagCollection.TagEvent, DeviceTagCollection.Tag>() {
-                @Override
-                public DeviceTagCollection.Tag call(DeviceTagCollection.TagEvent tagEvent) {
-                    return tagEvent.tag;
-                }
-            };
 
     private Comparator<DeviceTagCollection.Tag> mSortComparator =
             new Comparator<DeviceTagCollection.Tag>() {
@@ -42,12 +35,14 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
                     String aKey = a.getKey();
                     String bKey = b.getKey();
 
-                    if (aKey == bKey) {
+                    if (aKey == null && bKey == null) {
                         return 0;
                     }
+
                     if (aKey == null) {
                         return -1;
                     }
+
                     if (bKey == null) {
                         return 1;
                     }
@@ -68,21 +63,7 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
                 int tagIndex = indexOf(tag);
 
                 if (tagIndex != -1) {
-                    mTags.remove(tagIndex);
-
-                    int newIndex = Collections.binarySearch(mTags, tag, mSortComparator);
-                    if (newIndex < 0) {
-                        newIndex = -newIndex - 1;
-                    }
-
-                    mTags.add(newIndex, tag);
-                    mTagMap.put(tag.getId(), tag);
-
-                    if (newIndex != tagIndex) {
-                        notifyItemMoved(tagIndex, newIndex);
-                    } else {
-                        notifyItemChanged(tagIndex);
-                    }
+                    updateTagAt(tagIndex, tag);
                 } else {
                     tagIndex = Collections.binarySearch(mTags, tag, mSortComparator);
                     if (tagIndex < 0) {
@@ -100,6 +81,14 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
 
     DeviceTagAdapter(DeviceModel deviceModel) {
 
+        Func1<DeviceTagCollection.TagEvent, DeviceTagCollection.Tag> tagEventToTag =
+                new Func1<DeviceTagCollection.TagEvent, DeviceTagCollection.Tag>() {
+                    @Override
+                    public DeviceTagCollection.Tag call(DeviceTagCollection.TagEvent tagEvent) {
+                        return tagEvent.tag;
+                    }
+                };
+
         mUpdateSubscription = updateTags(Observable.from(deviceModel.getTags())
                 .concatWith(deviceModel.getTagObservable()
                         .filter(new Func1<DeviceTagCollection.TagEvent, Boolean>() {
@@ -109,7 +98,7 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
                                         tagEvent.action.equals(DeviceTagCollection.TagAction.UPDATE);
                             }
                         })
-                        .map(mTagEventToTag)
+                        .map(tagEventToTag)
                 ));
 
         mRemoveSubscription = removeTags(deviceModel.getTagObservable()
@@ -119,7 +108,7 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
                         return tagEvent.action.equals(DeviceTagCollection.TagAction.DELETE);
                     }
                 })
-                .map(mTagEventToTag)
+                .map(tagEventToTag)
         );
     }
 
@@ -167,15 +156,16 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_tag_list_item, parent, false);
-        view.setOnClickListener(new View.OnClickListener() {
+        DeviceTagItemView tagView = (DeviceTagItemView) LayoutInflater.from(
+                parent.getContext()).inflate(R.layout.view_tag_list_item, parent, false);
+        tagView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mOnClickViewSubject.onNext(view);
             }
         });
 
-        return new ViewHolder(view);
+        return new ViewHolder(tagView);
     }
 
     @Override
@@ -193,6 +183,43 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
         return mTags.get(itemPosition);
     }
 
+    void removeTag(DeviceTagCollection.Tag tag) {
+        tag = mTagMap.get(tag.getId());
+        int tagIndex = mTags.indexOf(tag);
+
+        if (tagIndex >= 0) {
+            mTags.remove(tagIndex);
+            notifyItemRemoved(tagIndex);
+        }
+    }
+
+    void updateTag(DeviceTagCollection.Tag tag) {
+        DeviceTagCollection.Tag oldTag = mTagMap.get(tag.getId());
+        int tagIndex = mTags.indexOf(oldTag);
+
+        if (tagIndex >= 0) {
+            updateTagAt(tagIndex, tag);
+        }
+    }
+
+    private void updateTagAt(int tagIndex, DeviceTagCollection.Tag tag) {
+        mTags.remove(tagIndex);
+
+        int newIndex = Collections.binarySearch(mTags, tag, mSortComparator);
+        if (newIndex < 0) {
+            newIndex = -newIndex - 1;
+        }
+
+        mTags.add(newIndex, tag);
+        mTagMap.put(tag.getId(), tag);
+
+        if (newIndex != tagIndex) {
+            notifyItemMoved(tagIndex, newIndex);
+        } else {
+            notifyItemChanged(tagIndex);
+        }
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         ViewHolder(View view) {
@@ -200,7 +227,8 @@ public class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.View
         }
 
         void update(DeviceTagCollection.Tag tag) {
-            ((DeviceTagItemView) itemView).update(tag);
+            DeviceTagItemView tagView = (DeviceTagItemView) itemView;
+            tagView.update(tag);
         }
     }
 }
