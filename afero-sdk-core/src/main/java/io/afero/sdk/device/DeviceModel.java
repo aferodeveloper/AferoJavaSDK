@@ -647,13 +647,11 @@ public final class DeviceModel {
     /**
      * Updates the key & values of the {@link DeviceTagCollection.Tag} specified by tagId.
      *
-     * @param tagId String containing the unique identifier of a specific Tag.
-     * @param key   String specifying the new key for the Tag.
-     * @param value String specifying the new value for the Tag
+     * @param tag Tag to be updated.
      * @return {@link Observable} that emits the updated Tag
      */
-    public Observable<DeviceTagCollection.Tag> updateTag(String tagId, String key, String value) {
-        return getDeviceTagCollection().updateTag(tagId, key, value);
+    public Observable<DeviceTagCollection.Tag> updateTag(DeviceTagCollection.Tag tag) {
+        return getDeviceTagCollection().updateTag(tag);
     }
 
     /**
@@ -726,6 +724,10 @@ public final class DeviceModel {
         return result;
     }
 
+    public AferoClient getAferoClient() {
+        return mAferoClient;
+    }
+
     @Override
     public String toString() {
         String result;
@@ -763,10 +765,6 @@ public final class DeviceModel {
 
 
     // non-public ------------------------------------------------------------------
-
-    AferoClient getAferoClient() {
-        return mAferoClient;
-    }
 
     DeviceTagCollection.Tag getTagInternal(String key) {
         return getDeviceTagCollection().getTagInternal(key);

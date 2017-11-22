@@ -41,6 +41,10 @@ public class DeviceTagCollection {
             mDeviceTag = new DeviceTag(key, value);
         }
 
+        Tag(Tag tag) {
+            mDeviceTag = new DeviceTag(tag.mDeviceTag);
+        }
+
         public String getKey() {
             return mDeviceTag.key;
         }
@@ -57,6 +61,13 @@ public class DeviceTagCollection {
             return mDeviceTag.deviceTagId;
         }
 
+        public Tag cloneWith(String key, String value) {
+            Tag tag = new Tag(this);
+            tag.mDeviceTag.key = key;
+            tag.mDeviceTag.value = value;
+            return tag;
+        }
+
         @Override
         public int compareTo(Tag thatTag) {
             final String thisKey = this.getKey();
@@ -69,6 +80,10 @@ public class DeviceTagCollection {
             }
 
             return thisKey.compareTo(thatKey);
+        }
+
+        DeviceTag getDeviceTag() {
+            return mDeviceTag;
         }
     }
 
@@ -129,13 +144,11 @@ public class DeviceTagCollection {
     /**
      * Updates the key & values of the {@link Tag} specified by tagId.
      *
-     * @param tagId String containing the unique identifier of a specific Tag.
-     * @param key   String specifying the new key for the Tag.
-     * @param value String specifying the new value for the Tag
+     * @param tag Tag to be updated
      * @return {@link Observable} that emits the updated Tag
      */
-    Observable<Tag> updateTag(String tagId, String key, String value) {
-        return mAferoClient.putDeviceTag(mDeviceModel.getId(), tagId, key, value)
+    Observable<Tag> updateTag(Tag tag) {
+        return mAferoClient.putDeviceTag(mDeviceModel.getId(), tag.mDeviceTag)
                 .flatMap(new Func1<DeviceTag, Observable<Tag>>() {
                     @Override
                     public Observable<Tag> call(DeviceTag deviceTag) {

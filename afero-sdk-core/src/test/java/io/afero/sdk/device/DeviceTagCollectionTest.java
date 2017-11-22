@@ -58,6 +58,18 @@ public class DeviceTagCollectionTest {
     }
 
     @Test
+    public void updateTag() throws Exception {
+        makeTagTester()
+                .addTag(KEY, VALUE)
+                .verifyTag(KEY, VALUE)
+
+                .updateLastAddedTag(KEY, VALUE)
+                .verifyTag(KEY, VALUE)
+                .verifyTagWasSavedToCloud(KEY, VALUE)
+        ;
+    }
+
+    @Test
     public void deleteTag() throws Exception {
 
         makeTagTester()
@@ -156,6 +168,7 @@ public class DeviceTagCollectionTest {
         final DeviceTag[] deviceTags;
 
         DeviceTagCollection.Tag deletedTag;
+        DeviceTagCollection.Tag addedTag;
         Iterable<DeviceTagCollection.Tag> getTagResult;
 
         TagTester() throws IOException {
@@ -181,7 +194,7 @@ public class DeviceTagCollectionTest {
 
                         @Override
                         public void onNext(DeviceTagCollection.Tag tag) {
-
+                            addedTag = tag;
                         }
                     });
             return this;
@@ -303,26 +316,28 @@ public class DeviceTagCollectionTest {
         }
 
         TagTester invalidateTagAdd(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            DeviceTag deviceTag = new DeviceTag(key, value);
+            deviceTag.deviceTagId = deviceTagId;
             deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.ADD.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagUpdate(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            DeviceTag deviceTag = new DeviceTag(key, value);
+            deviceTag.deviceTagId = deviceTagId;
             deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.UPDATE.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagDelete(String deviceTagId) throws JsonProcessingException {
             DeviceTagCollection.Tag tag = deviceTagCollection.getTagById(deviceTagId);
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, tag.getKey(), tag.getValue());
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), deviceTag);
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), tag.getDeviceTag());
             return this;
         }
 
         TagTester addDeviceTag(String deviceTagId, String key, String value) {
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            DeviceTag deviceTag = new DeviceTag(key, value);
+            deviceTag.deviceTagId = deviceTagId;
             deviceTagCollection.addTag(deviceTag);
             return this;
         }
@@ -338,6 +353,18 @@ public class DeviceTagCollectionTest {
             assertNotNull(tag);
             assertEquals(key, tag.getKey());
             assertEquals(value, tag.getValue());
+            return this;
+        }
+
+        TagTester updateLastAddedTag(String key, String value) {
+            DeviceTagCollection.Tag tag = addedTag;
+            addedTag = null;
+
+            tag.getDeviceTag().key = key;
+            tag.getDeviceTag().value = value;
+
+            deviceTagCollection.updateTag(tag);
+
             return this;
         }
     }

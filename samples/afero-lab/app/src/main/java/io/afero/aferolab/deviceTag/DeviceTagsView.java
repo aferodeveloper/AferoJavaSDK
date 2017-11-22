@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -110,14 +111,14 @@ public class DeviceTagsView extends ScreenView {
         return new DeviceTagEditor(this, R.string.wifi_password_dialog_title).start(tag);
     }
 
-    void removeTag(final DeviceTagCollection.Tag tag) {
+    void showRemoveTagConfirmation(final DeviceTagCollection.Tag tag) {
         new AlertDialog.Builder(getContext())
                 .setCancelable(true)
                 .setMessage(R.string.tag_delete_confirmation)
                 .setPositiveButton(R.string.button_title_tag_remove, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        mAdapter.removeTag(tag);
+                        mController.removeTag(tag);
                         dialogInterface.dismiss();
                     }
                 })
@@ -131,7 +132,40 @@ public class DeviceTagsView extends ScreenView {
 
     }
 
+    void addTag(DeviceTagCollection.Tag tag) {
+        mAdapter.addOrUpdateTag(tag);
+    }
+
     void updateTag(DeviceTagCollection.Tag tag) {
         mAdapter.updateTag(tag);
+    }
+
+    void removeTag(DeviceTagCollection.Tag tag) {
+        mAdapter.removeTag(tag);
+    }
+
+    public void showAddTagError(int statusCode) {
+        showError(R.string.error_generic, statusCode);
+    }
+
+    void showEditTagError(int statusCode) {
+        showError(R.string.error_generic, statusCode);
+    }
+
+    void showRemoveTagError(int statusCode) {
+        showError(R.string.error_generic, statusCode);
+    }
+
+    void showError(@StringRes int errorMessageResId, int statusCode) {
+        new AlertDialog.Builder(getContext())
+                .setCancelable(true)
+                .setMessage(errorMessageResId)
+                .setPositiveButton(R.string.button_title_ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                })
+                .show();
     }
 }

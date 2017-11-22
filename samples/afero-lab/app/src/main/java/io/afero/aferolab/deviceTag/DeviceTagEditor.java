@@ -8,12 +8,9 @@ package io.afero.aferolab.deviceTag;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.support.annotation.StringRes;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 
 import butterknife.ButterKnife;
 import io.afero.aferolab.R;
@@ -36,23 +33,8 @@ class DeviceTagEditor {
     private AferoEditText mTagValueEditText;
 
     private AlertDialog mAlertDialog;
-    private Button mPositiveButton;
-    private final TextWatcher mTextWatcher = new TextWatcher() {
-        @Override
-        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-        }
 
-        @Override
-        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-        }
-
-        @Override
-        public void afterTextChanged(Editable editable) {
-            mPositiveButton.setEnabled(mTagKeyEditText.length() > 0 || mTagValueEditText.length() > 0);
-        }
-    };
-
-    public static class Result {
+    static class Result {
 
         enum Event {
             ADD,
@@ -64,10 +46,11 @@ class DeviceTagEditor {
             event = e;
         }
 
-        public final Event event;
-        public DeviceTagCollection.Tag tag;
-        public String key;
-        public String value;
+        final Event event;
+        DeviceTagCollection.Tag tag;
+
+        String key;
+        String value;
     }
 
 
@@ -99,9 +82,6 @@ class DeviceTagEditor {
                     }
                 }
 
-                mTagKeyEditText.addTextChangedListener(mTextWatcher);
-                mTagValueEditText.addTextChangedListener(mTextWatcher);
-
                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(view.getContext())
                         .setView(view)
                         .setCancelable(false)
@@ -109,13 +89,21 @@ class DeviceTagEditor {
                         .setPositiveButton(R.string.button_title_ok, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                String key = mTagKeyEditText.getText().toString();
                                 mTagKeyEditText.hideKeyboard();
 
-                                Result result = new Result(mTag != null ? Result.Event.UPDATE : Result.Event.ADD);
-                                result.tag = mTag;
-                                result.key = key.isEmpty() ? null : key;
-                                result.value = mTagValueEditText.getText().toString();
+                                String value = mTagValueEditText.getText().toString();
+                                String key = mTagKeyEditText.getText().toString();
+                                key = key.isEmpty() ? null : key;
+
+                                Result result;
+                                if (mTag != null) {
+                                    result = new Result(Result.Event.UPDATE);
+                                    result.tag =  mTag.cloneWith(key, value);
+                                } else {
+                                    result = new Result(Result.Event.ADD);
+                                    result.key = key;
+                                    result.value = value;
+                                }
 
                                 emitter.onNext(result);
                                 emitter.onCompleted();
@@ -160,8 +148,6 @@ class DeviceTagEditor {
                 });
                 mAlertDialog.show();
 
-                mPositiveButton = mAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                mPositiveButton.setEnabled(false);
             }
         }, Emitter.BackpressureMode.LATEST)
                 .subscribeOn(AndroidSchedulers.mainThread())

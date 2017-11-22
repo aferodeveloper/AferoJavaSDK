@@ -143,12 +143,10 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagKey, String tagValue) {
+    public Observable<DeviceTag> putDeviceTag(String deviceId, DeviceTag tag) {
         if (hasNextCallFailure()) {
             return nextCallFailObservable();
         }
-
-        DeviceTag tag = new DeviceTag(tagId, tagKey, tagValue);
 
         return Observable.fromCallable(new Callable<DeviceTag>() {
 
