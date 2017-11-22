@@ -13,9 +13,9 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceTagCollection;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
+import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
@@ -62,9 +62,17 @@ class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.ViewHolder>
                 }
             });
 
-    private final Action1<DeviceTagCollection.Tag> mUpdateTagAction = new Action1<DeviceTagCollection.Tag>() {
+    private final Observer<DeviceTagCollection.Tag> mUpdateTagObserver = new Observer<DeviceTagCollection.Tag>() {
         @Override
-        public void call(DeviceTagCollection.Tag tag) {
+        public void onCompleted() {}
+
+        @Override
+        public void onError(Throwable e) {
+            e.printStackTrace();
+        }
+
+        @Override
+        public void onNext(DeviceTagCollection.Tag tag) {
             addOrUpdateTag(tag);
         }
     };
@@ -119,14 +127,24 @@ class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.ViewHolder>
     private Subscription updateTags(Observable<DeviceTagCollection.Tag> tags) {
         return tags.onBackpressureBuffer()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(mUpdateTagAction);
+                .subscribe(mUpdateTagObserver);
     }
 
     private Subscription removeTags(Observable<DeviceTagCollection.Tag> tags) {
         return tags.observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<DeviceTagCollection.Tag>() {
+                .subscribe(new Observer<DeviceTagCollection.Tag>() {
                     @Override
-                    public void call(DeviceTagCollection.Tag tag) {
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onNext(DeviceTagCollection.Tag tag) {
                         removeTag(tag);
                     }
                 });
