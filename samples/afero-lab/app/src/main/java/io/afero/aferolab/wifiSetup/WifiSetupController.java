@@ -13,11 +13,9 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.softhub.DeviceWifiSetup;
 import io.afero.sdk.utils.RxUtils;
-import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 
 class WifiSetupController {
 

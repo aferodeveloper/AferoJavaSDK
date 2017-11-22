@@ -19,7 +19,7 @@
 
         <TextView
             android:id="@+id/tag_key_text"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
             android:ellipsize="end"
@@ -28,7 +28,7 @@
 
         <TextView
             android:id="@+id/tag_value_text"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
             android:ellipsize="end"

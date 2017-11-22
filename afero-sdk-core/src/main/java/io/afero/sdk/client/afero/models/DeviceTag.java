@@ -15,6 +15,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DeviceTag {
 
+    public static final String TAG_TYPE_ACCOUNT = "ACCOUNT";
+    public static final String TAG_TYPE_SYSTEM = "SYSTEM";
+
     /**
      * A unique UUID value that identifies this tag, such that it can be deleted in the future.
      */
@@ -35,7 +38,7 @@ public class DeviceTag {
      * In the future, Afero may deploy different categories of tags. This field is not currently in
      * use, will always be 'ACCOUNT', and can be safely ignored by the developer.
      */
-    public String deviceTagType = "ACCOUNT";
+    public String deviceTagType = TAG_TYPE_ACCOUNT;
 
     /**
      * In the future, Afero may create the ability to localize these tags for different locales in
@@ -53,10 +56,16 @@ public class DeviceTag {
         value = tagValue;
     }
 
-    public DeviceTag(String tagId, String tagKey, String tagValue) {
-        deviceTagId = tagId;
-        key = tagKey;
-        value = tagValue;
+    public DeviceTag(DeviceTag tag) {
+        deviceTagId = tag.deviceTagId;
+        key = tag.key;
+        value = tag.value;
+        deviceTagType = tag.deviceTagType;
+        localizationKey = tag.localizationKey;
+    }
+
+    public boolean isEditable() {
+        return deviceTagType != null && !deviceTagType.equalsIgnoreCase(TAG_TYPE_SYSTEM);
     }
 
     @Override
@@ -65,6 +74,8 @@ public class DeviceTag {
                 "deviceTagId='" + deviceTagId + '\'' +
                 ", key='" + key + '\'' +
                 ", value='" + value + '\'' +
+                ", deviceTagType='" + deviceTagType + '\'' +
+                ", localizationKey='" + localizationKey + '\'' +
                 " }";
     }
 }
