@@ -9,28 +9,61 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.ResourceLoader;
+import rx.Observable;
 import rx.Observer;
+import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class DeviceTagCollectionTest {
 
     private final static String KEY = "key";
     private final static String VALUE = "value";
+    private final static String VALUE_1 = "value-1";
+    private final static String VALUE_2 = "value-2";
+    private final static String VALUE_3 = "value-3";
+    private final static String VALUE_4 = "value-4";
+    private final static String VALUE_5 = "value-5";
     private final static String DEVICE_TAG_ID = "device-tag-id";
 
     @Test
-    public void saveTag() throws Exception {
+    public void addTag() throws Exception {
         makeTagTester()
-                .saveTag(KEY, VALUE)
+                .addTag(KEY, VALUE)
+                .verifyTag(KEY, VALUE)
+                .verifyTagWasSavedToCloud(KEY, VALUE)
+        ;
+    }
+
+    @Test
+    public void addTagWithNullKey() throws Exception {
+        makeTagTester()
+                .addTag(null, VALUE)
+                .verifyTag(null, VALUE)
+                .verifyTagWasSavedToCloud(null, VALUE)
+        ;
+    }
+
+    @Test
+    public void updateTag() throws Exception {
+        makeTagTester()
+                .addTag(KEY, VALUE)
+                .verifyTag(KEY, VALUE)
+
+                .updateLastAddedTag(KEY, VALUE)
                 .verifyTag(KEY, VALUE)
                 .verifyTagWasSavedToCloud(KEY, VALUE)
         ;
@@ -40,7 +73,7 @@ public class DeviceTagCollectionTest {
     public void deleteTag() throws Exception {
 
         makeTagTester()
-                .saveTag(KEY, VALUE)
+                .addTag(KEY, VALUE)
                 .verifyTag(KEY, VALUE)
                 .verifyTagWasSavedToCloud(KEY, VALUE)
 
@@ -53,24 +86,34 @@ public class DeviceTagCollectionTest {
     @Test
     public void getTag() throws Exception {
         makeTagTester()
-                .saveTag(KEY, VALUE)
+                .addTag(KEY, VALUE_1)
+                .addTag(KEY, VALUE_2)
+                .addTag(KEY, VALUE_3)
+                .addTag(KEY, VALUE_4)
+                .addTag(KEY, VALUE_5)
 
-                .getTag(KEY)
-                .verifyGetTagReturnValue(VALUE)
+                .getTags(KEY)
+                .verifyGetTagReturnValue(new String[]{
+                        VALUE_1,
+                        VALUE_2,
+                        VALUE_3,
+                        VALUE_4,
+                        VALUE_5
+                })
 
-                .getTag("bogus")
-                .verifyGetTagReturnValue(null)
+                .getTags("bogus")
+                .verifyGetTagReturnValueIsEmpty()
         ;
     }
 
     @Test
     public void getTags() throws Exception {
         makeTagTester()
-                .saveTag("key-1", VALUE)
-                .saveTag("key-2", VALUE)
-                .saveTag("key-3", VALUE)
-                .saveTag("key-4", VALUE)
-                .saveTag("key-5", VALUE)
+                .addTag("key-1", VALUE)
+                .addTag("key-2", VALUE)
+                .addTag("key-3", VALUE)
+                .addTag("key-4", VALUE)
+                .addTag("key-5", VALUE)
 
                 .verifyGetTagsCount(5)
         ;
@@ -125,7 +168,8 @@ public class DeviceTagCollectionTest {
         final DeviceTag[] deviceTags;
 
         DeviceTagCollection.Tag deletedTag;
-        String valueReturnedFromGetTag;
+        DeviceTagCollection.Tag addedTag;
+        Iterable<DeviceTagCollection.Tag> getTagResult;
 
         TagTester() throws IOException {
             DeviceProfile deviceProfile = resourceLoader.createObjectFromJSONResource("deviceProfile.json", DeviceProfile.class);
@@ -134,13 +178,30 @@ public class DeviceTagCollectionTest {
             deviceTagCollection = new DeviceTagCollection(deviceModel);
         }
 
-        TagTester saveTag(String key, String value) {
-            deviceTagCollection.saveTag(key, value).subscribe();
+        TagTester addTag(String key, String value) {
+            deviceTagCollection.addTag(key, value).subscribe(
+                    new Observer<DeviceTagCollection.Tag>() {
+                        @Override
+                        public void onCompleted() {
+
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            e.printStackTrace();
+                            assertTrue(false);
+                        }
+
+                        @Override
+                        public void onNext(DeviceTagCollection.Tag tag) {
+                            addedTag = tag;
+                        }
+                    });
             return this;
         }
 
         TagTester deleteTag(String key) {
-            deviceTagCollection.deleteTag(key).subscribe(
+            deviceTagCollection.removeTag(deviceTagCollection.getTags(key).iterator().next()).subscribe(
                     new Observer<DeviceTagCollection.Tag>() {
                         @Override
                         public void onCompleted() {
@@ -158,16 +219,17 @@ public class DeviceTagCollectionTest {
                         }
                     }
             );
+
             return this;
         }
 
         TagTester verifyTag(String key, String value) {
-            assertEquals(value, deviceTagCollection.getTag(key));
+            assertEquals(value, deviceTagCollection.getTags(key).iterator().next().getValue());
             return this;
         }
 
         TagTester verifyTagWasDeletedLocally(String key) {
-            assertNull(deviceTagCollection.getTag(key));
+            assertFalse(deviceTagCollection.getTags(key).iterator().hasNext());
             assertNotNull(deletedTag);
             assertEquals(key, deletedTag.getKey());
             return this;
@@ -197,13 +259,23 @@ public class DeviceTagCollectionTest {
             return this;
         }
 
-        TagTester getTag(String key) {
-            valueReturnedFromGetTag = deviceTagCollection.getTag(key);
+        TagTester getTags(String key) {
+            getTagResult = deviceTagCollection.getTags(key);
             return this;
         }
 
-        TagTester verifyGetTagReturnValue(String expectedValue) {
-            assertEquals(expectedValue, valueReturnedFromGetTag);
+        TagTester verifyGetTagReturnValue(String[] values) {
+            List<String> tagList = Arrays.asList(values);
+
+            for (DeviceTagCollection.Tag tag : getTagResult) {
+                assertTrue(tagList.contains(tag.getValue()));
+            }
+
+            return this;
+        }
+
+        TagTester verifyGetTagReturnValueIsEmpty() {
+            assertFalse(getTagResult.iterator().hasNext());
             return this;
         }
 
@@ -244,26 +316,28 @@ public class DeviceTagCollectionTest {
         }
 
         TagTester invalidateTagAdd(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            DeviceTag deviceTag = new DeviceTag(key, value);
+            deviceTag.deviceTagId = deviceTagId;
             deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.ADD.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagUpdate(String deviceTagId, String key, String value) throws JsonProcessingException {
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            DeviceTag deviceTag = new DeviceTag(key, value);
+            deviceTag.deviceTagId = deviceTagId;
             deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.UPDATE.toString(), deviceTag);
             return this;
         }
 
         TagTester invalidateTagDelete(String deviceTagId) throws JsonProcessingException {
             DeviceTagCollection.Tag tag = deviceTagCollection.getTagById(deviceTagId);
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, tag.getKey(), tag.getValue());
-            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), deviceTag);
+            deviceTagCollection.invalidateTag(DeviceTagCollection.TagAction.DELETE.toString(), tag.getDeviceTag());
             return this;
         }
 
         TagTester addDeviceTag(String deviceTagId, String key, String value) {
-            DeviceTag deviceTag = new DeviceTag(deviceTagId, key, value);
+            DeviceTag deviceTag = new DeviceTag(key, value);
+            deviceTag.deviceTagId = deviceTagId;
             deviceTagCollection.addTag(deviceTag);
             return this;
         }
@@ -279,6 +353,18 @@ public class DeviceTagCollectionTest {
             assertNotNull(tag);
             assertEquals(key, tag.getKey());
             assertEquals(value, tag.getValue());
+            return this;
+        }
+
+        TagTester updateLastAddedTag(String key, String value) {
+            DeviceTagCollection.Tag tag = addedTag;
+            addedTag = null;
+
+            tag.getDeviceTag().key = key;
+            tag.getDeviceTag().value = value;
+
+            deviceTagCollection.updateTag(tag);
+
             return this;
         }
     }

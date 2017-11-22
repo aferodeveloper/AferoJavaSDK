@@ -40,7 +40,7 @@ public interface AferoClient {
 
     Observable<DeviceTag> postDeviceTag(String deviceId, String tagKey, String tagValue);
 
-    Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagKey, String tagValue);
+    Observable<DeviceTag> putDeviceTag(String deviceId, DeviceTag deviceTag);
 
     Observable<Void> deleteDeviceTag(String deviceId, String tagId);
 

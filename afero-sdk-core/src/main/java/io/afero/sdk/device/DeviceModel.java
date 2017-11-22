@@ -636,33 +636,43 @@ public final class DeviceModel {
      * Attaches a tag key/value to this device persistently via the Afero Cloud. The tag is removed
      * if the device is disassociated from the account.
      *
-     * @param key String specifying a unique identifier for the new tag
+     * @param key String specifying the key used to search for the tag.
      * @param value String containing arbitrary value for the new tag
      * @return Observable that emits the new {@link DeviceTagCollection.Tag}
      */
-    public Observable<DeviceTagCollection.Tag> putTag(String key, String value) {
-        return getDeviceTagCollection().saveTag(key, value);
+    public Observable<DeviceTagCollection.Tag> addTag(String key, String value) {
+        return getDeviceTagCollection().addTag(key, value);
+    }
+
+    /**
+     * Updates the key & values of the {@link DeviceTagCollection.Tag} specified by tagId.
+     *
+     * @param tag Tag to be updated.
+     * @return {@link Observable} that emits the updated Tag
+     */
+    public Observable<DeviceTagCollection.Tag> updateTag(DeviceTagCollection.Tag tag) {
+        return getDeviceTagCollection().updateTag(tag);
     }
 
     /**
      * Deletes a tag from both local and persistent cloud storage.
      *
-     * @param key Unique indentifier of the tag.
-     * @return {@link DeviceTagCollection.Tag} object that was removed; null if no such tag was found.
+     * @param tag {@link DeviceTagCollection.Tag} to be removed from the collection.
+     * @return Tag that was removed
      */
-    public Observable<DeviceTagCollection.Tag> deleteTag(String key) {
-        return getDeviceTagCollection().deleteTag(key);
+    public Observable<DeviceTagCollection.Tag> removeTag(DeviceTagCollection.Tag tag) {
+        return getDeviceTagCollection().removeTag(tag);
     }
 
     /**
-     * Retrieves the value of a tag attached to this device via {@link #putTag(String, String)}.
+     * Retrieves the value of a tag attached to this device via {@link #addTag(String, String)}.
      *
-     * @param key Unique indentifier of the tag.
+     * @param key String specifying the key used to search for the tag.
      * @return String containing the value of the tag.
-     * @see #putTag(String, String)
+     * @see #addTag(String, String)
      */
-    public String getTag(String key) {
-        return getDeviceTagCollection().getTag(key);
+    public Iterable<DeviceTagCollection.Tag> getTags(String key) {
+        return getDeviceTagCollection().getTags(key);
     }
 
     /**
@@ -674,8 +684,17 @@ public final class DeviceModel {
     }
 
     /**
+     * @return true if at least one tag exists matching the specified key; false otherwise.
+     */
+    public boolean hasTag(String key) {
+        return getDeviceTagCollection().hasTag(key);
+    }
+
+    /**
      * @return {@link Observable} that emits appropriate {@link DeviceTagCollection.TagEvent} objects
      * when a {@link DeviceTagCollection.Tag} is added, updated, or removed from the DeviceModel.
+     *
+     * @see DeviceTagCollection.TagEvent
      */
     @JsonIgnore
     public Observable<DeviceTagCollection.TagEvent> getTagObservable() {
@@ -703,6 +722,10 @@ public final class DeviceModel {
             result.put(attrEntry.getKey(), ad);
         }
         return result;
+    }
+
+    public AferoClient getAferoClient() {
+        return mAferoClient;
     }
 
     @Override
@@ -742,10 +765,6 @@ public final class DeviceModel {
 
 
     // non-public ------------------------------------------------------------------
-
-    AferoClient getAferoClient() {
-        return mAferoClient;
-    }
 
     DeviceTagCollection.Tag getTagInternal(String key) {
         return getDeviceTagCollection().getTagInternal(key);

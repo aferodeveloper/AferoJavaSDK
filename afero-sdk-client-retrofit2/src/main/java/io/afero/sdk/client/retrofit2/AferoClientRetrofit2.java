@@ -550,13 +550,12 @@ public class AferoClientRetrofit2 implements AferoClient {
      * Afero Cloud API call to update an existing {@link DeviceTag} on a device.
      *
      * @param deviceId String specifying the unique id of the device.
-     * @param tagKey String containing the key for the tag.
-     * @param tagValue String containing the value for the tag.
+     * @param tag DeviceTag to to be updated.
      * @return {@link Observable} that emits the DeviceTag if successful.
      */
     @Override
-    public Observable<DeviceTag> putDeviceTag(String deviceId, String tagId, String tagKey, String tagValue) {
-        return mAferoService.putDeviceTag(mActiveAccountId, deviceId, new DeviceTag(tagId, tagKey, tagValue));
+    public Observable<DeviceTag> putDeviceTag(String deviceId, DeviceTag tag) {
+        return mAferoService.putDeviceTag(mActiveAccountId, deviceId, tag);
     }
 
     /**
