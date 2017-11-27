@@ -27,7 +27,7 @@ public class DeviceTagCollection {
      */
     public static class Tag implements Comparable<Tag> {
 
-        private DeviceTag mDeviceTag;
+        private final DeviceTag mDeviceTag;
 
         private Tag() {
             mDeviceTag = new DeviceTag();
@@ -61,6 +61,10 @@ public class DeviceTagCollection {
             return mDeviceTag.deviceTagId;
         }
 
+        public boolean isEditable() {
+            return mDeviceTag.isEditable();
+        }
+
         public Tag cloneWith(String key, String value) {
             Tag tag = new Tag(this);
             tag.mDeviceTag.key = key;
@@ -80,6 +84,10 @@ public class DeviceTagCollection {
             }
 
             return thisKey.compareTo(thatKey);
+        }
+
+        void update(DeviceTag dt) {
+            mDeviceTag.set(dt);
         }
 
         DeviceTag getDeviceTag() {
@@ -154,7 +162,7 @@ public class DeviceTagCollection {
                     public Observable<Tag> call(DeviceTag deviceTag) {
                         final Tag tag = getTagById(deviceTag.deviceTagId);
                         if (tag != null) {
-                            tag.mDeviceTag = deviceTag;
+                            tag.update(deviceTag);
                             mTagEventSubject.onNext(new TagEvent(TagAction.UPDATE, tag));
                             return Observable.just(tag);
                         }

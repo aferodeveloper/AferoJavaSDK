@@ -58,6 +58,11 @@ public class DeviceTag {
     }
 
     public DeviceTag(DeviceTag tag) {
+        set(tag);
+    }
+
+    @JsonIgnore
+    public void set(DeviceTag tag) {
         deviceTagId = tag.deviceTagId;
         key = tag.key;
         value = tag.value;
