@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+  -->
+
+<io.afero.aferolab.wifiSetup.WifiSetupView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/background_light">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="100dp"
+        android:background="@android:color/background_light"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/wifi_setup_message_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="30dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="30dp"
+            android:fontFamily="medium"
+            android:gravity="center"
+            android:text=""
+            android:textSize="20sp"
+            />
+
+        <TextView
+            android:id="@+id/wifi_setup_title_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="0dp"
+            android:layout_marginEnd="50dp"
+            android:layout_marginStart="50dp"
+            android:layout_marginTop="20dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="2"
+            android:text=""
+            android:textSize="30sp"
+            />
+
+        <include
+            android:id="@+id/wifi_setup_progress"
+            layout="@layout/view_progress"
+            />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/network_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@android:color/background_light"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:orientation="horizontal"
+            android:padding="20dp">
+
+            <Button
+                android:id="@+id/wifi_error_cancel_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/button_title_cancel"
+                />
+
+            <Space
+                android:layout_width="10dp"
+                android:layout_height="1dp"/>
+
+            <Button
+                android:id="@+id/wifi_scan_try_again_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wifi_try_again"
+                />
+
+            <Button
+                android:id="@+id/wifi_send_creds_try_again_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wifi_try_again"
+                android:visibility="gone"
+                />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/wifi_setup_success"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/wifi_setup_done_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            android:text="@string/wifi_done"
+            />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/network_list_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/background_light"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            android:text="@string/wifi_select_network"
+            android:textSize="24sp"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="40dp"
+            android:gravity="center_horizontal"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            android:text="@string/wifi_select_network_prompt"
+            android:textSize="15sp"
+            />
+
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/network_list_refresh"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <ListView
+                android:id="@+id/network_list"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:divider="@null"
+                />
+        </android.support.v4.widget.SwipeRefreshLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_margin="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/manual_wifi_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wifi_manual_button_title"
+                />
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="0dp"/>
+
+            <Button
+                android:id="@+id/refresh_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wifi_refresh_button_title"/>
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/network_list_empty_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/background_light"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="20dp"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:text="@string/wifi_cant_find_wifi"
+                android:textSize="24sp"
+                />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="20dp"
+                android:gravity="center"
+                android:maxWidth="250dp"
+                android:text="@string/wifi_networks_not_found"
+                android:textSize="15sp"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_margin="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/empty_manual_wifi_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wifi_manual_button_title"
+                />
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="0dp"/>
+
+            <Button
+                android:id="@+id/empty_refresh_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wifi_refresh_button_title"/>
+        </LinearLayout>
+
+    </FrameLayout>
+
+</io.afero.aferolab.wifiSetup.WifiSetupView>

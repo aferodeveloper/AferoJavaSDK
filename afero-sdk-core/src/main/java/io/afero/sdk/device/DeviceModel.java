@@ -130,6 +130,9 @@ public final class DeviceModel {
     private OnNextDeviceRequest mOnNextDeviceRequestResponse;
     private OnErrorDeviceRequest mOnErrorDeviceRequestResponse;
 
+    private DeviceTagCollection mTags;
+
+
     private DeviceModel() {
         mId = null;
         mAferoClient = null;
@@ -298,6 +301,7 @@ public final class DeviceModel {
     /**
      * @return the {@link TimeZone} in which the device resides.
      */
+    @JsonIgnore
     public Observable<TimeZone> getTimeZone() {
 
         if (mTimeZoneValue.getState().equals(TimeZoneValue.State.SET)) {
@@ -386,7 +390,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<DeviceModel> getUpdateObservable() {
+    public Observable<DeviceModel> getUpdateObservable() {
         return mUpdateObservable;
     }
 
@@ -398,7 +402,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<DeviceSync> getDeviceSyncPreUpdateObservable() {
+    public Observable<DeviceSync> getDeviceSyncPreUpdateObservable() {
         return mDeviceSyncPreUpdateSubject;
     }
 
@@ -422,7 +426,7 @@ public final class DeviceModel {
      * @return {@link Observable}
      */
     @JsonIgnore
-    public rx.Observable<AferoError> getErrorObservable() {
+    public Observable<AferoError> getErrorObservable() {
         return mErrorSubject.onBackpressureBuffer();
     }
 
@@ -436,7 +440,7 @@ public final class DeviceModel {
      * @see <a href="https://developer.afero.io/docs/en/?target=Publish.html">Profile Editor: Publish Your Project</a>
      */
     @JsonIgnore
-    public rx.Observable<DeviceModel> getProfileObservable() {
+    public Observable<DeviceModel> getProfileObservable() {
         return mProfileUpdateSubject;
     }
 
@@ -628,13 +632,83 @@ public final class DeviceModel {
         return false;
     }
 
-    public void putTag(String key, String value) {
-        HashMap<String,String> tags = getTags();
-        tags.put(key, value);
+    /**
+     * Attaches a tag key/value to this device persistently via the Afero Cloud. The tag is removed
+     * if the device is disassociated from the account.
+     *
+     * @param key String specifying the key used to search for the tag.
+     * @param value String containing arbitrary value for the new tag
+     * @return Observable that emits the new {@link DeviceTagCollection.Tag}
+     */
+    public Observable<DeviceTagCollection.Tag> addTag(String key, String value) {
+        return getDeviceTagCollection().addTag(key, value);
     }
 
-    public String getTag(String key) {
-        return getTags().get(key);
+    /**
+     * Updates the key & values of the {@link DeviceTagCollection.Tag} specified by tagId.
+     *
+     * @param tag Tag to be updated.
+     * @return {@link Observable} that emits the updated Tag
+     */
+    public Observable<DeviceTagCollection.Tag> updateTag(DeviceTagCollection.Tag tag) {
+        return getDeviceTagCollection().updateTag(tag);
+    }
+
+    /**
+     * Deletes a tag from both local and persistent cloud storage.
+     *
+     * @param tag {@link DeviceTagCollection.Tag} to be removed from the collection.
+     * @return Tag that was removed
+     */
+    public Observable<DeviceTagCollection.Tag> removeTag(DeviceTagCollection.Tag tag) {
+        return getDeviceTagCollection().removeTag(tag);
+    }
+
+    /**
+     * Retrieves the value of a tag attached to this device via {@link #addTag(String, String)}.
+     *
+     * @param key String specifying the key used to search for the tag.
+     * @return String containing the value of the tag.
+     * @see #addTag(String, String)
+     */
+    public Iterable<DeviceTagCollection.Tag> getTags(String key) {
+        return getDeviceTagCollection().getTags(key);
+    }
+
+    /**
+     * @return {@link Iterable} for the collection of tags currently attached to the device.
+     */
+    @JsonIgnore
+    public Iterable<DeviceTagCollection.Tag> getTags() {
+        return getDeviceTagCollection().getTags();
+    }
+
+    /**
+     * @return true if at least one tag exists matching the specified key; false otherwise.
+     */
+    public boolean hasTag(String key) {
+        return getDeviceTagCollection().hasTag(key);
+    }
+
+    /**
+     * @return {@link Observable} that emits appropriate {@link DeviceTagCollection.TagEvent} objects
+     * when a {@link DeviceTagCollection.Tag} is added, updated, or removed from the DeviceModel.
+     *
+     * @see DeviceTagCollection.TagEvent
+     */
+    @JsonIgnore
+    public Observable<DeviceTagCollection.TagEvent> getTagObservable() {
+        return getDeviceTagCollection().getTagEventObservable();
+    }
+
+    /**
+     * Setter for DeviceTags used during DeviceModel JSON deserialization
+     *
+     * @param deviceTags Array of {@link DeviceTag} objects attached to this DeviceModel
+     */
+    @JsonProperty
+    public void setDeviceTags(DeviceTag[] deviceTags) {
+        getDeviceTagCollection().setDeviceTags(deviceTags);
     }
 
     @JsonProperty("attributes")
@@ -648,6 +722,10 @@ public final class DeviceModel {
             result.put(attrEntry.getKey(), ad);
         }
         return result;
+    }
+
+    public AferoClient getAferoClient() {
+        return mAferoClient;
     }
 
     @Override
@@ -687,6 +765,14 @@ public final class DeviceModel {
 
 
     // non-public ------------------------------------------------------------------
+
+    DeviceTagCollection.Tag getTagInternal(String key) {
+        return getDeviceTagCollection().getTagInternal(key);
+    }
+
+    DeviceTagCollection.Tag getTagById(String deviceTagId) {
+        return getDeviceTagCollection().getTagById(deviceTagId);
+    }
 
     void setProfile(DeviceProfile newProfile) {
         DeviceProfile oldProfile = mProfile;
@@ -821,10 +907,8 @@ public final class DeviceModel {
             mIsVirtual = deviceSync.virtual;
         }
 
-        if (deviceSync.tags != null) {
-            for (DeviceTag tag : deviceSync.tags) {
-                putTag(tag.deviceTagId, tag.value);
-            }
+        if (deviceSync.deviceTags != null) {
+            setDeviceTags(deviceSync.deviceTags);
         }
 
         if (deviceSync.timezone != null && deviceSync.timezone.timezone != null) {
@@ -870,6 +954,10 @@ public final class DeviceModel {
     void invalidateTimeZone() {
         mTimeZoneValue.invalidate();
         mUpdateSubject.onNext(this);
+    }
+
+    void invalidateTag(String deviceTagAction, DeviceTag deviceTag) {
+        getDeviceTagCollection().invalidateTag(deviceTagAction, deviceTag);
     }
 
     void onOTA(OTAInfo otaInfo) {
@@ -1099,13 +1187,11 @@ public final class DeviceModel {
         return data;
     }
 
-    private HashMap<String,String> mTags;
-    private static final String TAG_SELECTED_GROUP = "selected-group-id";
-
-    private HashMap<String,String> getTags() {
+    private DeviceTagCollection getDeviceTagCollection() {
         if (mTags == null) {
-            mTags = new HashMap<>();
+            mTags = new DeviceTagCollection(this);
         }
+
         return mTags;
     }
 

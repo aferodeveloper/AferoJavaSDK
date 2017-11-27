@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Version 1.0.0 *(2017-11-27)*
+----------------------------
+ * New: Added persistent device tags API to `DeviceModel`
+ * New: Added device tags sample code and UI to AferoLab
+ * New: Added ability to add devices via QR code scan to AferoLab
+ * New: Added device wifi setup sample code and UI to AferoLab
+ * New: JavaDoc is now published to Artifactory
+ * Fix: AferoSofthub now properly handles and reports errors that occur on startup
+
 Version 0.8.0 *(2017-09-27)*
 ----------------------------
  * New: Added `DeviceModel.setTimeZone(TimeZone)` and `getTimeZone()`

@@ -7,7 +7,6 @@ package io.afero.sdk.utils;
 import java.lang.ref.WeakReference;
 
 import io.afero.sdk.log.AfLog;
-import io.afero.sdk.scheduler.OfflineScheduler;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;

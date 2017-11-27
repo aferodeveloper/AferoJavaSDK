@@ -256,7 +256,10 @@ public class AferoSofthub {
 
                 @Override
                 public void onError(Throwable e) {
+                    AfLog.e("AferoSofthub startup error - deviceAssociate failed");
                     AfLog.e(e);
+                    mStartSubject.onError(e);
+                    mStartSubject = null;
                 }
 
                 @Override

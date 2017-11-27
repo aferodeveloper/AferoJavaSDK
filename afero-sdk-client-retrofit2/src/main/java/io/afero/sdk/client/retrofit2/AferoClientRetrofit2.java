@@ -16,6 +16,7 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
@@ -530,6 +531,43 @@ public class AferoClientRetrofit2 implements AferoClient {
     @Override
     public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
         return mAferoService.getDeviceLocation(mActiveAccountId, deviceModel.getId());
+    }
+
+    /**
+     * Afero Cloud API call to attach a {@link DeviceTag} to a device.
+     *
+     * @param deviceId String specifying the unique id of the device.
+     * @param tagKey String containing the key for the tag.
+     * @param tagValue String containing the value for the tag.
+     * @return {@link Observable} that emits the DeviceTag if successful.
+     */
+    @Override
+    public Observable<DeviceTag> postDeviceTag(String deviceId, String tagKey, String tagValue) {
+        return mAferoService.postDeviceTag(mActiveAccountId, deviceId, new DeviceTag(tagKey, tagValue));
+    }
+
+    /**
+     * Afero Cloud API call to update an existing {@link DeviceTag} on a device.
+     *
+     * @param deviceId String specifying the unique id of the device.
+     * @param tag DeviceTag to to be updated.
+     * @return {@link Observable} that emits the DeviceTag if successful.
+     */
+    @Override
+    public Observable<DeviceTag> putDeviceTag(String deviceId, DeviceTag tag) {
+        return mAferoService.putDeviceTag(mActiveAccountId, deviceId, tag);
+    }
+
+    /**
+     * Afero Cloud API call to delete a {@link DeviceTag} from a device.
+     *
+     * @param deviceId String specifying the unique id of the device.
+     * @param tagId String specifying the unique id of the tag.
+     * @return {@link Observable} that emits nothing and completes on success.
+     */
+    @Override
+    public Observable<Void> deleteDeviceTag(String deviceId, String tagId) {
+        return mAferoService.deleteDeviceTag(mActiveAccountId, deviceId, tagId);
     }
 
     /**

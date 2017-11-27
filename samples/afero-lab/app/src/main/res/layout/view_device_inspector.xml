@@ -3,10 +3,10 @@
   ~ Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
   -->
 
-<io.afero.aferolab.DeviceInspectorView
-    android:id="@+id/device_inspector"
+<io.afero.aferolab.deviceInspector.DeviceInspectorView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/device_inspector"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@null"
@@ -22,6 +22,7 @@
         />
 
     <LinearLayout
+        android:id="@+id/device_inspector_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -31,10 +32,12 @@
             android:id="@+id/device_info_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
             app:cardElevation="3dp"
             app:contentPadding="5dp">
 
             <LinearLayout
+                android:id="@+id/device_info_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
@@ -55,7 +58,128 @@
                     android:textColor="@android:color/darker_gray"
                     android:textSize="12sp"/>
 
+
+                <LinearLayout
+                    android:id="@+id/device_info_extra_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+
+                        <Button
+                            android:id="@+id/wifi_connect_button"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_weight="5"
+                            android:drawablePadding="10dp"
+                            android:drawableStart="@drawable/ic_wifi_black_36dp"
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="@string/connect_to_wifi"
+                            />
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+
+                        <Button
+                            android:id="@+id/device_tag_button"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="5"
+                            android:drawablePadding="10dp"
+                            android:drawableStart="@drawable/ic_tag_list_black_36dp"
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="@string/device_tag_button_title"
+                            />
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+
+                        <Button
+                            android:id="@+id/device_delete_button"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:layout_weight="5"
+                            android:drawablePadding="10dp"
+                            android:drawableStart="@drawable/ic_delete_forever_black_36dp"
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="@string/delete_device"
+                            />
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            />
+                    </LinearLayout>
+
+                </LinearLayout>
             </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/device_info_extra_open"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:background="@null"
+                android:src="@drawable/ic_expand_more_black_36dp"
+                />
+
+            <ImageButton
+                android:id="@+id/device_info_extra_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:background="@null"
+                android:src="@drawable/ic_expand_less_black_36dp"
+                android:visibility="gone"
+                />
         </android.support.v7.widget.CardView>
 
         <android.support.v7.widget.CardView
@@ -63,7 +187,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="5dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:animateLayoutChanges="true">
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/device_attribute_recycler_view"
@@ -76,4 +201,9 @@
         </android.support.v7.widget.CardView>
     </LinearLayout>
 
-</io.afero.aferolab.DeviceInspectorView>
+    <include
+        android:id="@+id/device_inspector_progress"
+        layout="@layout/view_progress_dark"
+        />
+
+</io.afero.aferolab.deviceInspector.DeviceInspectorView>

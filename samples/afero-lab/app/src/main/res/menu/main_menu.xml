@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+  -->
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_add_device"
+        android:icon="@drawable/ic_add_circle_outline_black_36dp"
+        android:title="@string/add_device"
+        app:showAsAction="ifRoom"
+        />
+
+    <item
+        android:id="@+id/action_sign_out"
+        android:title="@string/sign_out"
+        app:showAsAction="never"
+        />
+
+</menu>

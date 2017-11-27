@@ -7,7 +7,6 @@
         "attributes": [
             { "id": 100, "value": "123" }
         ],
-        "tags": [],
         "status": {
             "available": true,
             "visible": true
