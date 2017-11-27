@@ -27,7 +27,6 @@ class DeviceTagEditor {
     private DeviceTagCollection.Tag mTag;
 
     private final ViewGroup mOwnerView;
-    private final int mTitleResId;
 
     private AferoEditText mTagKeyEditText;
     private AferoEditText mTagValueEditText;
@@ -54,9 +53,8 @@ class DeviceTagEditor {
     }
 
 
-    DeviceTagEditor(ViewGroup ownerView, @StringRes int titleResId) {
+    DeviceTagEditor(ViewGroup ownerView) {
         mOwnerView = ownerView;
-        mTitleResId = titleResId;
     }
 
     public Observable<Result> start(DeviceTagCollection.Tag tag) {
@@ -80,12 +78,15 @@ class DeviceTagEditor {
                     if (mTag.getValue() != null) {
                         mTagValueEditText.setText(mTag.getValue());
                     }
+
+                    mTagKeyEditText.setEnabled(mTag.isEditable());
+                    mTagValueEditText.setEnabled(mTag.isEditable());
                 }
 
                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(view.getContext())
                         .setView(view)
                         .setCancelable(false)
-                        .setTitle(mTitleResId)
+                        .setTitle(mTag != null ? R.string.tag_editor_title_edit : R.string.tag_editor_title_new)
                         .setPositiveButton(R.string.button_title_ok, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
@@ -98,7 +99,7 @@ class DeviceTagEditor {
                                 Result result;
                                 if (mTag != null) {
                                     result = new Result(Result.Event.UPDATE);
-                                    result.tag =  mTag.cloneWith(key, value);
+                                    result.tag = mTag.cloneWith(key, value);
                                 } else {
                                     result = new Result(Result.Event.ADD);
                                     result.key = key;
@@ -122,31 +123,43 @@ class DeviceTagEditor {
                         });
 
                 if (mTag != null) {
-                    dialogBuilder.setNeutralButton(R.string.button_title_tag_remove, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            mTagKeyEditText.hideKeyboard();
+                    if (mTag.isEditable()) {
+                        dialogBuilder.setNeutralButton(R.string.button_title_tag_remove,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        mTagKeyEditText.hideKeyboard();
 
-                            Result result = new Result(Result.Event.DELETE);
-                            result.tag = mTag;
+                                        Result result = new Result(Result.Event.DELETE);
+                                        result.tag = mTag;
 
-                            emitter.onNext(result);
-                            emitter.onCompleted();
+                                        emitter.onNext(result);
+                                        emitter.onCompleted();
 
-                            dialogInterface.dismiss();
-                        }
-                    });
+                                        dialogInterface.dismiss();
+                                    }
+                                });
+                    } else {
+                        dialogBuilder.setMessage(R.string.tag_editor_not_editable_message);
+                    }
                 }
 
                 mAlertDialog = dialogBuilder.create();
 
-                mAlertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-                    @Override
-                    public void onShow(DialogInterface dialogInterface) {
-                        mTagKeyEditText.showKeyboard();
-                    }
-                });
+                if (mTag != null && mTag.isEditable()) {
+                    mAlertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                        @Override
+                        public void onShow(DialogInterface dialogInterface) {
+                            mTagKeyEditText.showKeyboard();
+                        }
+                    });
+                }
+
                 mAlertDialog.show();
+
+                if (mTag != null && !mTag.isEditable()) {
+                    mAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                }
 
             }
         }, Emitter.BackpressureMode.LATEST)

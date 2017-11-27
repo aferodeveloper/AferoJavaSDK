@@ -4,6 +4,7 @@
 
 package io.afero.sdk.client.afero.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
@@ -57,6 +58,11 @@ public class DeviceTag {
     }
 
     public DeviceTag(DeviceTag tag) {
+        set(tag);
+    }
+
+    @JsonIgnore
+    public void set(DeviceTag tag) {
         deviceTagId = tag.deviceTagId;
         key = tag.key;
         value = tag.value;
@@ -64,6 +70,7 @@ public class DeviceTag {
         localizationKey = tag.localizationKey;
     }
 
+    @JsonIgnore
     public boolean isEditable() {
         return deviceTagType != null && !deviceTagType.equalsIgnoreCase(TAG_TYPE_SYSTEM);
     }

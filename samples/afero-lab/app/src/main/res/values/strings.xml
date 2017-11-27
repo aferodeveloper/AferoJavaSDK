@@ -65,4 +65,7 @@
     <string name="tag_value_hint">Value</string>
     <string name="tag_delete_confirmation">Are you sure you want to remove this tag?</string>
     <string name="button_title_tag_remove">REMOVE</string>
+    <string name="tag_editor_not_editable_message">System tags are not editable</string>
+    <string name="tag_editor_title_edit">Edit Tag</string>
+    <string name="tag_editor_title_new">New Tag</string>
 </resources>
