@@ -4,6 +4,7 @@ Change Log
 Version 1.0.1 *(2017-12-12)*
 ----------------------------
  * Fix: Removed reference to HttpException in MockAferoClient to fix Proguard IOException.
+ * Fix: Improved concurrent stability in ConclaveClient.
 
 Version 1.0.0 *(2017-11-27)*
 ----------------------------
