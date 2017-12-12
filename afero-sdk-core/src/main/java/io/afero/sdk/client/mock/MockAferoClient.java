@@ -10,8 +10,6 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import javax.xml.ws.http.HTTPException;
-
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
@@ -161,7 +159,7 @@ public class MockAferoClient implements AferoClient {
             public DeviceTag call() throws Exception {
                 DeviceTag oldTag = mDeviceTags.get(deviceTag.deviceTagId);
                 if (oldTag == null) {
-                    throw new HTTPException(404);
+                    throw new Exception("404");
                 }
 
                 oldTag.key = deviceTag.key;
@@ -208,7 +206,7 @@ public class MockAferoClient implements AferoClient {
             @Override
             public Void call() throws Exception {
                 if (mDeviceTags.remove(tagId) == null) {
-                    throw new HTTPException(404);
+                    throw new Exception("404");
                 }
                 return null;
             }
