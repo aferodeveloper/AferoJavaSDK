@@ -66,6 +66,7 @@ public class ConclaveClient {
     private int mSessionId;
 
     private Socket mSocket;
+    private final Object mSocketLock = new Object();
     private PrintWriter mWriter;
     private BufferedReader mReader;
     private ReaderThread mReaderThread;
@@ -145,12 +146,20 @@ public class ConclaveClient {
                 mReaderThread = null;
             }
 
-            if (mSocket != null) {
-                mStatusSubject.onNext(ConclaveClient.Status.DISCONNECTED);
-                Observable.fromCallable(new CloseSocketCallable(mSocket))
-                    .subscribeOn(Schedulers.io());
-                mSocket = null;
+            boolean isSocketClosing = false;
+            synchronized (mSocketLock) {
+                if (mSocket != null) {
+                    Observable.fromCallable(new CloseSocketCallable(mSocket))
+                            .subscribeOn(Schedulers.io());
+                    mSocket = null;
+                    isSocketClosing = true;
+                }
             }
+
+            if (isSocketClosing) {
+                mStatusSubject.onNext(ConclaveClient.Status.DISCONNECTED);
+            }
+
         } catch (Exception e) {
             // ignore
         }
@@ -161,25 +170,27 @@ public class ConclaveClient {
 
         mStatusSubject.onNext(Status.CONNECTING);
 
-        if (mUseSSL) {
-            AfLog.i("ConclaveClient: Starting SSL connection to " + mHost + ":" + mPort);
-            mSocket = SSLSocketFactory.getDefault().createSocket(address, mPort);
-            ((SSLSocket)mSocket).setEnabledProtocols(new String[] {"TLSv1.1", "TLSv1.2"});
-        } else {
-            AfLog.i("ConclaveClient: Starting non-SSL connection to " + mHost + ":" + mPort);
-            mSocket = new Socket(address, mPort);
+        synchronized (mSocketLock) {
+            if (mUseSSL) {
+                AfLog.i("ConclaveClient: Starting SSL connection to " + mHost + ":" + mPort);
+                mSocket = SSLSocketFactory.getDefault().createSocket(address, mPort);
+                ((SSLSocket)mSocket).setEnabledProtocols(new String[] {"TLSv1.1", "TLSv1.2"});
+            } else {
+                AfLog.i("ConclaveClient: Starting non-SSL connection to " + mHost + ":" + mPort);
+                mSocket = new Socket(address, mPort);
+            }
+
+            OutputStream os = mSocket.getOutputStream();
+            InputStream is = mSocket.getInputStream();
+
+            if (mUseCompression) {
+                is = new StreamingInflaterInputStream(is);
+                os = new DeflaterOutputStream(os, true);
+            }
+
+            mReader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            mWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)), true);
         }
-
-        OutputStream os = mSocket.getOutputStream();
-        InputStream is = mSocket.getInputStream();
-
-        if (mUseCompression) {
-            is = new StreamingInflaterInputStream(is);
-            os = new DeflaterOutputStream(os, true);
-        }
-
-        mReader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-        mWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)), true);
 
         setHeartbeatTimeout(HEARBEAT_TIMEOUT_DEFAULT);
     }
@@ -188,21 +199,25 @@ public class ConclaveClient {
 
         mStatusSubject.onNext(Status.DISCONNECTING);
 
-        if (mSocket != null) {
-            try {
-                mSocket.close();
-            } catch (IOException e) {
-                // I'll alert the president.
-            }
+        synchronized (mSocketLock) {
+            if (mSocket != null) {
+                try {
+                    mSocket.close();
+                } catch (IOException e) {
+                    // I'll alert the president.
+                }
 
-            mSocket = null;
+                mSocket = null;
+            }
         }
 
         mStatusSubject.onNext(Status.DISCONNECTED);
     }
 
     public boolean isConnected() {
-        return mSocket != null && mSocket.isConnected();
+        synchronized (mSocketLock) {
+            return mSocket != null && mSocket.isConnected();
+        }
     }
 
     public Observable<Status> statusObservable() {
@@ -232,7 +247,8 @@ public class ConclaveClient {
 
             while (mIsRunning && !Thread.interrupted()) {
                 try {
-                    if (mSocket == null || !mSocket.isConnected()) {
+
+                    if (!isConnected()) {
                         AfLog.i("ConclaveClient: reconnecting in " + mRetryDelay + "s");
 
                         mStatusSubject.onNext(Status.DISCONNECTED);
@@ -293,7 +309,9 @@ public class ConclaveClient {
         }
 
         try {
-            mSocket.setSoTimeout(timeoutInSeconds * 1000);
+            synchronized (mSocketLock) {
+                mSocket.setSoTimeout(timeoutInSeconds * 1000);
+            }
         } catch (SocketException e) {
             e.printStackTrace();
         }
