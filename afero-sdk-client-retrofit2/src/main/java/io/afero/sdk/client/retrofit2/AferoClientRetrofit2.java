@@ -795,13 +795,10 @@ public class AferoClientRetrofit2 implements AferoClient {
     private class RefreshTokenAuthenticator implements Authenticator {
         @Override
         public Request authenticate(Route route, okhttp3.Response response) throws IOException {
-            if(responseCount(response) >= 2) {
-                mAccessToken = null;
-
-                BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-                if (tokenSubject != null) {
-                    mTokenSubject = null;
-                    tokenSubject.onError(new Exception());
+            if (responseCount(response) >= 2) {
+                synchronized (mTokenRefreshLock) {
+                    mAccessToken = null;
+                    notifyTokenException(new Exception("RefreshTokenAuthenticator: Too many retries"));
                 }
 
                 // If both the original call and the call with refreshed token failed,
@@ -813,7 +810,6 @@ public class AferoClientRetrofit2 implements AferoClient {
                 AccessToken currentToken = mAccessToken;
 
                 if (currentToken != null && currentToken.refreshToken != null) {
-
                     AfLog.d("AferoClient: Attempting to refresh token");
 
                     // Get a new token
@@ -822,28 +818,31 @@ public class AferoClientRetrofit2 implements AferoClient {
                         if (newToken != null) {
                             mAccessToken = newToken;
                             if (mTokenSubject != null) {
-                                mTokenSubject.onNext(mAccessToken);
+                                mTokenSubject.onNext(newToken);
                             }
-                        }
 
-                        // Add new header to rejected request and retry it
-                        return response.request().newBuilder()
-                                .header(HEADER_AUTHORIZATION, mAccessToken.tokenType + " " + mAccessToken.accessToken)
-                                .build();
+                            // Add new header to rejected request and retry it
+                            return response.request().newBuilder()
+                                    .header(HEADER_AUTHORIZATION, newToken.tokenType + " " + newToken.accessToken)
+                                    .build();
+                        }
                     } catch (Exception e) {
                         AfLog.d("AferoClient: Failed to refresh token");
                         mAccessToken = null;
-
-                        BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-                        if (tokenSubject != null) {
-                            mTokenSubject = null;
-                            tokenSubject.onError(e);
-                        }
+                        notifyTokenException(e);
                     }
                 }
             }
 
             return null;
+        }
+    }
+
+    private void notifyTokenException(Exception e) {
+        BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
+        if (tokenSubject != null && !(tokenSubject.hasThrowable() || tokenSubject.hasCompleted())) {
+            mTokenSubject = null;
+            tokenSubject.onError(e);
         }
     }
 
