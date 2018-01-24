@@ -87,6 +87,8 @@ public class DeviceProfile {
         private String mSemanticType;
         private AttributeValue.DataType mDataType = AttributeValue.DataType.UNKNOWN;
         private String[] mOperations;
+        private int mLength;
+        private String mDefaultValue;
 
         private Description mDescription;
 
@@ -162,6 +164,24 @@ public class DeviceProfile {
 
         public boolean isNumericDecimalType() {
             return AttributeValue.isNumericDecimalType(mDataType);
+        }
+
+        @JsonProperty
+        public int getLength() {
+            return mLength;
+        }
+
+        public void setLength(int len) {
+            mLength = len;
+        }
+
+        @JsonProperty
+        public void setValue(String value) {
+            mDefaultValue = value;
+        }
+
+        public AttributeValue getDefaultValue() {
+            return mDefaultValue != null ? new AttributeValue(mDefaultValue, getDataType()) : null;
         }
     }
 
