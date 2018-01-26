@@ -162,7 +162,7 @@ public class DeviceWifiSetup {
                     mWifiSetupImpl.getWifiSSIDListFromHub(mDeviceModel.getId(), wifiListCallback);
 
                 }
-            }, Emitter.BackpressureMode.LATEST)
+            }, Emitter.BackpressureMode.BUFFER)
             .flatMap(new Func1<List<WifiSSIDEntry>, Observable<WifiSSIDEntry>>() {
                 @Override
                 public Observable<WifiSSIDEntry> call(List<WifiSSIDEntry> wifiSSIDEntries) {
@@ -255,7 +255,9 @@ public class DeviceWifiSetup {
             wifiSSIDEntryEmitter.setCancellation(new Cancellable() {
                 @Override
                 public void cancel() throws Exception {
+                    AfLog.d("GetWifiListCallback.cancel");
                     if (isCancelable()) {
+                        AfLog.d("GetWifiListCallback.cancel calling cancelGetWifiSSIDListFromHub");
                         mWifiSetupImpl.cancelGetWifiSSIDListFromHub(getDeviceModel().getId());
                     }
                 }
@@ -339,11 +341,15 @@ public class DeviceWifiSetup {
         }
 
         boolean isCancelable() {
+
             if (mCurrentState != null) {
+                AfLog.d("SetupWifiSubscriberCallback.isCancelable: " + mCurrentState.toString());
+
                 switch (mCurrentState) {
                     case START:
                     case AVAILABLE:
                     case CONNECTED:
+                        AfLog.d("SetupWifiSubscriberCallback.isCancelable: true");
                         return true;
 
                     case DONE:
@@ -353,9 +359,12 @@ public class DeviceWifiSetup {
                     case TIMED_OUT_CONNECT:
                     case TIMED_OUT_COMMUNICATING:
                     case FAILED:
+                        AfLog.d("SetupWifiSubscriberCallback.isCancelable: false");
                         return false;
                 }
             }
+
+            AfLog.d("SetupWifiSubscriberCallback.isCancelable: false");
 
             return false;
         }
