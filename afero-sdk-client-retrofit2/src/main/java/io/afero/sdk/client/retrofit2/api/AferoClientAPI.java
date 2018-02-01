@@ -167,33 +167,33 @@ public interface AferoClientAPI {
             @Query("imageSize") String imageSize
     );
 
-    @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/requests")
+    @POST(V1 + "accounts/{accountId}/devices/{deviceId}/requests")
     Observable<WriteResponse[]> postDeviceRequest(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body WriteRequest[] body
     );
 
-    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone%2Ctags")
+    @GET(V1 + "accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone%2Ctags")
     Observable<DeviceSync[]> getDevicesWithState(
             @Path("accountId") String accountId
     );
 
-    @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag")
+    @POST(V1 + "accounts/{accountId}/devices/{deviceId}/deviceTag")
     Observable<DeviceTag> postDeviceTag(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body DeviceTag tag
     );
 
-    @PUT(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag")
+    @PUT(V1 + "accounts/{accountId}/devices/{deviceId}/deviceTag")
     Observable<DeviceTag> putDeviceTag(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body DeviceTag tag
     );
 
-    @DELETE(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag/{deviceTag}")
+    @DELETE(V1 + "accounts/{accountId}/devices/{deviceId}/deviceTag/{deviceTag}")
     Observable<Void> deleteDeviceTag(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
