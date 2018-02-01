@@ -166,14 +166,14 @@ public interface AferoClientAPI {
             @Query("imageSize") String imageSize
     );
 
-    @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/requests")
+    @POST(V1 + "accounts/{accountId}/devices/{deviceId}/requests")
     Observable<WriteResponse[]> postDeviceRequest(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body WriteRequest[] body
     );
 
-    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone")
+    @GET(V1 + "accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone")
     Observable<DeviceSync[]> getDevicesWithState(
             @Path("accountId") String accountId
     );
