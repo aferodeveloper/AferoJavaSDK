@@ -249,6 +249,8 @@ public class DeviceWifiSetup {
 
     protected final class GetWifiListCallback extends SetupWifiSubscriberCallback<List<WifiSSIDEntry>> {
 
+        private boolean mIsCancelable = true;
+
         public GetWifiListCallback(Emitter<List<WifiSSIDEntry>> wifiSSIDEntryEmitter, DeviceModel deviceModel, AferoClient aferoClient) {
             super(wifiSSIDEntryEmitter, deviceModel, aferoClient);
 
@@ -266,10 +268,17 @@ public class DeviceWifiSetup {
 
         @Override
         public void wifiListResult(String s, List<WifiSSIDEntry> list) {
+            AfLog.d("GetWifiListCallback.wifiListResult: mIsCancelable=false");
+            mIsCancelable = false;
             emit(list);
             completed();
         }
 
+        @Override
+        boolean isCancelable() {
+            AfLog.d("GetWifiListCallback.isCancelable: mIsCancelable=" + mIsCancelable);
+            return mIsCancelable && super.isCancelable();
+        }
     }
 
     protected final class SendWifiCredentialCallback extends SetupWifiSubscriberCallback<SetupWifiState> {
