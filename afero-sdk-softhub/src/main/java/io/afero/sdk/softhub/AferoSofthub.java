@@ -34,6 +34,11 @@ import rx.subjects.PublishSubject;
 
 public class AferoSofthub {
 
+    public enum HubFlag {
+        NONE,
+        DYNAMIC
+    }
+
     private static AferoSofthub sInstance;
     private static boolean sIsHubbyInitialized;
 
@@ -49,6 +54,7 @@ public class AferoSofthub {
     private final String mSetupPath;
     private final String mOTAPath;
     private final String mAppInfo;
+    private final HubFlag mHubFlags;
     private final NotificationCallback mNotificationCallback;
 
     private boolean mIsHubbyRunning;
@@ -79,10 +85,11 @@ public class AferoSofthub {
         }
     };
 
-    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo) {
+    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo, HubFlag flags) {
         mContextRef = new WeakReference<>(context);
         mAferoClient = aferoClient;
         mAppInfo = appInfo;
+        mHubFlags = flags;
 
         mNotificationCallback = new HubbyNotificationCallback(this);
 
@@ -91,8 +98,12 @@ public class AferoSofthub {
     }
 
     public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo) {
+        return acquireInstance(context, aferoClient, appInfo, HubFlag.NONE);
+    }
+
+    public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo, HubFlag flags) {
         if (sInstance == null) {
-            sInstance = new AferoSofthub(context, aferoClient, appInfo);
+            sInstance = new AferoSofthub(context, aferoClient, appInfo, flags);
         }
 
         return sInstance;
@@ -225,6 +236,15 @@ public class AferoSofthub {
         config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
         config.put(Hubby.Config.OTA_WORKING_PATH, mOTAPath);
         config.put(Hubby.Config.HARDWARE_INFO, hwInfo);
+
+        switch (mHubFlags) {
+            case NONE:
+                break;
+
+            case DYNAMIC:
+//                config.put(Hubby.Config.???, ???);
+                break;
+        }
 
         if (mService != null) {
             config.put(Hubby.Config.SERVICE, mService);
