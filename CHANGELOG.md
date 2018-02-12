@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 1.0.2 *(2011-01-12)*
+----------------------------
+ * Fix: Changed `AferoClientRetrofit2` to prevent potential uncaught exception when refreshing access token.
+ * Changed: `Attribute` length and default value fields are now exposed via getter/setter.
+ * Fix: Removed some extraneous preceding slashes from some `AferoClientAPI` endpoints
+ * Changed: Updated `AferoSofthub` to softhub version 631.
+
 Version 1.0.1 *(2017-12-12)*
 ----------------------------
  * Fix: Removed reference to HttpException in MockAferoClient to fix Proguard IOException.
