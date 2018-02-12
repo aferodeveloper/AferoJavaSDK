@@ -34,9 +34,16 @@ import rx.subjects.PublishSubject;
 
 public class AferoSofthub {
 
-    public enum HubFlag {
-        NONE,
-        DYNAMIC
+    public enum HubType {
+        /**
+         * For hubs that handle small/limited small numbers of devices
+         */
+        CONSUMER,
+
+        /**
+         * For hubs that handle large/unlimited numbers of devices
+         */
+        ENTERPRISE
     }
 
     private static AferoSofthub sInstance;
@@ -54,7 +61,7 @@ public class AferoSofthub {
     private final String mSetupPath;
     private final String mOTAPath;
     private final String mAppInfo;
-    private final HubFlag mHubFlags;
+    private final HubType mHubType;
     private final NotificationCallback mNotificationCallback;
 
     private boolean mIsHubbyRunning;
@@ -85,11 +92,11 @@ public class AferoSofthub {
         }
     };
 
-    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo, HubFlag flags) {
+    private AferoSofthub(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo, HubType type) {
         mContextRef = new WeakReference<>(context);
         mAferoClient = aferoClient;
         mAppInfo = appInfo;
-        mHubFlags = flags;
+        mHubType = type;
 
         mNotificationCallback = new HubbyNotificationCallback(this);
 
@@ -97,20 +104,40 @@ public class AferoSofthub {
         mSetupPath = context.getFilesDir().getAbsolutePath();
     }
 
+    /**
+     * Returns the single instance of the AferoSofthub, instantiating a new one if necessary.
+     *
+     * @param context Android {@link Context}
+     * @param aferoClient {@link AferoClient} used for associating the softub during startup
+     * @param appInfo App defined string that will be appended to the softhub's HW_INFO attribute
+     * @return AferoSofthub instance
+     */
     public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo) {
-        return acquireInstance(context, aferoClient, appInfo, HubFlag.NONE);
+        return acquireInstance(context, aferoClient, appInfo, HubType.CONSUMER);
     }
 
-    public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo, HubFlag flags) {
+    /**
+     * Returns the single instance of the AferoSofthub, instantiating a new one if necessary.
+     *
+     * @param context Android {@link Context}
+     * @param aferoClient {@link AferoClient} used for associating the softub during startup
+     * @param appInfo App defined string that will be appended to the softhub's HW_INFO attribute
+     * @param type See {@link AferoSofthub.HubType}
+     * @return AferoSofthub instance
+     */
+    public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo, HubType type) {
         if (sInstance == null) {
-            sInstance = new AferoSofthub(context, aferoClient, appInfo, flags);
+            sInstance = new AferoSofthub(context, aferoClient, appInfo, type);
         }
 
         return sInstance;
     }
 
     public static void releaseInstance() {
-        sInstance = null;
+        if (sInstance != null) {
+            sInstance.stop();
+            sInstance = null;
+        }
     }
 
     public synchronized @NonNull Observable<AferoSofthub> start() {
@@ -237,12 +264,13 @@ public class AferoSofthub {
         config.put(Hubby.Config.OTA_WORKING_PATH, mOTAPath);
         config.put(Hubby.Config.HARDWARE_INFO, hwInfo);
 
-        switch (mHubFlags) {
-            case NONE:
+        switch (mHubType) {
+            case CONSUMER:
+                config.put(Hubby.Config.HUB_TYPE, Hubby.HUB_TYPE_CONSUMER);
                 break;
 
-            case DYNAMIC:
-//                config.put(Hubby.Config.???, ???);
+            case ENTERPRISE:
+                config.put(Hubby.Config.HUB_TYPE, Hubby.HUB_TYPE_ENTERPRISE);
                 break;
         }
 
