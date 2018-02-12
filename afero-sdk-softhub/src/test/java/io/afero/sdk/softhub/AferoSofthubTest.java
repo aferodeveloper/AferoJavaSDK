@@ -41,13 +41,13 @@ public class AferoSofthubTest {
 
     @Test
     public void init() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
                 .verifyHubbyHelperCreated();
     }
 
     @Test
     public void start() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .startHubby()
                 .waitUntilStartedCalled()
@@ -60,13 +60,28 @@ public class AferoSofthubTest {
 
                 .verifyHubbyNotStarting()
                 .verifyHubbyIsRunning()
+                .verifyHubbyIsTypeConsumer()
                 .verifyHubbyStartCompleted()
         ;
     }
 
     @Test
+    public void startWithTypeEnterprise() throws Exception {
+        makeAferoSofthubTester(AferoSofthub.HubType.ENTERPRISE)
+
+                .startHubby()
+                .waitUntilStartedCalled()
+
+                .hubbyCallbackInitializationCompleted()
+                .waitUntilStartCompleted()
+
+                .verifyHubbyIsTypeEnterprise()
+        ;
+    }
+
+    @Test
     public void startWithDeviceAssociateFailure() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .startHubbyWithDeviceAssociateFailure()
                 .waitUntilStartedCalled()
@@ -85,7 +100,7 @@ public class AferoSofthubTest {
 
     @Test
     public void stop() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .startHubbyCompletely()
                 .verifyHubbyIsRunning()
@@ -97,7 +112,7 @@ public class AferoSofthubTest {
 
     @Test
     public void onPause() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .startHubbyCompletely()
                 .verifyHubbyIsRunning()
@@ -112,7 +127,7 @@ public class AferoSofthubTest {
 
     @Test
     public void onResume() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .startHubbyCompletely()
                 .pauseHubby()
@@ -130,7 +145,7 @@ public class AferoSofthubTest {
 
     @Test
     public void isActive() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .verifyHubbyIsActive()
 
@@ -146,7 +161,7 @@ public class AferoSofthubTest {
 
     @Test
     public void isRunning() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .verifyHubbyNotRunning()
 
@@ -162,7 +177,7 @@ public class AferoSofthubTest {
 
     @Test
     public void isStarting() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .verifyHubbyNotStarting()
 
@@ -183,7 +198,7 @@ public class AferoSofthubTest {
 
     @Test
     public void observeCompletionReason() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
                 .startHubbyCompletely()
 
                 .stopHubby()
@@ -194,7 +209,7 @@ public class AferoSofthubTest {
 
     @Test
     public void observeAssociation() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
                 .startHubbyCompletely()
 
                 .hubbyCallbackAssociationNeeded("aferoSofthubTest")
@@ -205,7 +220,7 @@ public class AferoSofthubTest {
 
     @Test
     public void setService() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
 
                 .setServiceToDev()
 
@@ -218,7 +233,7 @@ public class AferoSofthubTest {
 
     @Test
     public void testOTAStartAndStop() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
                 .startHubbyCompletely()
 
                 .hubbyCallbackOTAStatus(OtaCallback.OtaState.START, DEVICE_ID)
@@ -233,7 +248,7 @@ public class AferoSofthubTest {
 
     @Test
     public void testOTAWithHubbyPause() throws Exception {
-        makeHubbyHelperTester()
+        makeAferoSofthubTester()
                 .startHubbyCompletely()
 
                 .hubbyCallbackOTAStatus(OtaCallback.OtaState.START, DEVICE_ID)
@@ -258,8 +273,11 @@ public class AferoSofthubTest {
 
     // test support --------------------------------------------------------
 
-    private HubbyHelperTester makeHubbyHelperTester() {
+    private HubbyHelperTester makeAferoSofthubTester() {
         return new HubbyHelperTester();
+    }
+    private HubbyHelperTester makeAferoSofthubTester(AferoSofthub.HubType hubType) {
+        return new HubbyHelperTester(hubType);
     }
 
     private class HubbyHelperTester {
@@ -275,6 +293,14 @@ public class AferoSofthubTest {
         HubbyHelperTester() {
             activity = Robolectric.buildActivity(Activity.class).create().get();
             aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D");
+            aferoSofthub.setHubbyImpl(hubbyImpl);
+            aferoSofthub.observeCompletion().subscribe(onNextComplete);
+            aferoSofthub.observeAssociation().subscribe(onNextAssociation);
+        }
+
+        HubbyHelperTester(AferoSofthub.HubType hubType) {
+            activity = Robolectric.buildActivity(Activity.class).create().get();
+            aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D", hubType);
             aferoSofthub.setHubbyImpl(hubbyImpl);
             aferoSofthub.observeCompletion().subscribe(onNextComplete);
             aferoSofthub.observeAssociation().subscribe(onNextAssociation);
@@ -427,6 +453,17 @@ public class AferoSofthubTest {
             assertNotNull(startObserver.error);
             return this;
         }
+
+        HubbyHelperTester verifyHubbyIsTypeEnterprise() {
+            assertEquals(Hubby.HUB_TYPE_ENTERPRISE, hubbyImpl.mConfigs.get(Hubby.Config.HUB_TYPE));
+            return this;
+        }
+
+        HubbyHelperTester verifyHubbyIsTypeConsumer() {
+            assertEquals(Hubby.HUB_TYPE_CONSUMER, hubbyImpl.mConfigs.get(Hubby.Config.HUB_TYPE));
+            return this;
+        }
+
     }
 
     private class MockHubbyImpl implements AferoSofthub.HubbyImpl {
