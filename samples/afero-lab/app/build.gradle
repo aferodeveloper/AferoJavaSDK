@@ -5,7 +5,7 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk-develop'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.0.2-6-gd4ada9c'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.0.2-8-g8ebc33f'
 
 repositories {
     maven {
