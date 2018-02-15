@@ -166,7 +166,7 @@ public class AferoSofthub {
         }
     }
 
-    Observable<NotificationCallback.CompleteReason> observeCompletion() {
+    public Observable<NotificationCallback.CompleteReason> observeCompletion() {
         return mCompleteSubject;
     }
 
@@ -207,6 +207,14 @@ public class AferoSofthub {
 
     public void setService(@NonNull String service) {
         mService = service;
+    }
+
+    public String getDeviceId() {
+        return mHubbyImpl.getDeviceId();
+    }
+
+    public String getSofthubVersion() {
+        return BuildConfig.HUBBY_VERSION;
     }
 
     // For unit testing
@@ -522,6 +530,8 @@ public class AferoSofthub {
         void start(final HashMap<Hubby.Config, String> configs, final NotificationCallback callback);
 
         void stop();
+
+        String getDeviceId();
     }
 
     private class NativeHubbyImpl implements HubbyImpl {
@@ -539,6 +549,11 @@ public class AferoSofthub {
         @Override
         public void stop() {
             Hubby.stop();
+        }
+
+        @Override
+        public String getDeviceId() {
+            return Hubby.getId();
         }
     }
 }
