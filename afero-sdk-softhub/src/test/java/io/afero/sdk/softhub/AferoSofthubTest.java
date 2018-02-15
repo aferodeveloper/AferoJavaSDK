@@ -498,6 +498,11 @@ public class AferoSofthubTest {
             }
         }
 
+        @Override
+        public String getDeviceId() {
+            return "mock-hub-id";
+        }
+
         void callbackInitializationCompleted() {
             mCallback.initializationComplete();
         }

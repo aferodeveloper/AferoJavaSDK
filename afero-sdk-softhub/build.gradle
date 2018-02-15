@@ -15,6 +15,8 @@ repositories {
     }
 }
 
+final String hubbyVersion = "1.0.643"
+
 android {
     publishNonDefault true
     compileSdkVersion 25
@@ -26,6 +28,8 @@ android {
 
         versionCode 1
         versionName rootProject.version
+
+        buildConfigField 'String', 'HUBBY_VERSION', '"'+hubbyVersion+'"'
     }
 
     buildTypes {
@@ -41,7 +45,7 @@ dependencies {
 
     compile project(path: ':afero-sdk-core')
 
-    embedded "io.afero.sdk:hubby:1.0.638@aar"
+    embedded "io.afero.sdk:hubby:${hubbyVersion}@aar"
 
     compile 'com.android.support:support-annotations:25.3.1'
 
