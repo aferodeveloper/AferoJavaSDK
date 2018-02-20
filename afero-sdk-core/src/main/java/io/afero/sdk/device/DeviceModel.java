@@ -774,7 +774,7 @@ public final class DeviceModel {
         return getDeviceTagCollection().getTagById(deviceTagId);
     }
 
-    void setProfile(DeviceProfile newProfile) {
+    synchronized void setProfile(DeviceProfile newProfile) {
         DeviceProfile oldProfile = mProfile;
         mProfile = newProfile;
         mProfileId = newProfile.getId();

@@ -14,21 +14,27 @@ import rx.subjects.PublishSubject;
 class DeviceProfileCollection {
 
     private final AferoClient mAferoClient;
-    private HashMap<String, DeviceProfile> mProfiles = new HashMap<>();
-    private PublishSubject<DeviceProfile> mProfileSubject = PublishSubject.create();
+    private final HashMap<String, DeviceProfile> mProfiles = new HashMap<>();
+    private final PublishSubject<DeviceProfile> mProfileSubject = PublishSubject.create();
 
     DeviceProfileCollection(AferoClient aferoClient) {
         mAferoClient = aferoClient;
     }
 
     private DeviceProfile addProfile(DeviceProfile profile) {
-        mProfiles.put(profile.getId(), profile);
+        synchronized (mProfiles) {
+            mProfiles.put(profile.getId(), profile);
+        }
+
         mProfileSubject.onNext(profile);
+
         return profile;
     }
 
     DeviceProfile getProfileFromID(String profileId) {
-        return mProfiles.get(profileId);
+        synchronized (mProfiles) {
+            return mProfiles.get(profileId);
+        }
     }
 
     Observable<DeviceProfile[]> fetchAccountProfiles() {
