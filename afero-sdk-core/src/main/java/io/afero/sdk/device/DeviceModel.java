@@ -688,7 +688,7 @@ public final class DeviceModel {
 
     // non-public ------------------------------------------------------------------
 
-    void setProfile(DeviceProfile newProfile) {
+    synchronized void setProfile(DeviceProfile newProfile) {
         DeviceProfile oldProfile = mProfile;
         mProfile = newProfile;
         mProfileId = newProfile.getId();
