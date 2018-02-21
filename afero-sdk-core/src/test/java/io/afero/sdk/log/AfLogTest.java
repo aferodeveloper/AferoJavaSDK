@@ -481,6 +481,7 @@ public class AfLogTest {
     }
 
     private class TestLogger implements AfLog.Impl {
+        private String tag;
         private String userEmail;
         private String userId;
         private String stringKey;
@@ -494,6 +495,16 @@ public class AfLogTest {
         private String contentType;
         private String contentId;
         private String contentName;
+
+        @Override
+        public void setTag(String t) {
+            tag = t;
+        }
+
+        @Override
+        public String getTag() {
+            return tag;
+        }
 
         @Override
         public void setUserEmail(String email) {
