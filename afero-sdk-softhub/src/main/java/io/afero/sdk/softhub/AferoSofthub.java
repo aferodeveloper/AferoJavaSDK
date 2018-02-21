@@ -160,7 +160,12 @@ public class AferoSofthub {
     public synchronized void stop() {
         AfLog.i("AferoSofthub.stop");
 
-        if (isRunning()) {
+        if (isStarting() || isRunning()) {
+            if (mStartSubject != null) {
+                mStartSubject.onError(new StartCancelled("AferoSofthub.stop called during start process"));
+                mStartSubject = null;
+            }
+
             mIsHubbyRunning = false;
             mHubbyImpl.stop();
         }
@@ -554,6 +559,12 @@ public class AferoSofthub {
         @Override
         public String getDeviceId() {
             return Hubby.getId();
+        }
+    }
+
+    public class StartCancelled extends Throwable {
+        public StartCancelled(String message) {
+            super(message);
         }
     }
 }
