@@ -7,7 +7,6 @@ package io.afero.sdk.log;
 public class AfLog {
 
     private static Impl mImpl;
-    private static String mTag = "";
     private static FilterLevel mFilterLevel = FilterLevel.VERBOSE;
 
     public enum FilterLevel {
@@ -21,16 +20,15 @@ public class AfLog {
 
     public static void init(AfLog.Impl impl) {
         mImpl = impl;
-        mTag = "";
         mFilterLevel = FilterLevel.VERBOSE;
     }
 
     public static void setTag(String tag) {
-        mTag = tag;
+        getImpl().setTag(tag);
     }
 
     public static String getTag() {
-        return mTag;
+        return getImpl().getTag();
     }
 
     public static void setFilterLevel(FilterLevel level) {
@@ -115,6 +113,8 @@ public class AfLog {
     }
 
     public interface Impl {
+        void setTag(String tag);
+        String getTag();
         void setUserEmail(String email);
         void setUserId(String email);
         void setString(String key, String value);

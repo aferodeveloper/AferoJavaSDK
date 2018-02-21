@@ -11,12 +11,24 @@ import io.afero.sdk.log.AfLog;
 
 public class AndroidLog implements AfLog.Impl {
 
+    private String mTag;
+
     public AndroidLog() {
-        this("");
+        this("AferoSDK");
     }
 
     public AndroidLog(String tag) {
-        AfLog.setTag(tag);
+        setTag(tag);
+    }
+
+    @Override
+    public void setTag(String tag) {
+        mTag = tag;
+    }
+
+    @Override
+    public String getTag() {
+        return mTag;
     }
 
     @Override
