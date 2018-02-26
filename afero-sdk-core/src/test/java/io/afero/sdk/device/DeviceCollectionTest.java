@@ -129,6 +129,53 @@ public class DeviceCollectionTest {
 
     @Test
     public void observeCreates() throws Exception {
+        // test creates emitted in response to snapshots
+        newDeviceCollectionTester()
+                .deviceCollectionStart()
+
+                .deviceCollectionObserveCreates()
+                .verifyGetCountReturnsExpectedCount(1)
+                .verifyGetDeviceReturnsNonNull("device-001")
+
+                .deviceEventSourceSnapshot("snapshot3")
+
+                .verifyObservedCreateCount(2)
+                .verifyGetCountReturnsExpectedCount(3)
+
+                .verifyGetDeviceReturnsNonNull("device-001")
+                .verifyDeviceHasProfile("device-001", "profile-001")
+
+                .verifyGetDeviceReturnsNonNull("device-002")
+                .verifyDeviceHasProfile("device-002", "profile-002")
+
+                .verifyGetDeviceReturnsNonNull("device-003")
+                .verifyDeviceHasProfile("device-003", "profile-003")
+
+        ;
+
+        // test creates emitted in response to snapshots, with a failed getProfile
+        newDeviceCollectionTester()
+                .deviceCollectionStart()
+
+                .deviceCollectionObserveCreates()
+                .verifyGetCountReturnsExpectedCount(1)
+                .verifyGetDeviceReturnsNonNull("device-001")
+
+                .deviceEventSourceSnapshot("snapshot4")
+
+                .verifyObservedCreateCount(1)
+                .verifyGetCountReturnsExpectedCount(2)
+
+                .verifyGetDeviceReturnsNonNull("device-001")
+                .verifyDeviceHasProfile("device-001", "profile-001")
+
+                .verifyGetDeviceReturnsNull("device-002")
+
+                .verifyGetDeviceReturnsNonNull("device-003")
+                .verifyDeviceHasProfile("device-003", "profile-003")
+
+        ;
+
         newDeviceCollectionTester()
                 .deviceCollectionStartWithNoDevices()
                 .deviceCollectionObserveCreates()
@@ -477,6 +524,7 @@ public class DeviceCollectionTest {
         }
 
 
+
         DeviceCollectionTester verifyDeviceEventSourceHasOneObserver() {
             assertTrue(deviceEventSource.mSnapshotSubject.hasObservers());
             assertEquals(1, deviceEventSource.mSnapshotSubscriptionCount);
@@ -518,6 +566,14 @@ public class DeviceCollectionTest {
 
         DeviceCollectionTester verifyGetDeviceReturnsNonNull(String deviceId) {
             assertNotNull(deviceCollection.getDevice(deviceId));
+            return this;
+        }
+
+        DeviceCollectionTester verifyDeviceHasProfile(String deviceId, String profileId) {
+            DeviceModel deviceModel = deviceCollection.getDevice(deviceId);
+            assertNotNull(deviceModel);
+            assertNotNull(deviceModel.getProfile());
+            assertEquals(profileId, deviceModel.getProfile().getId());
             return this;
         }
 
