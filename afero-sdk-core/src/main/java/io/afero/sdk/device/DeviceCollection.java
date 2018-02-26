@@ -375,14 +375,6 @@ public class DeviceCollection {
                                 }
                             })
                             ;
-//                        return mDeviceProfileCollection
-//                                .fetchAccountProfiles()
-//                                .zipWith(Observable.just(deviceSyncs), new Func2<DeviceProfile[], DeviceSync[], DeviceSync[]>() {
-//                                    @Override
-//                                    public DeviceSync[] call(DeviceProfile[] deviceProfiles, DeviceSync[] ds) {
-//                                        return ds;
-//                                    }
-//                                });
                     }
                 })
                 .doOnNext(new Action1<DeviceSync[]>() {
