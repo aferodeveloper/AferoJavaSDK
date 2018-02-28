@@ -60,22 +60,7 @@ public class AferoSofthubTest {
 
                 .verifyHubbyNotStarting()
                 .verifyHubbyIsRunning()
-                .verifyHubbyIsTypeConsumer()
                 .verifyHubbyStartCompleted()
-        ;
-    }
-
-    @Test
-    public void startWithTypeEnterprise() throws Exception {
-        makeAferoSofthubTester(AferoSofthub.HubType.ENTERPRISE)
-
-                .startHubby()
-                .waitUntilStartedCalled()
-
-                .hubbyCallbackInitializationCompleted()
-                .waitUntilStartCompleted()
-
-                .verifyHubbyIsTypeEnterprise()
         ;
     }
 
@@ -276,9 +261,6 @@ public class AferoSofthubTest {
     private HubbyHelperTester makeAferoSofthubTester() {
         return new HubbyHelperTester();
     }
-    private HubbyHelperTester makeAferoSofthubTester(AferoSofthub.HubType hubType) {
-        return new HubbyHelperTester(hubType);
-    }
 
     private class HubbyHelperTester {
         final Activity activity;
@@ -293,14 +275,6 @@ public class AferoSofthubTest {
         HubbyHelperTester() {
             activity = Robolectric.buildActivity(Activity.class).create().get();
             aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D");
-            aferoSofthub.setHubbyImpl(hubbyImpl);
-            aferoSofthub.observeCompletion().subscribe(onNextComplete);
-            aferoSofthub.observeAssociation().subscribe(onNextAssociation);
-        }
-
-        HubbyHelperTester(AferoSofthub.HubType hubType) {
-            activity = Robolectric.buildActivity(Activity.class).create().get();
-            aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D", hubType);
             aferoSofthub.setHubbyImpl(hubbyImpl);
             aferoSofthub.observeCompletion().subscribe(onNextComplete);
             aferoSofthub.observeAssociation().subscribe(onNextAssociation);
@@ -458,12 +432,6 @@ public class AferoSofthubTest {
             assertEquals(Hubby.HUB_TYPE_ENTERPRISE, hubbyImpl.mConfigs.get(Hubby.Config.HUB_TYPE));
             return this;
         }
-
-        HubbyHelperTester verifyHubbyIsTypeConsumer() {
-            assertEquals(Hubby.HUB_TYPE_CONSUMER, hubbyImpl.mConfigs.get(Hubby.Config.HUB_TYPE));
-            return this;
-        }
-
     }
 
     private class MockHubbyImpl implements AferoSofthub.HubbyImpl {
