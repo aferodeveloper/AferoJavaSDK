@@ -15,7 +15,7 @@ repositories {
     }
 }
 
-final String hubbyVersion = "1.0.666"
+final String hubbyVersion = "1.0.672"
 
 android {
     publishNonDefault true
