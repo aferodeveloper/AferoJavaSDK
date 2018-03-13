@@ -17,7 +17,7 @@
     },
     {
         "id": "device-002",
-        "profileId": "profile-002",
+        "profileId": "bogus-profile-id",
         "createdTimeStamp": 456789,
         "attributes": [
             { "id": 100, "value": "123" }

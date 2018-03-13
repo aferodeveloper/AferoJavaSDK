@@ -162,7 +162,7 @@ public class DeviceWifiSetup {
                     mWifiSetupImpl.getWifiSSIDListFromHub(mDeviceModel.getId(), wifiListCallback);
 
                 }
-            }, Emitter.BackpressureMode.LATEST)
+            }, Emitter.BackpressureMode.BUFFER)
             .flatMap(new Func1<List<WifiSSIDEntry>, Observable<WifiSSIDEntry>>() {
                 @Override
                 public Observable<WifiSSIDEntry> call(List<WifiSSIDEntry> wifiSSIDEntries) {
@@ -249,13 +249,17 @@ public class DeviceWifiSetup {
 
     protected final class GetWifiListCallback extends SetupWifiSubscriberCallback<List<WifiSSIDEntry>> {
 
+        private boolean mIsCancelable = true;
+
         public GetWifiListCallback(Emitter<List<WifiSSIDEntry>> wifiSSIDEntryEmitter, DeviceModel deviceModel, AferoClient aferoClient) {
             super(wifiSSIDEntryEmitter, deviceModel, aferoClient);
 
             wifiSSIDEntryEmitter.setCancellation(new Cancellable() {
                 @Override
                 public void cancel() throws Exception {
+                    AfLog.d("GetWifiListCallback.cancel");
                     if (isCancelable()) {
+                        AfLog.d("GetWifiListCallback.cancel calling cancelGetWifiSSIDListFromHub");
                         mWifiSetupImpl.cancelGetWifiSSIDListFromHub(getDeviceModel().getId());
                     }
                 }
@@ -264,10 +268,17 @@ public class DeviceWifiSetup {
 
         @Override
         public void wifiListResult(String s, List<WifiSSIDEntry> list) {
+            AfLog.d("GetWifiListCallback.wifiListResult: mIsCancelable=false");
+            mIsCancelable = false;
             emit(list);
             completed();
         }
 
+        @Override
+        boolean isCancelable() {
+            AfLog.d("GetWifiListCallback.isCancelable: mIsCancelable=" + mIsCancelable);
+            return mIsCancelable && super.isCancelable();
+        }
     }
 
     protected final class SendWifiCredentialCallback extends SetupWifiSubscriberCallback<SetupWifiState> {
@@ -339,11 +350,15 @@ public class DeviceWifiSetup {
         }
 
         boolean isCancelable() {
+
             if (mCurrentState != null) {
+                AfLog.d("SetupWifiSubscriberCallback.isCancelable: " + mCurrentState.toString());
+
                 switch (mCurrentState) {
                     case START:
                     case AVAILABLE:
                     case CONNECTED:
+                        AfLog.d("SetupWifiSubscriberCallback.isCancelable: true");
                         return true;
 
                     case DONE:
@@ -353,9 +368,12 @@ public class DeviceWifiSetup {
                     case TIMED_OUT_CONNECT:
                     case TIMED_OUT_COMMUNICATING:
                     case FAILED:
+                        AfLog.d("SetupWifiSubscriberCallback.isCancelable: false");
                         return false;
                 }
             }
+
+            AfLog.d("SetupWifiSubscriberCallback.isCancelable: false");
 
             return false;
         }

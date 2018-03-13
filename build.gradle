@@ -65,7 +65,8 @@ Closure<String> getSDKVersion = { ->
                 version = gitDescribeFull(versionTagMatch).replace(tagBranch, "")
             } else {
                 String user = gitConfigEmail().split("@").getAt(0)
-                version = gitDescribeAbbrev(versionTagMatch).replace(tagBranch, "") + '-dev-' + user
+                final String devBuildLabel = project.findProperty('aferoDevBuildLabel') ?: '-dev-'
+                version = gitDescribeAbbrev(versionTagMatch).replace(tagBranch, "") + devBuildLabel + user
             }
 
             // drop the 'v' and the branch name
