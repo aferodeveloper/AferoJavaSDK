@@ -4,6 +4,8 @@
 
 package io.afero.sdk.device;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,7 +17,9 @@ import java.util.TreeMap;
 import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AttributeValue;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.mock.MockAferoClient;
+import io.afero.sdk.client.mock.MockDeviceEventSource;
 import io.afero.sdk.client.mock.ResourceLoader;
 import io.afero.sdk.conclave.models.DeviceSync;
 import rx.Observer;
@@ -23,12 +27,14 @@ import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DeviceModelTest extends AferoTest {
 
+    static final String PATH_PREFIX = "resources/deviceModel/";
     private static final String DEVICE_ID = "deviceModel-model-id";
 
     public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) {
@@ -47,7 +53,7 @@ public class DeviceModelTest extends AferoTest {
 
     @Test
     public void testDefaults() throws IOException {
-        DeviceProfile dp = loadDeviceProfile("resources/deviceModelTestProfile.json");
+        DeviceProfile dp = loadDeviceProfile(PATH_PREFIX + "deviceModelTestProfile.json");
         DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
         assertEquals(DeviceModel.UpdateState.NORMAL, dm.getState());
@@ -63,8 +69,8 @@ public class DeviceModelTest extends AferoTest {
 
     @Test
     public void testUpdateFromJson() throws IOException {
-        DeviceSync ds = loadDeviceSync("resources/deviceSync.json");
-        DeviceProfile dp = loadDeviceProfile("resources/deviceModelTestProfile.json");
+        DeviceSync ds = loadDeviceSync(PATH_PREFIX + "deviceSync.json");
+        DeviceProfile dp = loadDeviceProfile(PATH_PREFIX + "deviceModelTestProfile.json");
         DeviceModel dm = new DeviceModel(DEVICE_ID, dp, false, null);
 
         dm.update(ds);
@@ -72,12 +78,6 @@ public class DeviceModelTest extends AferoTest {
         assertEquals("deviceModel-model-id", dm.getId());
         assertEquals("device-profile-id", dm.getProfileID());
         assertEquals("device-name", dm.getName());
-
-        String tagValue = dm.getTag("tag-id-1");
-        assertEquals("tag-1", tagValue);
-
-        tagValue = dm.getTag("tag-id-2");
-        assertEquals("tag-2", tagValue);
 
         DeviceProfile.Attribute a100 = dp.getAttributeById(100);
         testAttribute(dm, a100, new BigDecimal(123));
@@ -103,13 +103,15 @@ public class DeviceModelTest extends AferoTest {
 
     private void testAttribute(DeviceModel dm, DeviceProfile.Attribute attribute, BigDecimal expected) {
         AttributeValue av = dm.getAttributePendingValue(attribute);
-        BigDecimal actual = av != null ? av.numericValue() : null;;
+        BigDecimal actual = av != null ? av.numericValue() : null;
+        ;
         assertTrue(actual.compareTo(expected) == 0);
     }
 
     private void testAttribute(DeviceModel dm, DeviceProfile.Attribute attribute, String expected) {
         AttributeValue av = dm.getAttributePendingValue(attribute);
-        String actual = av != null ? av.toString() : null;;
+        String actual = av != null ? av.toString() : null;
+        ;
         assertEquals(expected, actual);
     }
 
@@ -123,7 +125,7 @@ public class DeviceModelTest extends AferoTest {
                 .deviceModelUpdate(1, ATTRIBUTE_ID, ATTRIBUTE_VALUE)
 
                 .verifyWriteResultStatus(ATTRIBUTE_ID, AttributeWriter.Result.Status.SUCCESS)
-                ;
+        ;
     }
 
     private WriteAttributeTester makeWriteAttributeTester() throws IOException {
@@ -131,31 +133,27 @@ public class DeviceModelTest extends AferoTest {
     }
 
     private static class WriteAttributeTester {
-        final ResourceLoader resourceLoader = new ResourceLoader("resources/");
+        final ResourceLoader resourceLoader = new ResourceLoader(PATH_PREFIX);
         final DeviceProfile deviceProfile;
         final MockAferoClient aferoClient = new MockAferoClient();
         final DeviceModel deviceModel;
         TreeMap<Integer, AttributeWriter.Result> writeResults = new TreeMap<>();
 
         WriteAttributeTester() throws IOException {
-            deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
+            deviceProfile = resourceLoader.createObjectFromJSONResource("deviceModelTestProfile.json", DeviceProfile.class);
             deviceModel = new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
-        }
-
-        DeviceProfile loadDeviceProfile(String path) throws IOException {
-            return resourceLoader.createObjectFromJSONResource(path, DeviceProfile.class);
         }
 
         WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
             deviceModel.writeAttributes()
-                .put(attrId, new AttributeValue(value, type))
-                .commit()
-                .subscribe(new Action1<AttributeWriter.Result>() {
-                    @Override
-                    public void call(AttributeWriter.Result wr) {
-                        writeResults.put(wr.attributeId, wr);
-                    }
-                });
+                    .put(attrId, new AttributeValue(value, type))
+                    .commit()
+                    .subscribe(new Action1<AttributeWriter.Result>() {
+                        @Override
+                        public void call(AttributeWriter.Result wr) {
+                            writeResults.put(wr.attributeId, wr);
+                        }
+                    });
 
             return this;
         }
@@ -177,12 +175,11 @@ public class DeviceModelTest extends AferoTest {
     }
 
 
-
     @Test
     public void testTimeZoneNotSetByDefault() throws IOException {
         makeTimeZoneTester()
                 .verifyTimeZoneNotSet()
-                ;
+        ;
     }
 
     @Test
@@ -193,7 +190,7 @@ public class DeviceModelTest extends AferoTest {
 
                 .verifySetTimeZoneCompleted()
                 .verifyTimeZoneSet()
-                ;
+        ;
     }
 
     @Test
@@ -204,7 +201,7 @@ public class DeviceModelTest extends AferoTest {
 
                 .verifyGetTimeZoneCompleted()
                 .verifyGetTimeZoneReturnedNull()
-                ;
+        ;
     }
 
     @Test
@@ -218,7 +215,7 @@ public class DeviceModelTest extends AferoTest {
                 .verifyGetTimeZoneCompleted()
 
                 .verifyGetTimeZoneReturnedSameTimeZoneFromSet()
-                ;
+        ;
     }
 
     @Test
@@ -239,7 +236,7 @@ public class DeviceModelTest extends AferoTest {
                 .getTimeZone()
                 .verifyGetTimeZoneReturnedNotNull()
                 .verifyTimeZoneSet()
-                ;
+        ;
     }
 
     private TimeZoneTester makeTimeZoneTester() throws IOException {
@@ -247,7 +244,7 @@ public class DeviceModelTest extends AferoTest {
     }
 
     private static class TimeZoneTester {
-        final ResourceLoader resourceLoader = new ResourceLoader("resources/");
+        final ResourceLoader resourceLoader = new ResourceLoader(PATH_PREFIX);
         final DeviceProfile deviceProfile;
         final MockAferoClient aferoClient = new MockAferoClient();
         final DeviceModel deviceModel;
@@ -255,12 +252,8 @@ public class DeviceModelTest extends AferoTest {
         final TimeZoneObserver setTimeZoneObserver = new TimeZoneObserver();
 
         TimeZoneTester() throws IOException {
-            deviceProfile = loadDeviceProfile("deviceModelTestProfile.json");
+            deviceProfile = resourceLoader.createObjectFromJSONResource("deviceModelTestProfile.json", DeviceProfile.class);
             deviceModel = new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
-        }
-
-        DeviceProfile loadDeviceProfile(String path) throws IOException {
-            return resourceLoader.createObjectFromJSONResource(path, DeviceProfile.class);
         }
 
         TimeZoneTester setTimeZone() {
@@ -348,6 +341,212 @@ public class DeviceModelTest extends AferoTest {
             public void onNext(TimeZone tz) {
                 timeZone = tz;
             }
+        }
+    }
+
+
+    // Device Tag Tests ----------------------------------------------------------------
+
+    @Test
+    public void testTagsFromDeviceCollectionStart() throws IOException {
+        makeTagTester()
+                .deviceCollectionStart()
+
+                .verifyAllTags()
+        ;
+    }
+
+    @Test
+    public void testAddTag() throws IOException {
+        makeTagTester()
+                .makeDeviceModel()
+
+                .addTag("key", "value")
+                .verifyTagWasSaved("key", "value")
+        ;
+    }
+
+    @Test
+    public void testDeleteTag() throws IOException {
+        makeTagTester()
+                .makeDeviceModel()
+
+                .addTag("key", "value")
+                .verifyTag("key", "value")
+
+                .deleteTag("key")
+                .verifyTagWasDeleted("key")
+        ;
+    }
+
+    @Test
+    public void testReplaceTag() throws IOException {
+        makeTagTester()
+                .makeDeviceModel()
+
+                .addTag("key", "value")
+                .verifyTagWasSaved("key", "value")
+
+                .addTag("key", "newValue")
+                .verifyTagWasSaved("key", "newValue")
+        ;
+    }
+
+    private TagTester makeTagTester() throws IOException {
+        return new TagTester();
+    }
+
+    private class TagTester {
+        final MockAferoClient aferoClient = new MockAferoClient(PATH_PREFIX);
+        final MockDeviceEventSource deviceEventSource = new MockDeviceEventSource();
+        final DeviceCollection deviceCollection;
+
+        Throwable thrown;
+        DeviceModel deviceModel;
+        DeviceTagCollection.Tag deletedTag;
+
+        TagTester() {
+            deviceCollection = new DeviceCollection(deviceEventSource, aferoClient);
+        }
+
+        TagTester deviceCollectionStart() {
+            aferoClient.setFileGetDevices("getDevices.json");
+            deviceCollection.start().subscribe(new Observer<DeviceCollection>() {
+                @Override
+                public void onCompleted() {
+
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    thrown = e;
+                    e.printStackTrace();
+                    assertTrue(false);
+                }
+
+                @Override
+                public void onNext(DeviceCollection deviceCollection) {
+                    deviceCollection.getDevices().take(1)
+                            .subscribe(new Action1<DeviceModel>() {
+                                @Override
+                                public void call(DeviceModel dm) {
+                                    deviceModel = dm;
+                                }
+                            });
+                }
+            });
+
+            return this;
+        }
+
+        TagTester addDevice() {
+            deviceCollection.addDevice("genericDevice", false)
+                    .subscribe(new Action1<DeviceModel>() {
+                        @Override
+                        public void call(DeviceModel dm) {
+                            deviceModel = dm;
+                        }
+                    });
+            return this;
+        }
+
+        TagTester makeDeviceModel() throws IOException {
+            DeviceProfile dp = loadDeviceProfile(PATH_PREFIX + "getDeviceProfile/profile-001.json");
+            deviceModel = new DeviceModel(DEVICE_ID, dp, false, aferoClient);
+            return this;
+        }
+
+        TagTester addTag(String key, String value) {
+            deviceModel.addTag(key, value).subscribe(
+                    new Observer<DeviceTagCollection.Tag>() {
+                        @Override
+                        public void onCompleted() {
+
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            assertTrue(false);
+                        }
+
+                        @Override
+                        public void onNext(DeviceTagCollection.Tag tag) {
+
+                        }
+                    }
+            );
+            return this;
+        }
+
+        TagTester deleteTag(String key) {
+            deviceModel.removeTag(deviceModel.getTags(key).iterator().next()).subscribe(
+                    new Observer<DeviceTagCollection.Tag>() {
+                        @Override
+                        public void onCompleted() {
+
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+
+                        }
+
+                        @Override
+                        public void onNext(DeviceTagCollection.Tag tag) {
+                            deletedTag = tag;
+                        }
+                    }
+            );
+            return this;
+        }
+
+        TagTester verifyTag(String key, String value) {
+            assertEquals(value, deviceModel.getTags(key).iterator().next().getValue());
+            return this;
+        }
+
+        TagTester verifyAllTags() throws IOException {
+            DeviceSync[] deviceSyncs = loadObject(PATH_PREFIX + "getDevices.json", DeviceSync[].class);
+            assertNotEquals(0, deviceSyncs.length);
+            assertNotEquals(0, deviceSyncs[0].deviceTags.length);
+
+            for (DeviceTag dt : deviceSyncs[0].deviceTags) {
+                DeviceTagCollection.Tag tag = deviceModel.getTagById(dt.deviceTagId);
+                assertNotNull(tag);
+            }
+
+            return this;
+        }
+
+        TagTester verifyTagWasDeleted(String key) {
+            assertFalse(deviceModel.getTags(key).iterator().hasNext());
+            assertNotNull(deletedTag);
+            assertEquals(key, deletedTag.getKey());
+            return this;
+        }
+
+        TagTester verifyTagWasSaved(final String key, String value) throws JsonProcessingException {
+            DeviceTagCollection.Tag tag = deviceModel.getTagInternal(key);
+            assertNotNull(tag);
+            assertEquals(value, tag.getValue());
+
+            DeviceTag deviceTag = aferoClient.getTagById(tag.getId());
+            assertNotNull(deviceTag);
+            assertEquals(tag.getKey(), deviceTag.key);
+            assertEquals(tag.getValue(), deviceTag.value);
+
+            return this;
+        }
+
+        TagTester verifyTagWasNotSaved(final String key, String value) throws JsonProcessingException {
+            DeviceTagCollection.Tag tag = deviceModel.getTagInternal(key);
+            assertNotNull(tag);
+            assertEquals(value, tag.getValue());
+
+            DeviceTag deviceTag = aferoClient.getTagById(tag.getId());
+            assertNull(deviceTag);
+
+            return this;
         }
     }
 }

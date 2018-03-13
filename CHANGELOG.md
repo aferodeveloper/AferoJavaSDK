@@ -1,7 +1,28 @@
 Change Log
 ==========
 
-Version 0.8.0 *(2017-08-27)*
+Version 1.0.2 *(2011-01-12)*
+----------------------------
+ * Fix: Changed `AferoClientRetrofit2` to prevent potential uncaught exception when refreshing access token.
+ * Changed: `Attribute` length and default value fields are now exposed via getter/setter.
+ * Fix: Removed some extraneous preceding slashes from some `AferoClientAPI` endpoints
+ * Changed: Updated `AferoSofthub` to softhub version 631.
+
+Version 1.0.1 *(2017-12-12)*
+----------------------------
+ * Fix: Removed reference to HttpException in MockAferoClient to fix Proguard IOException.
+ * Fix: Improved concurrent stability in ConclaveClient.
+
+Version 1.0.0 *(2017-11-27)*
+----------------------------
+ * New: Added persistent device tags API to `DeviceModel`
+ * New: Added device tags sample code and UI to AferoLab
+ * New: Added ability to add devices via QR code scan to AferoLab
+ * New: Added device wifi setup sample code and UI to AferoLab
+ * New: JavaDoc is now published to Artifactory
+ * Fix: AferoSofthub now properly handles and reports errors that occur on startup
+
+Version 0.8.0 *(2017-09-27)*
 ----------------------------
  * New: Added `DeviceModel.setTimeZone(TimeZone)` and `getTimeZone()`
  * New: Added device inspector and attribute editor views to `AferoLab` sample app

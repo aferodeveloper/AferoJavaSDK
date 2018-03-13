@@ -5,6 +5,19 @@
 package io.afero.sdk.log;
 
 public class JavaLog implements AfLog.Impl {
+
+    private String mTag = "AferoSDK";
+
+    @Override
+    public void setTag(String tag) {
+        mTag = tag;
+    }
+
+    @Override
+    public String getTag() {
+        return mTag;
+    }
+
     @Override
     public void setUserEmail(String email) {
 

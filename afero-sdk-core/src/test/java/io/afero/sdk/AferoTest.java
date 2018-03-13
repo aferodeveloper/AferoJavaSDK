@@ -29,4 +29,10 @@ public class AferoTest {
         assertNotNull(is);
         return mObjectMapper.readValue(is, DeviceSync.class);
     }
+
+    public <T> T loadObject(String path, Class<T> valueType) throws IOException {
+        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+        assertNotNull(is);
+        return mObjectMapper.readValue(is, valueType);
+    }
 }

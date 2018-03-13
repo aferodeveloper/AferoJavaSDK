@@ -1,0 +1,25 @@
+{
+    "id": "device-model-id",
+    "profileId": "device-profile-id",
+    "currentSeq": 123,
+    "createdTimeStamp": 456789,
+    "attributes": [
+        { "id": 100, "value": "123" },
+        { "id": 200, "value": "12345" },
+        { "id": 300, "value": "123456" },
+        { "id": 400, "value": "12345678901" },
+        { "id": 500, "value": "12345.12345" },
+        { "id": 600, "value": "123456.12345678" },
+        { "id": 700, "value": "string-value" },
+        { "id": 800, "value": "12345.12345" },
+        { "id": 900, "value": "123456.12345678" }
+    ],
+    "status": {
+        "available": true,
+        "visible": true
+    },
+    "virtual": false,
+    "friendlyName": "device-name",
+    "requestId": 123,
+    "ignoreMe": "bogus"
+}

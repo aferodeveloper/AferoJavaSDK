@@ -27,22 +27,22 @@ public class JSONUtils {
 
     public static <T> T readValue(String src, Class<T> valueType)
             throws IOException, JsonParseException, JsonMappingException {
-        return sObjectMapper.readValue(src, valueType);
+        return getObjectMapper().readValue(src, valueType);
     }
 
     public static <T> T readValue(byte[] src, Class<T> valueType)
             throws IOException, JsonParseException, JsonMappingException {
-        return sObjectMapper.readValue(src, valueType);
+        return getObjectMapper().readValue(src, valueType);
     }
 
     public static String writeValueAsString(Object value)
             throws JsonProcessingException {
-        return sObjectMapper.writeValueAsString(value);
+        return getObjectMapper().writeValueAsString(value);
     }
 
     public static String writeValueAsPrettyString(Object value)
             throws JsonProcessingException {
-        return sObjectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(value);
+        return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(value);
     }
 
 }

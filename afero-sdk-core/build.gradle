@@ -36,8 +36,8 @@ publishing {
             artifactId project.getName()
             groupId rootProject.group
 
-            // Tell maven to prepare the generated "*.jar" file for publishing
             artifact("$buildDir/libs/${project.getName()}.jar")
+            artifact packageJavadoc
 
             pom.withXml {
                 def dependencies = asNode().appendNode('dependencies')
@@ -58,4 +58,9 @@ javadoc {
     options.links("http://fasterxml.github.io/jackson-annotations/javadoc/2.8/")
     options.links("http://fasterxml.github.io/jackson-core/javadoc/2.8/")
     options.links("http://fasterxml.github.io/jackson-databind/javadoc/2.8/")
+}
+
+task packageJavadoc(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
 }

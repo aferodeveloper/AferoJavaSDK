@@ -123,14 +123,14 @@ gradle.projectsEvaluated {
     task aggregateJavadocs(type: Javadoc) {
         description = 'Aggregates Javadoc API documentation of all subprojects.'
         group = JavaBasePlugin.DOCUMENTATION_GROUP
-        dependsOn javaSubprojects.javadoc, androidSubprojects.generateReleaseJavadoc
+        dependsOn javaSubprojects.javadoc, androidSubprojects.androidJavadocs
 
         title 'Afero Java SDK'
         options.windowTitle title
 
-        source javaSubprojects.javadoc.source, androidSubprojects.generateReleaseJavadoc.source
+        source javaSubprojects.javadoc.source, androidSubprojects.androidJavadocs.source
         destinationDir rootProject.file("$rootProject.buildDir/docs/javadoc")
-        classpath = rootProject.files(javaSubprojects.javadoc.classpath, androidSubprojects.generateReleaseJavadoc.classpath)
+        classpath = rootProject.files(javaSubprojects.javadoc.classpath, androidSubprojects.androidJavadocs.classpath)
 
         // allow html tags
         options.addStringOption('Xdoclint:none', '-quiet')
@@ -139,7 +139,7 @@ gradle.projectsEvaluated {
         def links = new HashSet<String>();
         links.add("http://docs.oracle.com/javase/7/docs/api/")
         links.addAll(javaSubprojects.javadoc.options.links.collectMany { it })
-        links.addAll(androidSubprojects.generateReleaseJavadoc.options.links.collectMany { it })
+        links.addAll(androidSubprojects.androidJavadocs.options.links.collectMany { it })
         options.addMultilineStringsOption('link').setValue(links.toList())
 
         // collect all the -linksoffline options from subprojects
@@ -149,7 +149,7 @@ gradle.projectsEvaluated {
                 linksOffline.put(l.getExtDocUrl(), [l.getExtDocUrl(), l.getPackagelistLoc()].join("' '"))
             }
         }
-        androidSubprojects.generateReleaseJavadoc.options.linksOffline.each { lo ->
+        androidSubprojects.androidJavadocs.options.linksOffline.each { lo ->
             lo.each { l ->
                 linksOffline.put(l.getExtDocUrl(), [l.getExtDocUrl(), l.getPackagelistLoc()].join("' '"))
             }

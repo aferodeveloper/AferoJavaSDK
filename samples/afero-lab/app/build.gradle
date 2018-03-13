@@ -4,8 +4,8 @@
 
 apply plugin: 'com.android.application'
 
-final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '0.7.1'
+final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk-develop'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.0.2-8-g8ebc33f'
 
 repositories {
     maven {
@@ -19,18 +19,18 @@ repositories {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '26.0.0'
+    buildToolsVersion '26.0.1'
     defaultConfig {
         applicationId 'io.afero.aferolab'
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 25
         versionCode 1
         versionName '1.0'
 
         buildConfigField 'String', 'AFERO_CLIENT_ID', project.aferoClientId
         buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.aferoClientSecret
-        buildConfigField 'String', 'AFERO_SERVICE_URL', project.findProperty('aferoServiceUrl') ?: 'https://api.afero.io'
-        buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: 'prod'
+        buildConfigField 'String', 'AFERO_SERVICE_URL', project.findProperty('aferoServiceUrl') ?: '"https://api.afero.io"'
+        buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: '"prod"'
     }
 
     buildTypes {
@@ -80,6 +80,9 @@ dependencies {
     // http://jakewharton.github.io/butterknife/
     compile 'com.jakewharton:butterknife:8.5.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
+
+    // https://github.com/dm77/barcodescanner
+    compile 'me.dm7.barcodescanner:zxing:1.9.8'
 
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support:recyclerview-v7:25.3.1'

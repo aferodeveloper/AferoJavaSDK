@@ -16,6 +16,7 @@ import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
@@ -533,6 +534,43 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
+     * Afero Cloud API call to attach a {@link DeviceTag} to a device.
+     *
+     * @param deviceId String specifying the unique id of the device.
+     * @param tagKey String containing the key for the tag.
+     * @param tagValue String containing the value for the tag.
+     * @return {@link Observable} that emits the DeviceTag if successful.
+     */
+    @Override
+    public Observable<DeviceTag> postDeviceTag(String deviceId, String tagKey, String tagValue) {
+        return mAferoService.postDeviceTag(mActiveAccountId, deviceId, new DeviceTag(tagKey, tagValue));
+    }
+
+    /**
+     * Afero Cloud API call to update an existing {@link DeviceTag} on a device.
+     *
+     * @param deviceId String specifying the unique id of the device.
+     * @param tag DeviceTag to to be updated.
+     * @return {@link Observable} that emits the DeviceTag if successful.
+     */
+    @Override
+    public Observable<DeviceTag> putDeviceTag(String deviceId, DeviceTag tag) {
+        return mAferoService.putDeviceTag(mActiveAccountId, deviceId, tag);
+    }
+
+    /**
+     * Afero Cloud API call to delete a {@link DeviceTag} from a device.
+     *
+     * @param deviceId String specifying the unique id of the device.
+     * @param tagId String specifying the unique id of the tag.
+     * @return {@link Observable} that emits nothing and completes on success.
+     */
+    @Override
+    public Observable<Void> deleteDeviceTag(String deviceId, String tagId) {
+        return mAferoService.deleteDeviceTag(mActiveAccountId, deviceId, tagId);
+    }
+
+    /**
      * <p><b>For internal use only. Use {@link DeviceCollection} and {@link DeviceEventSource} instead.</b></p>
      *
      * @return {@link Observable} that emits {@link ConclaveAccessDetails} in {@link rx.Observer#onNext}.
@@ -757,13 +795,10 @@ public class AferoClientRetrofit2 implements AferoClient {
     private class RefreshTokenAuthenticator implements Authenticator {
         @Override
         public Request authenticate(Route route, okhttp3.Response response) throws IOException {
-            if(responseCount(response) >= 2) {
-                mAccessToken = null;
-
-                BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-                if (tokenSubject != null) {
-                    mTokenSubject = null;
-                    tokenSubject.onError(new Exception());
+            if (responseCount(response) >= 2) {
+                synchronized (mTokenRefreshLock) {
+                    mAccessToken = null;
+                    notifyTokenException(new Exception("RefreshTokenAuthenticator: Too many retries"));
                 }
 
                 // If both the original call and the call with refreshed token failed,
@@ -775,7 +810,6 @@ public class AferoClientRetrofit2 implements AferoClient {
                 AccessToken currentToken = mAccessToken;
 
                 if (currentToken != null && currentToken.refreshToken != null) {
-
                     AfLog.d("AferoClient: Attempting to refresh token");
 
                     // Get a new token
@@ -784,28 +818,31 @@ public class AferoClientRetrofit2 implements AferoClient {
                         if (newToken != null) {
                             mAccessToken = newToken;
                             if (mTokenSubject != null) {
-                                mTokenSubject.onNext(mAccessToken);
+                                mTokenSubject.onNext(newToken);
                             }
-                        }
 
-                        // Add new header to rejected request and retry it
-                        return response.request().newBuilder()
-                                .header(HEADER_AUTHORIZATION, mAccessToken.tokenType + " " + mAccessToken.accessToken)
-                                .build();
+                            // Add new header to rejected request and retry it
+                            return response.request().newBuilder()
+                                    .header(HEADER_AUTHORIZATION, newToken.tokenType + " " + newToken.accessToken)
+                                    .build();
+                        }
                     } catch (Exception e) {
                         AfLog.d("AferoClient: Failed to refresh token");
                         mAccessToken = null;
-
-                        BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-                        if (tokenSubject != null) {
-                            mTokenSubject = null;
-                            tokenSubject.onError(e);
-                        }
+                        notifyTokenException(e);
                     }
                 }
             }
 
             return null;
+        }
+    }
+
+    private void notifyTokenException(Exception e) {
+        BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
+        if (tokenSubject != null && !(tokenSubject.hasThrowable() || tokenSubject.hasCompleted())) {
+            mTokenSubject = null;
+            tokenSubject.onError(e);
         }
     }
 

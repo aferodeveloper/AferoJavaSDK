@@ -5,16 +5,19 @@
 package io.afero.sdk.client.mock;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
-import io.afero.sdk.client.afero.models.WriteRequest;
+import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
@@ -30,6 +33,8 @@ public class MockAferoClient implements AferoClient {
     private Observable<WriteResponse[]> postBatchAttributeWriteResponse;
     private TimeZone mDeviceTimeZone;
     private int mRequestId;
+    private HashMap<String,DeviceTag> mDeviceTags = new HashMap<>();
+    private Throwable nextCallFailure;
 
     public MockAferoClient() {
         mLoader = new ResourceLoader();
@@ -41,12 +46,19 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         ActionResponse response = new ActionResponse();
         return Observable.just(response);
     }
 
     @Override
     public Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
 
         if (postBatchAttributeWriteResponse == null) {
             WriteResponse[] response = new WriteResponse[body.length];
@@ -65,6 +77,10 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<DeviceProfile> getDeviceProfile(String profileId) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         try {
             return Observable.just(mLoader.createObjectFromJSONResource(
                     "getDeviceProfile/" + profileId + ".json",
@@ -76,6 +92,10 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<DeviceProfile[]> getAccountDeviceProfiles() {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return Observable.fromCallable(new Callable<DeviceProfile[]>() {
             @Override
             public DeviceProfile[] call() throws Exception {
@@ -86,26 +106,119 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<ConclaveAccessDetails> postConclaveAccess() {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return null;
     }
 
     @Override
     public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileDeviceId) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return null;
     }
 
     @Override
     public Observable<Location> putDeviceLocation(String deviceId, Location location) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return Observable.just(location);
     }
 
     @Override
     public Observable<Location> getDeviceLocation(DeviceModel deviceModel) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return null;
     }
 
     @Override
+    public Observable<DeviceTag> putDeviceTag(String deviceId, DeviceTag tag) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
+        return Observable.fromCallable(new Callable<DeviceTag>() {
+
+            DeviceTag deviceTag;
+
+            Callable<DeviceTag> init(DeviceTag tag) {
+                deviceTag = tag;
+                return this;
+            }
+
+            @Override
+            public DeviceTag call() throws Exception {
+                DeviceTag oldTag = mDeviceTags.get(deviceTag.deviceTagId);
+                if (oldTag == null) {
+                    throw new Exception("404");
+                }
+
+                oldTag.key = deviceTag.key;
+                oldTag.value = deviceTag.value;
+
+                return oldTag;
+            }
+        }.init(tag));
+    }
+
+    @Override
+    public Observable<DeviceTag> postDeviceTag(String deviceId, String tagKey, String tagValue) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
+        DeviceTag tag = new DeviceTag(tagKey, tagValue);
+
+        return Observable.fromCallable(new Callable<DeviceTag>() {
+
+            DeviceTag deviceTag;
+
+            Callable<DeviceTag> init(DeviceTag tag) {
+                deviceTag = tag;
+                return this;
+            }
+
+            @Override
+            public DeviceTag call() throws Exception {
+                deviceTag.deviceTagId = UUID.randomUUID().toString();
+                mDeviceTags.put(deviceTag.deviceTagId, deviceTag);
+                return deviceTag;
+            }
+        }.init(tag));
+    }
+
+    @Override
+    public Observable<Void> deleteDeviceTag(String deviceId, final String tagId) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
+        return Observable.fromCallable(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                if (mDeviceTags.remove(tagId) == null) {
+                    throw new Exception("404");
+                }
+                return null;
+            }
+        });
+    }
+
+    @Override
     public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {
@@ -119,6 +232,10 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<DeviceAssociateResponse> deviceAssociate(String associationId) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         try {
             DeviceAssociateResponse dar = mDeviceAssociateResponse;
             if (dar == null) {
@@ -133,21 +250,37 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return Observable.just(deviceModel);
     }
 
     @Override
     public Observable<Void> putDeviceTimeZone(DeviceModel deviceModel, TimeZone tz) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return Observable.just(null);
     }
 
     @Override
     public Observable<TimeZone> getDeviceTimeZone(DeviceModel deviceModel) {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return mDeviceTimeZone != null ? Observable.just(mDeviceTimeZone) : Observable.<TimeZone>empty();
     }
 
     @Override
     public Observable<DeviceSync[]> getDevicesWithState() {
+        if (hasNextCallFailure()) {
+            return nextCallFailObservable();
+        }
+
         return Observable.fromCallable(new Callable<DeviceSync[]>() {
             @Override
             public DeviceSync[] call() throws Exception {
@@ -171,6 +304,10 @@ public class MockAferoClient implements AferoClient {
         return false;
     }
 
+    public void failNextCall(Throwable t) {
+        nextCallFailure = t;
+    }
+
     public void setDeviceAssociateResponse(DeviceAssociateResponse dar) {
         mDeviceAssociateResponse = dar;
     }
@@ -189,5 +326,17 @@ public class MockAferoClient implements AferoClient {
 
     public void setDeviceTimeZone(TimeZone tz) {
         mDeviceTimeZone = tz;
+    }
+
+    public DeviceTag getTagById(String deviceTagId) {
+        return mDeviceTags.get(deviceTagId);
+    }
+
+    private <T> Observable<T> nextCallFailObservable() {
+        return Observable.error(nextCallFailure);
+    }
+
+    private boolean hasNextCallFailure() {
+        return nextCallFailure != null;
     }
 }

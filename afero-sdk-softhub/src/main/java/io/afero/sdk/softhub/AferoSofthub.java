@@ -90,6 +90,14 @@ public class AferoSofthub {
         mSetupPath = context.getFilesDir().getAbsolutePath();
     }
 
+    /**
+     * Returns the single instance of the AferoSofthub, instantiating a new one if necessary.
+     *
+     * @param context Android {@link Context}
+     * @param aferoClient {@link AferoClient} used for associating the softub during startup
+     * @param appInfo App defined string that will be appended to the softhub's HW_INFO attribute
+     * @return AferoSofthub instance
+     */
     public static AferoSofthub acquireInstance(@NonNull Context context, @NonNull AferoClient aferoClient, @Nullable String appInfo) {
         if (sInstance == null) {
             sInstance = new AferoSofthub(context, aferoClient, appInfo);
@@ -98,8 +106,14 @@ public class AferoSofthub {
         return sInstance;
     }
 
+    /**
+     * Calls {@link #stop()} and releases the internal reference to the current AferoSofthub instance, if any.
+     */
     public static void releaseInstance() {
-        sInstance = null;
+        if (sInstance != null) {
+            sInstance.stop();
+            sInstance = null;
+        }
     }
 
     public synchronized @NonNull Observable<AferoSofthub> start() {
@@ -122,13 +136,18 @@ public class AferoSofthub {
     public synchronized void stop() {
         AfLog.i("AferoSofthub.stop");
 
-        if (isRunning()) {
+        if (isStarting() || isRunning()) {
+            if (mStartSubject != null) {
+                mStartSubject.onError(new StartCancelled("AferoSofthub.stop called during start process"));
+                mStartSubject = null;
+            }
+
             mIsHubbyRunning = false;
             mHubbyImpl.stop();
         }
     }
 
-    Observable<NotificationCallback.CompleteReason> observeCompletion() {
+    public Observable<NotificationCallback.CompleteReason> observeCompletion() {
         return mCompleteSubject;
     }
 
@@ -169,6 +188,14 @@ public class AferoSofthub {
 
     public void setService(@NonNull String service) {
         mService = service;
+    }
+
+    public String getDeviceId() {
+        return mHubbyImpl.getDeviceId();
+    }
+
+    public String getSofthubVersion() {
+        return BuildConfig.HUBBY_VERSION;
     }
 
     // For unit testing
@@ -225,6 +252,7 @@ public class AferoSofthub {
         config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
         config.put(Hubby.Config.OTA_WORKING_PATH, mOTAPath);
         config.put(Hubby.Config.HARDWARE_INFO, hwInfo);
+        config.put(Hubby.Config.HUB_TYPE, Hubby.HUB_TYPE_ENTERPRISE);
 
         if (mService != null) {
             config.put(Hubby.Config.SERVICE, mService);
@@ -256,7 +284,10 @@ public class AferoSofthub {
 
                 @Override
                 public void onError(Throwable e) {
+                    AfLog.e("AferoSofthub startup error - deviceAssociate failed");
                     AfLog.e(e);
+                    mStartSubject.onError(e);
+                    mStartSubject = null;
                 }
 
                 @Override
@@ -471,6 +502,8 @@ public class AferoSofthub {
         void start(final HashMap<Hubby.Config, String> configs, final NotificationCallback callback);
 
         void stop();
+
+        String getDeviceId();
     }
 
     private class NativeHubbyImpl implements HubbyImpl {
@@ -488,6 +521,17 @@ public class AferoSofthub {
         @Override
         public void stop() {
             Hubby.stop();
+        }
+
+        @Override
+        public String getDeviceId() {
+            return Hubby.getId();
+        }
+    }
+
+    public class StartCancelled extends Throwable {
+        public StartCancelled(String message) {
+            super(message);
         }
     }
 }
