@@ -252,7 +252,7 @@ public class AferoSofthub {
         config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
         config.put(Hubby.Config.OTA_WORKING_PATH, mOTAPath);
         config.put(Hubby.Config.HARDWARE_INFO, hwInfo);
-        config.put(Hubby.Config.HUB_TYPE, Hubby.HUB_TYPE_ENTERPRISE);
+        config.put(Hubby.Config.HUB_TYPE, BuildConfig.HUB_TYPE);
 
         if (mService != null) {
             config.put(Hubby.Config.SERVICE, mService);

@@ -19,6 +19,7 @@ repositories {
 }
 
 final String hubbyVersion = "1.0.672"
+final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {
     publishNonDefault true
@@ -33,6 +34,7 @@ android {
         versionName rootProject.version
 
         buildConfigField 'String', 'HUBBY_VERSION', '"'+hubbyVersion+'"'
+        buildConfigField 'String', 'HUB_TYPE', hubType
     }
 
     buildTypes {
