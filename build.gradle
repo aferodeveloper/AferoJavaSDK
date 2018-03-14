@@ -59,14 +59,14 @@ Closure<String> getSDKVersion = { ->
         final String tagBranch =  "-${project.aferoSDKBranchName}"
         final String versionTagMatch = "v*${tagBranch}"
         String version
+        final String buildLabel = project.findProperty('aferoBuildLabel') ?: ''
 
         try {
             if (isCIBuild()) {
-                version = gitDescribeFull(versionTagMatch).replace(tagBranch, "")
+                version = gitDescribeFull(versionTagMatch).replace(tagBranch, "") + buildLabel
             } else {
                 String user = gitConfigEmail().split("@").getAt(0)
-                final String devBuildLabel = project.findProperty('aferoDevBuildLabel') ?: '-dev-'
-                version = gitDescribeAbbrev(versionTagMatch).replace(tagBranch, "") + devBuildLabel + user
+                version = gitDescribeAbbrev(versionTagMatch).replace(tagBranch, "") + '-dev-' + user + buildLabel
             }
 
             // drop the 'v' and the branch name
