@@ -12,6 +12,8 @@ import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ViewRequest;
+import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
@@ -198,5 +200,12 @@ public interface AferoClientAPI {
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Path("deviceTag") String deviceTagId
+    );
+
+    @POST(V1 + "accounts/{accountId}/devices/{deviceId}/requests")
+    Observable<ViewResponse> postDeviceViewRequest(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId,
+            @Body ViewRequest body
     );
 }
