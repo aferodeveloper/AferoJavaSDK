@@ -12,6 +12,8 @@ import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ViewRequest;
+import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.models.DeviceSync;
@@ -24,6 +26,8 @@ public interface AferoClient {
     Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode);
 
     Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode);
+
+    Observable<ViewResponse> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body);
 
     Observable<DeviceProfile> getDeviceProfile(String profileId);
 
