@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.RxUtils;
 import rx.Observable;
 import rx.Subscription;
@@ -32,6 +33,7 @@ public final class ViewingDeviceNotifier {
     private final AferoClient mAferoClient;
     private Subscription mViewNotifierSubscription;
 
+    private final Object mLock = new Object();
     private final long mDurationSeconds;
     private final long mRefreshDeltaSeconds;
 
@@ -56,20 +58,29 @@ public final class ViewingDeviceNotifier {
      *
      * @return this instance
      */
-    public synchronized ViewingDeviceNotifier start() {
-        if (mViewNotifierSubscription != null) {
-            return this;
-        }
+    public ViewingDeviceNotifier start() {
+        synchronized (mLock) {
+            if (isRunning()) {
+                return this;
+            }
 
-        long intervalSeconds = mDurationSeconds - mRefreshDeltaSeconds;
-        mViewNotifierSubscription = Observable.interval(0, intervalSeconds, TimeUnit.SECONDS)
-            .flatMap(new Func1<Long, Observable<ViewResponse>>() {
-                @Override
-                public Observable<ViewResponse> call(Long x) {
-                    return mAferoClient.postDeviceViewRequest(mDeviceModel, ViewRequest.start(mDurationSeconds));
-                }
-            })
-            .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse>());
+            long intervalSeconds = mDurationSeconds - mRefreshDeltaSeconds;
+            mViewNotifierSubscription = Observable.interval(0, intervalSeconds, TimeUnit.SECONDS)
+                .flatMap(new Func1<Long, Observable<ViewResponse>>() {
+                    @Override
+                    public Observable<ViewResponse> call(Long x) {
+                        AfLog.d("Observable.interval: x=" + x);
+                        synchronized (mLock) {
+                            if (isRunning()) {
+                                return mAferoClient.postDeviceViewRequest(mDeviceModel, ViewRequest.start(mDurationSeconds));
+                            }
+                        }
+
+                        return Observable.empty();
+                    }
+                })
+                .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse>());
+        }
 
         return this;
     }
@@ -78,11 +89,17 @@ public final class ViewingDeviceNotifier {
      * Notifies the Afero Cloud Service that the device is no longer being viewed.
      * If {@link #start()} hasn't yet been called, {@code stop()} does nothing.
      */
-    public synchronized void stop() {
-        if (mViewNotifierSubscription != null) {
-            mViewNotifierSubscription = RxUtils.safeUnSubscribe(mViewNotifierSubscription);
-            mAferoClient.postDeviceViewRequest(mDeviceModel, ViewRequest.stop())
-                .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse>());
+    public void stop() {
+        synchronized (mLock) {
+            if (isRunning()) {
+                mViewNotifierSubscription = RxUtils.safeUnSubscribe(mViewNotifierSubscription);
+                mAferoClient.postDeviceViewRequest(mDeviceModel, ViewRequest.stop())
+                    .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse>());
+            }
         }
+    }
+
+    private boolean isRunning() {
+        return mViewNotifierSubscription != null;
     }
 }
