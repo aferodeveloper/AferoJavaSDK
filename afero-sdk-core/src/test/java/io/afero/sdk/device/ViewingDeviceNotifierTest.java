@@ -6,12 +6,15 @@ package io.afero.sdk.device;
 
 import org.junit.Test;
 
+import java.util.concurrent.TimeoutException;
+
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.mock.MockAferoClient;
 import rx.Subscription;
 import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -22,6 +25,7 @@ public class ViewingDeviceNotifierTest {
         makeTester()
             .viewNotifierStart()
             .waitForViewRequest()
+            .verifyViewRequestDidNotTimeout()
             .verifyViewNotifierStarted()
         ;
     }
@@ -30,9 +34,21 @@ public class ViewingDeviceNotifierTest {
     public void stop() throws Exception {
         makeTester()
             .viewNotifierStart()
-            .waitForViewRequest()
+
+            .waitForViewRequestCount(3, 5000)
+            .verifyViewRequestDidNotTimeout()
+            .verifyViewRequestCountAtLeast(3)
+
             .viewNotifierStop()
             .verifyViewNotifierStopped()
+
+            // wait for last 'stop' request
+            .waitForViewRequest(2000)
+            .verifyViewRequestDidNotTimeout()
+
+            // shouldn't get any more request, expecting a timeout
+            .waitForViewRequest(2000)
+// FIXME            .verifyViewRequestDidTimeout()
         ;
     }
 
@@ -41,39 +57,81 @@ public class ViewingDeviceNotifierTest {
         return new ViewNotifierTester();
     }
 
-    class ViewNotifierTester {
-        final MockAferoClient aferoClient = new MockAferoClient();
-        final DeviceModel deviceModel = new DeviceModel("device-id", new DeviceProfile(), false, null);
-        final ViewingDeviceNotifier viewingDeviceNotifier = new ViewingDeviceNotifier(deviceModel, aferoClient, 2, 1);
-        final Object viewRequestObject = new Object();
-        final Subscription viewRequestSubscription = aferoClient.observeViewRequests()
+    private class ViewNotifierTester {
+        private final MockAferoClient aferoClient = new MockAferoClient();
+        private final DeviceModel deviceModel = new DeviceModel("device-id", new DeviceProfile(), false, null);
+        private final ViewingDeviceNotifier viewingDeviceNotifier = new ViewingDeviceNotifier(deviceModel, aferoClient, 2, 1);
+        private final Object viewRequestObject = new Object();
+        private final Subscription viewRequestSubscription = aferoClient.observeViewRequests()
             .subscribe(new Action1<ViewRequest>() {
                 @Override
                 public void call(ViewRequest viewRequest) {
                     synchronized (viewRequestObject) {
+                        viewRequestCount++;
+                        System.out.println("viewRequestCount="+viewRequestCount);
                         viewRequestObject.notifyAll();
                     }
                 }
             });
+        private int viewRequestCount;
+        private boolean viewRequestTimedOut;
 
         ViewNotifierTester viewNotifierStart() {
+            System.out.println("viewNotifierStart");
             viewingDeviceNotifier.start();
             return this;
         }
 
         ViewNotifierTester viewNotifierStop() {
+            System.out.println("viewNotifierStop");
             viewingDeviceNotifier.stop();
             return this;
         }
 
         ViewNotifierTester waitForViewRequest() {
+            return waitForViewRequest(5000);
+        }
+
+        ViewNotifierTester waitForViewRequest(long timeout) {
             try {
                 synchronized (viewRequestObject) {
-                    viewRequestObject.wait(5000);
+                    System.out.println("waiting for viewRequest...");
+                    viewRequestObject.wait(timeout);
+                }
+                viewRequestTimedOut = false;
+                System.out.println("viewRequestTimedOut = false");
+            } catch (InterruptedException e) {
+                System.out.println("viewRequestTimedOut = true");
+                viewRequestTimedOut = true;
+            }
+            return this;
+        }
+
+        ViewNotifierTester waitForViewRequestCount(int expectedCount, long timeout) {
+            try {
+                while (viewRequestCount < expectedCount) {
+                    synchronized (viewRequestObject) {
+                        System.out.println("waiting for viewRequest...");
+                        viewRequestObject.wait(timeout);
+                    }
+                    viewRequestTimedOut = false;
+                    System.out.println("viewRequestTimedOut = false");
                 }
             } catch (InterruptedException e) {
-                assertTrue(false);
+                System.out.println("viewRequestTimedOut = true");
+                viewRequestTimedOut = true;
             }
+
+            return this;
+        }
+
+        ViewNotifierTester verifyViewRequestDidTimeout() {
+            assertTrue(viewRequestTimedOut);
+            return this;
+        }
+
+        ViewNotifierTester verifyViewRequestDidNotTimeout() {
+            assertFalse(viewRequestTimedOut);
             return this;
         }
 
@@ -86,6 +144,11 @@ public class ViewingDeviceNotifierTest {
         ViewNotifierTester verifyViewNotifierStopped() {
             assertEquals(deviceModel.getId(), aferoClient.getViewingDeviceId());
             assertEquals(0, aferoClient.getViewingDeviceSeconds());
+            return this;
+        }
+
+        ViewNotifierTester verifyViewRequestCountAtLeast(int expectedCount) {
+            assertTrue(viewRequestCount >= expectedCount);
             return this;
         }
     }
