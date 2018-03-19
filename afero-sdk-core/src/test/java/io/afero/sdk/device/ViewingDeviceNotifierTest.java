@@ -6,8 +6,6 @@ package io.afero.sdk.device;
 
 import org.junit.Test;
 
-import java.util.concurrent.TimeoutException;
-
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.mock.MockAferoClient;
 import rx.Subscription;
@@ -42,13 +40,8 @@ public class ViewingDeviceNotifierTest {
             .viewNotifierStop()
             .verifyViewNotifierStopped()
 
-            // wait for last 'stop' request
             .waitForViewRequest(2000)
-            .verifyViewRequestDidNotTimeout()
-
-            // shouldn't get any more request, expecting a timeout
-            .waitForViewRequest(2000)
-// FIXME            .verifyViewRequestDidTimeout()
+            .verifyViewRequestDidTimeout()
         ;
     }
 
@@ -68,7 +61,8 @@ public class ViewingDeviceNotifierTest {
                 public void call(ViewRequest viewRequest) {
                     synchronized (viewRequestObject) {
                         viewRequestCount++;
-                        System.out.println("viewRequestCount="+viewRequestCount);
+                        System.out.println("viewRequestCount=" + viewRequestCount);
+                        viewRequestTimedOut = false;
                         viewRequestObject.notifyAll();
                     }
                 }
@@ -96,14 +90,14 @@ public class ViewingDeviceNotifierTest {
             try {
                 synchronized (viewRequestObject) {
                     System.out.println("waiting for viewRequest...");
+                    viewRequestTimedOut = true;
                     viewRequestObject.wait(timeout);
                 }
-                viewRequestTimedOut = false;
-                System.out.println("viewRequestTimedOut = false");
             } catch (InterruptedException e) {
-                System.out.println("viewRequestTimedOut = true");
-                viewRequestTimedOut = true;
+                // ignore
             }
+
+            System.out.println("viewRequestTimedOut = " + viewRequestTimedOut);
             return this;
         }
 
