@@ -121,6 +121,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         return mSessionTrace;
     }
 
+    @Deprecated
     public void viewDevice(String deviceId, boolean isViewing) {
         mConclaveClient.sayAsync("device:view", new ConclaveMessage.ViewDeviceFields(deviceId, isViewing))
             .subscribe(new RxUtils.IgnoreResponseObserver<ConclaveMessage.Say>());
