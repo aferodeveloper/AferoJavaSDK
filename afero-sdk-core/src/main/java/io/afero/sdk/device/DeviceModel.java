@@ -132,6 +132,8 @@ public final class DeviceModel {
 
     private DeviceTagCollection mTags;
 
+    private ViewingDeviceNotifier mViewingDeviceNotifier;
+
 
     private DeviceModel() {
         mId = null;
@@ -593,6 +595,16 @@ public final class DeviceModel {
     public long getAttributeUpdatedTime(DeviceProfile.Attribute attribute) {
         AttributeData ad = getAttributeData(attribute);
         return ad != null ? ad.mUpdatedTimeStamp : 0;
+    }
+
+    /**
+     * @return {@link ViewingDeviceNotifier} used to managed the viewing state of this DeviceModel
+     */
+    public ViewingDeviceNotifier notifyViewing() {
+        if (mViewingDeviceNotifier == null) {
+            mViewingDeviceNotifier = new ViewingDeviceNotifier(this, mAferoClient);
+        }
+        return mViewingDeviceNotifier;
     }
 
     @Deprecated

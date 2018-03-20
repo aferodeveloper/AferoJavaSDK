@@ -20,6 +20,8 @@ import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ViewRequest;
+import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.api.AferoClientAPI;
@@ -496,6 +498,19 @@ public class AferoClientRetrofit2 implements AferoClient {
     public Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode) {
         Observable<WriteResponse[]> observable = mAferoService.postDeviceRequest(mActiveAccountId, deviceModel.getId(), body);
         return maxRetryCount > 0 ? observable.retryWhen(new RetryOnError(maxRetryCount, statusCode)) : observable;
+    }
+
+    /**
+     * Request to notify the specified device that it is currently being "viewed" by the user.
+     * Depending on the device this can potentially result in quicker attribute updates.
+     *
+     * @param deviceModel {@link DeviceModel} that is being viewed
+     * @param body {@link ViewRequest} that specifies whether to start or stop viewing
+     * @return empty {@link ViewResponse}
+     */
+    @Override
+    public Observable<ViewResponse> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body) {
+        return mAferoService.postDeviceViewRequest(mActiveAccountId, deviceModel.getId(), body);
     }
 
     /**
