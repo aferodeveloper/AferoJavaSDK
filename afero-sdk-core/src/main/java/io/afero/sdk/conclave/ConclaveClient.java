@@ -312,7 +312,7 @@ public class ConclaveClient {
             synchronized (mSocketLock) {
                 mSocket.setSoTimeout(timeoutInSeconds * 1000);
             }
-        } catch (SocketException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
