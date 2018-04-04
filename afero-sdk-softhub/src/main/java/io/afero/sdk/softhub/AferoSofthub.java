@@ -520,7 +520,11 @@ public class AferoSofthub {
 
         @Override
         public void stop() {
-            Hubby.stop();
+            try {
+                Hubby.stop();
+            } catch (Exception e) {
+                // ignore
+            }
         }
 
         @Override
