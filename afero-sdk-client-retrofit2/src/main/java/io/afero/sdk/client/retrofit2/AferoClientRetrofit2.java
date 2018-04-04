@@ -829,18 +829,16 @@ public class AferoClientRetrofit2 implements AferoClient {
 
                     // Get a new token
                     try {
-                        AccessToken newToken = internalRefreshAccessToken(currentToken.refreshToken, GRANT_TYPE_REFRESH_TOKEN);
-                        if (newToken != null) {
-                            mAccessToken = newToken;
-                            if (mTokenSubject != null) {
-                                mTokenSubject.onNext(newToken);
-                            }
-
-                            // Add new header to rejected request and retry it
-                            return response.request().newBuilder()
-                                    .header(HEADER_AUTHORIZATION, newToken.tokenType + " " + newToken.accessToken)
-                                    .build();
+                        mAccessToken = internalRefreshAccessToken(currentToken.refreshToken, GRANT_TYPE_REFRESH_TOKEN);
+                        if (mTokenSubject != null) {
+                            mTokenSubject.onNext(mAccessToken);
                         }
+
+                        // Add new header to rejected request and retry it
+                        return response.request().newBuilder()
+                            .header(HEADER_AUTHORIZATION, mAccessToken.tokenType + " " + mAccessToken.accessToken)
+                            .build();
+
                     } catch (Exception e) {
                         AfLog.d("AferoClient: Failed to refresh token");
                         mAccessToken = null;
@@ -865,7 +863,16 @@ public class AferoClientRetrofit2 implements AferoClient {
         Response<AccessToken> response = mAferoService
                 .refreshAccessToken(grantType, refreshToken, mOAuthAuthorizationBase64)
                 .execute();
-        return response.isSuccessful() ? response.body() : null;
+
+        if (!response.isSuccessful()) {
+            throw new HttpException(response);
+        }
+
+        if (response.body() == null) {
+            throw new IOException("Null AccessToken in response");
+        }
+
+        return response.body();
     }
 
     private static int responseCount(okhttp3.Response response) {
