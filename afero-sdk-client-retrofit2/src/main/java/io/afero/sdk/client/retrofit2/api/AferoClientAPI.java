@@ -206,6 +206,6 @@ public interface AferoClientAPI {
     Observable<ViewResponse> postDeviceViewRequest(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
-            @Body ViewRequest body
+            @Body ViewRequest[] body
     );
 }
