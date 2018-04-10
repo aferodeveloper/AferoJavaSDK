@@ -82,11 +82,11 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
-    public Observable<ViewResponse> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body) {
+    public Observable<ViewResponse[]> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body) {
         mViewingDeviceId = deviceModel.getId();
         mViewingSeconds = body.seconds;
         mViewRequestSubject.onNext(body);
-        return Observable.just(new ViewResponse());
+        return Observable.just(new ViewResponse[] { new ViewResponse() });
     }
 
     @Override

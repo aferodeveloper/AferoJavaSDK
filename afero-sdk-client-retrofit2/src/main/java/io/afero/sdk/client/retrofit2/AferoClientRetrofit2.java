@@ -509,7 +509,7 @@ public class AferoClientRetrofit2 implements AferoClient {
      * @return empty {@link ViewResponse}
      */
     @Override
-    public Observable<ViewResponse> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body) {
+    public Observable<ViewResponse[]> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body) {
         ViewRequest[] requests = { body };
         return mAferoService.postDeviceViewRequest(mActiveAccountId, deviceModel.getId(), requests);
     }

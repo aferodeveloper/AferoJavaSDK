@@ -203,7 +203,7 @@ public interface AferoClientAPI {
     );
 
     @POST(V1 + "accounts/{accountId}/devices/{deviceId}/requests")
-    Observable<ViewResponse> postDeviceViewRequest(
+    Observable<ViewResponse[]> postDeviceViewRequest(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body ViewRequest[] body

@@ -27,7 +27,7 @@ public interface AferoClient {
 
     Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode);
 
-    Observable<ViewResponse> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body);
+    Observable<ViewResponse[]> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body);
 
     Observable<DeviceProfile> getDeviceProfile(String profileId);
 
