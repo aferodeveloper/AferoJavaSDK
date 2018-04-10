@@ -66,9 +66,9 @@ public final class ViewingDeviceNotifier {
 
             long intervalSeconds = mDurationSeconds - mRefreshDeltaSeconds;
             mViewNotifierSubscription = Observable.interval(0, intervalSeconds, TimeUnit.SECONDS)
-                .flatMap(new Func1<Long, Observable<ViewResponse>>() {
+                .flatMap(new Func1<Long, Observable<ViewResponse[]>>() {
                     @Override
-                    public Observable<ViewResponse> call(Long x) {
+                    public Observable<ViewResponse[]> call(Long x) {
                         AfLog.d("Observable.interval: x=" + x);
                         synchronized (mLock) {
                             if (isRunning()) {
@@ -79,7 +79,7 @@ public final class ViewingDeviceNotifier {
                         return Observable.empty();
                     }
                 })
-                .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse>());
+                .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse[]>());
         }
 
         return this;
@@ -94,7 +94,7 @@ public final class ViewingDeviceNotifier {
             if (isRunning()) {
                 mViewNotifierSubscription = RxUtils.safeUnSubscribe(mViewNotifierSubscription);
                 mAferoClient.postDeviceViewRequest(mDeviceModel, ViewRequest.stop())
-                    .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse>());
+                    .subscribe(new RxUtils.IgnoreResponseObserver<ViewResponse[]>());
             }
         }
     }
