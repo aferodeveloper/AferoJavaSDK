@@ -40,6 +40,7 @@ import io.afero.sdk.android.clock.AndroidClock;
 import io.afero.sdk.android.log.AndroidLog;
 import io.afero.sdk.client.retrofit2.AferoClientRetrofit2;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
+import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.ConclaveClient;
 import io.afero.sdk.device.ConclaveDeviceEventSource;
@@ -48,6 +49,7 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.softhub.AferoSofthub;
 import io.afero.sdk.utils.RxUtils;
+import retrofit2.Response;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
@@ -454,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isActiveNetworkConnectedOrConnecting() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        NetworkInfo activeNetwork = cm != null ? cm.getActiveNetworkInfo() : null;
         return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
@@ -476,13 +478,45 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Observable<ConclaveDeviceEventSource> startDeviceEventStream() {
+        Observable<ConclaveDeviceEventSource> startStreamObservable;
+
         if (!mDeviceEventSource.hasStarted()) {
             final String accountId = mAferoClient.getActiveAccountId();
             final String userId = mUserId;
-            return mDeviceEventSource.start(accountId, userId, "android");
+
+            startStreamObservable = mDeviceEventSource.start(accountId, userId, ClientID.get(this), "android");
         } else {
-            return mDeviceEventSource.reconnect();
+            startStreamObservable = mDeviceEventSource.reconnect();
         }
+
+        return registerClientID()
+            .flatMap(
+                new RxUtils.FlatMapper<Response<Void>, ConclaveDeviceEventSource>(startStreamObservable)
+            );
+    }
+
+    private Observable<Response<Void>> registerClientID() {
+        if (!ClientID.getIDWasRegistered()) {
+            DeviceInfoBody deviceInfo = new DeviceInfoBody(DeviceInfoBody.PLATFORM_ANDROID, "", ClientID.get(this), BuildConfig.APPLICATION_ID);
+
+            deviceInfo.extendedData.app_version = BuildConfig.VERSION_NAME;
+            deviceInfo.extendedData.app_build_number = BuildConfig.VERSION_CODE;
+            deviceInfo.extendedData.app_identifier = BuildConfig.APPLICATION_ID;
+            deviceInfo.extendedData.app_build_type = BuildConfig.BUILD_TYPE;
+
+            final String userId = mUserId;
+            if (userId != null && !userId.isEmpty()) {
+                return mAferoClient.postDeviceInfo(userId, deviceInfo)
+                    .doOnNext(new Action1<Response<Void>>() {
+                        @Override
+                        public void call(Response<Void> response) {
+                            ClientID.setIDWasRegistered(true);
+                        }
+                    });
+            }
+        }
+
+        return Observable.just(Response.success((Void) null));
     }
 
     private static class TokenObserver extends RxUtils.WeakObserver<AccessToken, MainActivity> {
