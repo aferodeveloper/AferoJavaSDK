@@ -117,8 +117,8 @@ public class ConclaveClient {
         }
     }
 
-    public void login(String accountId, String userId, String token, String type, boolean trace) {
-        write(new ConclaveMessage.Login(accountId, userId, token, type, CLIENT_VERSION, trace));
+    public void login(String accountId, String userId, String mobileDeviceId, String token, String type, boolean trace) {
+        write(new ConclaveMessage.Login(accountId, userId, mobileDeviceId, token, type, CLIENT_VERSION, trace));
     }
 
     public void say(String event, Object data) {
