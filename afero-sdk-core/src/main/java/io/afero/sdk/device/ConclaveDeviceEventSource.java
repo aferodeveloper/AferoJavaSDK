@@ -48,6 +48,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
 
     private String mAccountId;
     private String mUserId;
+    private String mClientId;
     private String mToken;
     private String mType;
     private boolean mSessionTrace;
@@ -93,9 +94,10 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         return mConclaveClient.statusObservable();
     }
 
-    public rx.Observable<ConclaveDeviceEventSource> start(String accountId, String userId, String type) {
+    public rx.Observable<ConclaveDeviceEventSource> start(String accountId, String userId, String clientId, String type) {
         mAccountId = accountId;
         mUserId = userId;
+        mClientId = clientId;
         mType = type;
         mGeneration = 0;
         mSequenceNum = 0;
@@ -121,6 +123,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         return mSessionTrace;
     }
 
+    @Deprecated
     public void viewDevice(String deviceId, boolean isViewing) {
         mConclaveClient.sayAsync("device:view", new ConclaveMessage.ViewDeviceFields(deviceId, isViewing))
             .subscribe(new RxUtils.IgnoreResponseObserver<ConclaveMessage.Say>());
@@ -231,7 +234,7 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
             onMessage(entry.getValue());
         }
         else if (key.equals("hello")) {
-            mConclaveClient.login(mAccountId, mUserId, mToken, mType, mSessionTrace);
+            mConclaveClient.login(mAccountId, mUserId, mClientId, mToken, mType, mSessionTrace);
         }
         else if (key.equals("welcome")) {
             long generation = mGeneration;

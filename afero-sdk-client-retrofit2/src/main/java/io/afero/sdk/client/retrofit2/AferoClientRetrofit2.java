@@ -20,6 +20,8 @@ import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ViewRequest;
+import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.api.AferoClientAPI;
@@ -499,6 +501,20 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
+     * Request to notify the specified device that it is currently being "viewed" by the user.
+     * Depending on the device this can potentially result in quicker attribute updates.
+     *
+     * @param deviceModel {@link DeviceModel} that is being viewed
+     * @param body {@link ViewRequest} that specifies whether to start or stop viewing
+     * @return empty {@link ViewResponse}
+     */
+    @Override
+    public Observable<ViewResponse[]> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body) {
+        ViewRequest[] requests = { body };
+        return mAferoService.postDeviceViewRequest(mActiveAccountId, deviceModel.getId(), requests);
+    }
+
+    /**
      * Afero Cloud API to fetch all {@link DeviceProfile} object for the devices associated with
      * the active account.
      *
@@ -795,13 +811,10 @@ public class AferoClientRetrofit2 implements AferoClient {
     private class RefreshTokenAuthenticator implements Authenticator {
         @Override
         public Request authenticate(Route route, okhttp3.Response response) throws IOException {
-            if(responseCount(response) >= 2) {
-                mAccessToken = null;
-
-                BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-                if (tokenSubject != null) {
-                    mTokenSubject = null;
-                    tokenSubject.onError(new Exception());
+            if (responseCount(response) >= 2) {
+                synchronized (mTokenRefreshLock) {
+                    mAccessToken = null;
+                    notifyTokenException(new Exception("RefreshTokenAuthenticator: Too many retries"));
                 }
 
                 // If both the original call and the call with refreshed token failed,
@@ -813,32 +826,24 @@ public class AferoClientRetrofit2 implements AferoClient {
                 AccessToken currentToken = mAccessToken;
 
                 if (currentToken != null && currentToken.refreshToken != null) {
-
                     AfLog.d("AferoClient: Attempting to refresh token");
 
                     // Get a new token
                     try {
-                        AccessToken newToken = internalRefreshAccessToken(currentToken.refreshToken, GRANT_TYPE_REFRESH_TOKEN);
-                        if (newToken != null) {
-                            mAccessToken = newToken;
-                            if (mTokenSubject != null) {
-                                mTokenSubject.onNext(mAccessToken);
-                            }
+                        mAccessToken = internalRefreshAccessToken(currentToken.refreshToken, GRANT_TYPE_REFRESH_TOKEN);
+                        if (mTokenSubject != null) {
+                            mTokenSubject.onNext(mAccessToken);
                         }
 
                         // Add new header to rejected request and retry it
                         return response.request().newBuilder()
-                                .header(HEADER_AUTHORIZATION, mAccessToken.tokenType + " " + mAccessToken.accessToken)
-                                .build();
+                            .header(HEADER_AUTHORIZATION, mAccessToken.tokenType + " " + mAccessToken.accessToken)
+                            .build();
+
                     } catch (Exception e) {
                         AfLog.d("AferoClient: Failed to refresh token");
                         mAccessToken = null;
-
-                        BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-                        if (tokenSubject != null) {
-                            mTokenSubject = null;
-                            tokenSubject.onError(e);
-                        }
+                        notifyTokenException(e);
                     }
                 }
             }
@@ -847,11 +852,28 @@ public class AferoClientRetrofit2 implements AferoClient {
         }
     }
 
+    private void notifyTokenException(Exception e) {
+        BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
+        if (tokenSubject != null && !(tokenSubject.hasThrowable() || tokenSubject.hasCompleted())) {
+            mTokenSubject = null;
+            tokenSubject.onError(e);
+        }
+    }
+
     private AccessToken internalRefreshAccessToken(String refreshToken, String grantType) throws IOException {
         Response<AccessToken> response = mAferoService
                 .refreshAccessToken(grantType, refreshToken, mOAuthAuthorizationBase64)
                 .execute();
-        return response.isSuccessful() ? response.body() : null;
+
+        if (!response.isSuccessful()) {
+            throw new HttpException(response);
+        }
+
+        if (response.body() == null) {
+            throw new IOException("Null AccessToken in response");
+        }
+
+        return response.body();
     }
 
     private static int responseCount(okhttp3.Response response) {

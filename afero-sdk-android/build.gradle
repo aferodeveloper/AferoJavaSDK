@@ -60,7 +60,7 @@ publishing {
             groupId rootProject.group
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-            artifact androidJavadocsJar
+//            artifact androidJavadocsJar
 
             pom.withXml {
                 def dependencies = asNode().appendNode('dependencies')

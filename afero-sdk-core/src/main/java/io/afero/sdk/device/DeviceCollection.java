@@ -329,21 +329,52 @@ public class DeviceCollection {
 
         mSnapshotSubscription = mDeviceEventSource.observeSnapshot()
                 .flatMap(new Func1<DeviceSync[], Observable<DeviceSync[]>>() {
-                    // Make sure we have a profile for the new device in our local registry
+                    // Make sure we have a profile for any new devices in our local registry
                     // If not, fetch it before passing it on...
                     @Override
                     public Observable<DeviceSync[]> call(final DeviceSync[] deviceSyncs) {
                         AfLog.i("DeviceCollection.flatMap('snapshot'): deviceSync[].length=" + deviceSyncs.length);
 
-                        // TODO: we're always fetching all profiles. optimize this. (use api filtering?)
-                        return mDeviceProfileCollection
-                                .fetchAccountProfiles()
-                                .zipWith(Observable.just(deviceSyncs), new Func2<DeviceProfile[], DeviceSync[], DeviceSync[]>() {
-                                    @Override
-                                    public DeviceSync[] call(DeviceProfile[] deviceProfiles, DeviceSync[] ds) {
-                                        return ds;
+                        return Observable.from(deviceSyncs)
+                            .map(new Func1<DeviceSync, Observable<DeviceSync>>() {
+                                @Override
+                                public Observable<DeviceSync> call(DeviceSync ds) {
+                                    if (mDeviceProfileCollection.getProfileFromID(ds.profileId) == null) {
+                                        return mDeviceProfileCollection.fetchDeviceProfile(ds.profileId)
+                                                .onErrorResumeNext(Observable.<DeviceProfile>empty())
+                                                .flatMap(new RxUtils.FlatMapper<DeviceProfile, DeviceSync>(Observable.just(ds)));
                                     }
-                                });
+
+                                    return Observable.just(ds);
+                                }
+                            })
+                            .reduce(new ArrayList<Observable<DeviceSync>>(deviceSyncs.length), new Func2<ArrayList<Observable<DeviceSync>>, Observable<DeviceSync>, ArrayList<Observable<DeviceSync>>>() {
+                                @Override
+                                public ArrayList<Observable<DeviceSync>> call(ArrayList<Observable<DeviceSync>> list, Observable<DeviceSync> deviceSyncObservable) {
+                                    list.add(deviceSyncObservable);
+                                    return list;
+                                }
+                            })
+                            .flatMap(new Func1<ArrayList<Observable<DeviceSync>>, Observable<DeviceSync[]>>() {
+                                @Override
+                                public Observable<DeviceSync[]> call(ArrayList<Observable<DeviceSync>> observables) {
+                                    return Observable.mergeDelayError(observables)
+                                            .reduce(new ArrayList<DeviceSync>(), new Func2<ArrayList<DeviceSync>, DeviceSync, ArrayList<DeviceSync>>() {
+                                                @Override
+                                                public ArrayList<DeviceSync> call(ArrayList<DeviceSync> list, DeviceSync deviceSync) {
+                                                    list.add(deviceSync);
+                                                    return list;
+                                                }
+                                            })
+                                            .map(new Func1<ArrayList<DeviceSync>, DeviceSync[]>() {
+                                                @Override
+                                                public DeviceSync[] call(ArrayList<DeviceSync> list) {
+                                                    return list.toArray(new DeviceSync[list.size()]);
+                                                }
+                                            });
+                                }
+                            })
+                            ;
                     }
                 })
                 .doOnNext(new Action1<DeviceSync[]>() {

@@ -12,6 +12,8 @@ import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ViewRequest;
+import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.models.AccessToken;
@@ -167,36 +169,43 @@ public interface AferoClientAPI {
             @Query("imageSize") String imageSize
     );
 
-    @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/requests")
+    @POST(V1 + "accounts/{accountId}/devices/{deviceId}/requests")
     Observable<WriteResponse[]> postDeviceRequest(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body WriteRequest[] body
     );
 
-    @GET(V1 + "/accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone%2Ctags")
+    @GET(V1 + "accounts/{accountId}/devices?expansions=state%2Cattributes%2Ctimezone%2Ctags")
     Observable<DeviceSync[]> getDevicesWithState(
             @Path("accountId") String accountId
     );
 
-    @POST(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag")
+    @POST(V1 + "accounts/{accountId}/devices/{deviceId}/deviceTag")
     Observable<DeviceTag> postDeviceTag(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body DeviceTag tag
     );
 
-    @PUT(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag")
+    @PUT(V1 + "accounts/{accountId}/devices/{deviceId}/deviceTag")
     Observable<DeviceTag> putDeviceTag(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body DeviceTag tag
     );
 
-    @DELETE(V1 + "/accounts/{accountId}/devices/{deviceId}/deviceTag/{deviceTag}")
+    @DELETE(V1 + "accounts/{accountId}/devices/{deviceId}/deviceTag/{deviceTag}")
     Observable<Void> deleteDeviceTag(
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Path("deviceTag") String deviceTagId
+    );
+
+    @POST(V1 + "accounts/{accountId}/devices/{deviceId}/requests")
+    Observable<ViewResponse[]> postDeviceViewRequest(
+            @Path("accountId") String accountId,
+            @Path("deviceId") String deviceId,
+            @Body ViewRequest[] body
     );
 }

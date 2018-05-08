@@ -13,12 +13,18 @@ repositories {
             password = project.aferoArtifactoryPassword
         }
     }
+    maven {
+        url "https://maven.google.com"
+    }
 }
+
+final String hubbyVersion = "1.0.674"
+final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {
     publishNonDefault true
     compileSdkVersion 25
-    buildToolsVersion "26"
+    buildToolsVersion "26.0.2"
 
     defaultConfig {
         minSdkVersion 21
@@ -26,6 +32,9 @@ android {
 
         versionCode 1
         versionName rootProject.version
+
+        buildConfigField 'String', 'HUBBY_VERSION', '"'+hubbyVersion+'"'
+        buildConfigField 'String', 'HUB_TYPE', hubType
     }
 
     buildTypes {
@@ -41,9 +50,9 @@ dependencies {
 
     compile project(path: ':afero-sdk-core')
 
-    embedded "io.afero.sdk:hubby:1.0.547@aar"
+    embedded "io.afero.sdk:hubby:${hubbyVersion}@aar"
 
-    compile 'com.android.support:support-annotations:25.3.1'
+    compile 'com.android.support:support-annotations:27.1.0'
 
     // https://github.com/robolectric/robolectric
     testCompile 'org.robolectric:robolectric:3.3.1'

@@ -17,12 +17,15 @@ import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ViewRequest;
+import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 import rx.Observable;
+import rx.subjects.PublishSubject;
 
 
 public class MockAferoClient implements AferoClient {
@@ -35,6 +38,9 @@ public class MockAferoClient implements AferoClient {
     private int mRequestId;
     private HashMap<String,DeviceTag> mDeviceTags = new HashMap<>();
     private Throwable nextCallFailure;
+    private String mViewingDeviceId;
+    private long mViewingSeconds;
+    private PublishSubject<ViewRequest> mViewRequestSubject = PublishSubject.create();
 
     public MockAferoClient() {
         mLoader = new ResourceLoader();
@@ -73,6 +79,14 @@ public class MockAferoClient implements AferoClient {
         }
 
         return postBatchAttributeWriteResponse;
+    }
+
+    @Override
+    public Observable<ViewResponse[]> postDeviceViewRequest(DeviceModel deviceModel, ViewRequest body) {
+        mViewingDeviceId = deviceModel.getId();
+        mViewingSeconds = body.seconds;
+        mViewRequestSubject.onNext(body);
+        return Observable.just(new ViewResponse[] { new ViewResponse() });
     }
 
     @Override
@@ -338,5 +352,17 @@ public class MockAferoClient implements AferoClient {
 
     private boolean hasNextCallFailure() {
         return nextCallFailure != null;
+    }
+
+    public String getViewingDeviceId() {
+        return mViewingDeviceId;
+    }
+
+    public long getViewingDeviceSeconds() {
+        return mViewingSeconds;
+    }
+
+    public Observable<ViewRequest> observeViewRequests() {
+        return mViewRequestSubject;
     }
 }

@@ -132,6 +132,8 @@ public final class DeviceModel {
 
     private DeviceTagCollection mTags;
 
+    private ViewingDeviceNotifier mViewingDeviceNotifier;
+
 
     private DeviceModel() {
         mId = null;
@@ -595,6 +597,16 @@ public final class DeviceModel {
         return ad != null ? ad.mUpdatedTimeStamp : 0;
     }
 
+    /**
+     * @return {@link ViewingDeviceNotifier} used to managed the viewing state of this DeviceModel
+     */
+    public ViewingDeviceNotifier notifyViewing() {
+        if (mViewingDeviceNotifier == null) {
+            mViewingDeviceNotifier = new ViewingDeviceNotifier(this, mAferoClient);
+        }
+        return mViewingDeviceNotifier;
+    }
+
     @Deprecated
     public boolean isRunning() {
         DeviceProfile.Presentation presentation = getPresentation();
@@ -774,7 +786,7 @@ public final class DeviceModel {
         return getDeviceTagCollection().getTagById(deviceTagId);
     }
 
-    void setProfile(DeviceProfile newProfile) {
+    synchronized void setProfile(DeviceProfile newProfile) {
         DeviceProfile oldProfile = mProfile;
         mProfile = newProfile;
         mProfileId = newProfile.getId();
