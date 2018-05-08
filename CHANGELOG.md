@@ -1,12 +1,13 @@
 Change Log
 ==========
 
-Version 1.0.2 *(2011-01-12)*
+Version 1.0.2 *(2018-05-08)*
 ----------------------------
  * Fix: Changed `AferoClientRetrofit2` to prevent potential uncaught exception when refreshing access token.
  * Changed: `Attribute` length and default value fields are now exposed via getter/setter.
  * Fix: Removed some extraneous preceding slashes from some `AferoClientAPI` endpoints
- * Changed: Updated `AferoSofthub` to softhub version 631.
+ * Changed: Updated `AferoSofthub` to softhub version 674.
+ * Fix: Conclave login now sends mobileDeviceId/clientId once again.
 
 Version 1.0.1 *(2017-12-12)*
 ----------------------------
