@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.0.3 *(2018-07-10)*
+----------------------------
+ * Changed: Updated `AferoSofthub` to softhub version 1.0.750 to pick up latest fixes.
+
 Version 1.0.2 *(2018-05-08)*
 ----------------------------
  * Fix: Changed `AferoClientRetrofit2` to prevent potential uncaught exception when refreshing access token.
