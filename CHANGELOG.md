@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.0.5 *(2018-07-23)*
+----------------------------
+ * Changed: Updated `AferoSofthub` to softhub version 1.0.756 to pick up latest fixes.
+
 Version 1.0.4 *(2018-07-16)*
 ----------------------------
  * Changed: Updated `AferoSofthub` to softhub version 1.0.751 to pick up latest fixes.
