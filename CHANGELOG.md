@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.0.6 *(2018-08-21)*
+----------------------------
+ * Changed: `AferoSofthub` now exposes `HubType` so that partners can make use of `ENTERPRISE` mode should they require it.
+
 Version 1.0.5 *(2018-07-23)*
 ----------------------------
  * Changed: Updated `AferoSofthub` to softhub version 1.0.756 to pick up latest fixes.
