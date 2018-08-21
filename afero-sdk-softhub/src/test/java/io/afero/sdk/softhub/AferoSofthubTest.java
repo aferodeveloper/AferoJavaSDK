@@ -46,6 +46,26 @@ public class AferoSofthubTest {
     }
 
     @Test
+    public void defaultHubTypeIsConsumer() throws Exception {
+        makeAferoSofthubTester()
+            .startHubby()
+            .waitUntilStartedCalled()
+
+            .verifyDefaultHubTypeIsConsumer()
+        ;
+    }
+
+    @Test
+    public void setHubTypeToEnterprise() throws Exception {
+        makeAferoSofthubTesterEnterprise()
+            .startHubby()
+            .waitUntilStartedCalled()
+
+            .verifyDefaultHubTypeIsEnterprise()
+        ;
+    }
+
+    @Test
     public void start() throws Exception {
         makeAferoSofthubTester()
 
@@ -259,8 +279,13 @@ public class AferoSofthubTest {
     // test support --------------------------------------------------------
 
     private HubbyHelperTester makeAferoSofthubTester() {
-        return new HubbyHelperTester();
+        return new HubbyHelperTester(null);
     }
+
+    private HubbyHelperTester makeAferoSofthubTesterEnterprise() {
+        return new HubbyHelperTester(AferoSofthub.HubType.ENTERPRISE);
+    }
+
 
     private class HubbyHelperTester {
         final Activity activity;
@@ -272,9 +297,13 @@ public class AferoSofthubTest {
 
         AferoSofthub aferoSofthub;
 
-        HubbyHelperTester() {
+        HubbyHelperTester(AferoSofthub.HubType hubType) {
             activity = Robolectric.buildActivity(Activity.class).create().get();
-            aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D");
+            if (hubType != null) {
+                aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D", hubType);
+            } else {
+                aferoSofthub = AferoSofthub.acquireInstance(activity, aferoClient, "clientId: 17824C90-4FBC-4C22-96C6-F6755495280D");
+            }
             aferoSofthub.setHubbyImpl(hubbyImpl);
             aferoSofthub.observeCompletion().subscribe(onNextComplete);
             aferoSofthub.observeAssociation().subscribe(onNextAssociation);
@@ -428,7 +457,14 @@ public class AferoSofthubTest {
             return this;
         }
 
-        HubbyHelperTester verifyHubbyIsTypeEnterprise() {
+        HubbyHelperTester verifyDefaultHubTypeIsConsumer() {
+            assertEquals(aferoSofthub.getHubType(), AferoSofthub.HubType.CONSUMER);
+            assertEquals(Hubby.HUB_TYPE_CONSUMER, hubbyImpl.mConfigs.get(Hubby.Config.HUB_TYPE));
+            return this;
+        }
+
+        HubbyHelperTester verifyDefaultHubTypeIsEnterprise() {
+            assertEquals(aferoSofthub.getHubType(), AferoSofthub.HubType.ENTERPRISE);
             assertEquals(Hubby.HUB_TYPE_ENTERPRISE, hubbyImpl.mConfigs.get(Hubby.Config.HUB_TYPE));
             return this;
         }
