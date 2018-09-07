@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.0.7 *(2018-09-7)*
+----------------------------
+ * Fix: `AferoSofthub` has added more rigorous null checks and synchronization around the start process.
+
 Version 1.0.6 *(2018-08-21)*
 ----------------------------
  * Changed: `AferoSofthub` now exposes `HubType` so that partners can make use of `ENTERPRISE` mode should they require it.

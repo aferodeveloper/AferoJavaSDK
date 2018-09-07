@@ -173,10 +173,7 @@ public class AferoSofthub {
         AfLog.i("AferoSofthub.stop");
 
         if (isStarting() || isRunning()) {
-            if (mStartSubject != null) {
-                mStartSubject.onError(new StartCancelled("AferoSofthub.stop called during start process"));
-                mStartSubject = null;
-            }
+            startError(new StartCancelled("AferoSofthub.stop called during start process"));
 
             mIsHubbyRunning = false;
             mHubbyImpl.stop();
@@ -301,17 +298,26 @@ public class AferoSofthub {
         mHubbyImpl.start(config, mNotificationCallback);
     }
 
-    private void onInitializationComplete() {
+    private synchronized void onInitializationComplete() {
         AfLog.i("AferoSofthub.onInitializationComplete");
         mIsHubbyRunning = true;
 
-        mStartSubject.onCompleted();
-        mStartSubject = null;
+        if (mStartSubject != null) {
+            mStartSubject.onCompleted();
+            mStartSubject = null;
+        }
     }
 
     private void onRunComplete(NotificationCallback.CompleteReason completeReason) {
         AfLog.i("AferoSofthub.onRunComplete");
         mCompleteSubject.onNext(completeReason);
+    }
+
+    private synchronized void startError(Throwable e) {
+        if (mStartSubject != null) {
+            mStartSubject.onError(e);
+            mStartSubject = null;
+        }
     }
 
     private void onSecureHubAssociationNeeded(String assId) {
@@ -326,8 +332,7 @@ public class AferoSofthub {
                 public void onError(Throwable e) {
                     AfLog.e("AferoSofthub startup error - deviceAssociate failed");
                     AfLog.e(e);
-                    mStartSubject.onError(e);
-                    mStartSubject = null;
+                    startError(e);
                 }
 
                 @Override
