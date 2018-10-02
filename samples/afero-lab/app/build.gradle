@@ -22,7 +22,7 @@ android {
     buildToolsVersion '26.0.3'
     defaultConfig {
         applicationId 'io.afero.aferolab'
-        minSdkVersion 21
+        minSdkVersion 19
         targetSdkVersion 26
         versionCode 1
         versionName '1.0'
