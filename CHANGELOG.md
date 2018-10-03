@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.0.8 *(2018-10-3)*
+----------------------------
+ * Changed: Set the `AferoSofthub` `minSdkVersion` to 19 rather than 21.
+
 Version 1.0.7 *(2018-09-7)*
 ----------------------------
  * Fix: `AferoSofthub` has added more rigorous null checks and synchronization around the start process.
