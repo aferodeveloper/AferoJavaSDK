@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.0.9 *(2018-12-09)*
+----------------------------
+ * Changed: Updated `AferoSofthub` to softhub version 1.0.786 to pick up latest fixes.
+
 Version 1.0.8 *(2018-10-3)*
 ----------------------------
  * Changed: Set the `AferoSofthub` `minSdkVersion` to 19 rather than 21.
