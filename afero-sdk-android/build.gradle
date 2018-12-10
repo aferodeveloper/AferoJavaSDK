@@ -6,7 +6,6 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "26.0.3"
 
     defaultConfig {
         minSdkVersion 19
@@ -23,57 +22,27 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile project(path: ':afero-sdk-core')
+    implementation project(path: ':afero-sdk-core')
 
-    testCompile 'junit:junit:4.12'
-}
-
-task androidJavadocs(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath = project.files(android.getBootClasspath())
-
-    android.libraryVariants.all { variant ->
-        classpath += files(variant.javaCompile.classpath.files)
-    }
-
-    options {
-        links "http://docs.oracle.com/javase/8/docs/api/"
-        linksOffline "http://d.android.com/reference", "${android.sdkDirectory}/docs/reference"
-    }
-
-    exclude '**/BuildConfig.java'
-    exclude '**/R.java'
-}
-
-task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-    classifier = 'javadoc'
-    from androidJavadocs.destinationDir
+    testImplementation 'junit:junit:4.12'
 }
 
 publishing {
     publications {
         aar(MavenPublication) {
+
             version = rootProject.version
             artifactId project.getName()
             groupId rootProject.group
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-//            artifact androidJavadocsJar
-
-            pom.withXml {
-                def dependencies = asNode().appendNode('dependencies')
-                configurations.getByName("_releaseCompile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
-                    // don't include local dependencies
-                    if (it.moduleVersion != 'unspecified') {
-                        def dependency = dependencies.appendNode('dependency')
-                        dependency.appendNode('groupId', it.moduleGroup)
-                        dependency.appendNode('artifactId', it.moduleName)
-                        dependency.appendNode('version', it.moduleVersion)
-                    }
-                }
-            }
+//            artifact packageJavadoc
         }
     }
+}
+
+artifactoryPublish {
+    publications(publishing.publications.aar)
 }

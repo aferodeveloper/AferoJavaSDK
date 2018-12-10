@@ -3,7 +3,7 @@
  */
 
 apply plugin: 'com.android.library'
-apply from: 'fat-aar.gradle'
+apply plugin: "com.mobbeel.plugin"
 
 repositories {
     maven {
@@ -22,9 +22,7 @@ final String hubbyVersion = "1.0.786"
 final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {
-    publishNonDefault true
     compileSdkVersion 26
-    buildToolsVersion "26.0.3"
 
     defaultConfig {
         minSdkVersion 19
@@ -46,100 +44,35 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    compile project(path: ':afero-sdk-core')
+    implementation project(path: ':afero-sdk-core')
 
-    embedded "io.afero.sdk:hubby:${hubbyVersion}@aar"
+    api "io.afero.sdk:hubby:${hubbyVersion}@aar"
 
-    compile 'com.android.support:support-annotations:27.1.1'
+    implementation 'io.reactivex:rxjava:1.3.0'
+    implementation 'com.android.support:support-annotations:27.1.1'
 
     // https://github.com/robolectric/robolectric
-    testCompile 'org.robolectric:robolectric:3.3.1'
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.squareup.retrofit2:retrofit:2.3.0'
-}
-
-task androidJavadocs(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath = files(android.getBootClasspath())
-
-    android.libraryVariants.all { variant ->
-        classpath += files(variant.javaCompile.classpath.files)
-    }
-
-    options {
-        links "http://docs.oracle.com/javase/8/docs/api/"
-        linksOffline "http://d.android.com/reference", "${android.sdkDirectory}/docs/reference"
-    }
-
-    exclude '**/BuildConfig.java'
-    exclude '**/R.java'
-}
-
-task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-    classifier = 'javadoc'
-    from androidJavadocs.destinationDir
+    testImplementation 'org.robolectric:robolectric:3.3.1'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'com.squareup.retrofit2:retrofit:2.3.0'
 }
 
 publishing {
     publications {
         aar(MavenPublication) {
+
             version = rootProject.version
             artifactId project.getName()
             groupId rootProject.group
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-            artifact androidJavadocsJar
-
-            List<String> embedList = new ArrayList<>();
-            Map<String, ResolvedDependency> depList = new LinkedHashMap<>();
-
-            // List all embedded dependencies
-            configurations.embedded.allDependencies.each {
-                def depName = String.format("%s:%s", it.group, it.name)
-                embedList.add(depName);
-            }
-
-            // Collect all first level dependencies except embedded ones
-            configurations.compile.resolvedConfiguration.firstLevelModuleDependencies.each {
-                ResolvedDependency dep ->
-                    def depName = String.format("%s:%s", dep.moduleGroup, dep.moduleName)
-                    if (!embedList.contains(depName) && !depList.containsKey(depName)) {
-                        depList.put(depName, dep)
-                    }
-            }
-
-            // Collect all second level dependencies of embedded ones
-            configurations.embedded.resolvedConfiguration.firstLevelModuleDependencies.each {
-                // Second level dependencies
-                it.children.each {
-                    ResolvedDependency dep ->
-                        def depName = String.format("%s:%s", dep.moduleGroup, dep.moduleName)
-                        if (!embedList.contains(depName) && !depList.containsKey(depName)) {
-                            depList.put(depName, dep)
-                        }
-                }
-            }
-
-            pom.withXml {
-                def dependenciesNode = asNode().appendNode('dependencies')
-
-                // Iterate over the compile dependencies, adding a <dependency> node for each
-                depList.values().each {
-                    ResolvedDependency dep ->
-                        def hasGroup = dep.moduleGroup != null
-                        def hasName = (dep.moduleName != null && !"unspecified".equals(dep.moduleName))
-                        def hasVersion = (dep.moduleVersion != null && !"unspecified".equals(dep.moduleVersion))
-
-                        if (hasGroup && hasName && hasVersion) {
-                            def depNode = dependenciesNode.appendNode('dependency')
-                            depNode.appendNode('groupId', dep.moduleGroup)
-                            depNode.appendNode('artifactId', dep.moduleName)
-                            depNode.appendNode('version', dep.moduleVersion)
-                        }
-                }
-            }
+//            artifact packageJavadoc
         }
     }
+}
+
+artifactoryPublish {
+    publications(publishing.publications.aar)
 }
