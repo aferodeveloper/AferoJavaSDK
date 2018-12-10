@@ -303,7 +303,7 @@ public class AttributeWriterTest {
 
     private static class Tester {
         final TestMockAferoClient aferoClient = new TestMockAferoClient();
-        final ResourceLoader resourceLoader = new ResourceLoader("resources/writeAttributeOperation/");
+        final ResourceLoader resourceLoader = new ResourceLoader("writeAttributeOperation/");
         final DeviceProfile deviceProfile = resourceLoader.createObjectFromJSONResource("deviceProfile.json", DeviceProfile.class);
         final DeviceModel deviceModel = new DeviceModel("device-id", deviceProfile, false, aferoClient);
         final AttributeWriter attributeWriter;

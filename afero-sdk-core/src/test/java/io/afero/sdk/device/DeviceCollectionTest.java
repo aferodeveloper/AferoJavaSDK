@@ -281,7 +281,7 @@ public class DeviceCollectionTest {
     }
 
     private static class DeviceCollectionTester {
-        static final String PATH_PREFIX = "resources/deviceCollection/";
+        static final String PATH_PREFIX = "deviceCollection/";
         final ResourceLoader resourceLoader = new ResourceLoader(PATH_PREFIX);
         final MockAferoClient aferoClient = new MockAferoClient(PATH_PREFIX);
         final MockDeviceEventSource deviceEventSource = new MockDeviceEventSource();

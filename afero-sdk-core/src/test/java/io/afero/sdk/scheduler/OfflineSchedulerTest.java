@@ -35,7 +35,7 @@ public class OfflineSchedulerTest extends AferoTest {
     @Before
     public void setup() throws IOException {
         AfLog.init(new JavaLog());
-        deviceProfile = loadDeviceProfile("resources/offlineScheduleEvent/deviceProfile.json");
+        deviceProfile = loadDeviceProfile("offlineScheduleEvent/deviceProfile.json");
     }
 
     @Test
@@ -145,7 +145,7 @@ public class OfflineSchedulerTest extends AferoTest {
     @Test
     public void migrateAllToDeviceTimeZone() throws Exception {
         MockAferoClient aferoClient = new MockAferoClient();
-        DeviceSync data = loadDeviceSync("resources/offlineScheduleEvent/migrateDeviceSync.json");
+        DeviceSync data = loadDeviceSync("offlineScheduleEvent/migrateDeviceSync.json");
         DeviceModel deviceModel = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient, data);
         DeviceProfile.Attribute attr1 = deviceModel.getAttributeById(59002);
         DeviceProfile.Attribute attr2 = deviceModel.getAttributeById(59003);
@@ -187,7 +187,7 @@ public class OfflineSchedulerTest extends AferoTest {
     @Test
     public void migrateAllToDeviceTimeZoneWithNoTimeZoneSet() throws Exception {
         MockAferoClient aferoClient = new MockAferoClient();
-        DeviceSync data = loadDeviceSync("resources/offlineScheduleEvent/migrateDeviceSyncNoTimeZone.json");
+        DeviceSync data = loadDeviceSync("offlineScheduleEvent/migrateDeviceSyncNoTimeZone.json");
         DeviceModel deviceModel = DeviceModelTest.createDeviceModel(deviceProfile, aferoClient, data);
 
         Observable<OfflineScheduleEvent> offlineScheduleMigration = OfflineScheduler.migrateToDeviceTimeZone(deviceModel);

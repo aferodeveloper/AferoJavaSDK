@@ -44,7 +44,7 @@ public class AferoSofthub {
     private static AferoSofthub sInstance;
     private static boolean sIsHubbyInitialized;
 
-    private static final String WAKE_LOCK_TAG = "io.afero.sdk.hubby.AferoSofthub.OTAWakeLockTag";
+    private static final String WAKE_LOCK_TAG = "io.afero.sdk.hubby.AferoSofthub:OTAWakeLockTag";
     private static final long OTA_END_DELAY = 30000;
     private static final long WAKE_LOCK_WATCHDOG_INTERVAL = 5000;
     private static final int HARDWARE_INFO_MAX_LENGTH = 500;

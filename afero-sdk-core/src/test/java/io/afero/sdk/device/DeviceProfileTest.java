@@ -24,7 +24,7 @@ public class DeviceProfileTest {
     @Test
     public void testJson() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-        InputStream is = getClass().getClassLoader().getResourceAsStream("resources/profile.json");
+        InputStream is = getClass().getClassLoader().getResourceAsStream("profile.json");
         assertNotNull(is);
 
         DeviceProfile profile = objectMapper.readValue(is, DeviceProfile.class);

@@ -167,7 +167,7 @@ public class RangeOptionsTest {
 
     @Test
     public void testFromJson() throws IOException {
-        InputStream is = getClass().getClassLoader().getResourceAsStream("resources/rangeOptions.json");
+        InputStream is = getClass().getClassLoader().getResourceAsStream("rangeOptions.json");
         assertNotNull(is);
 
         ObjectMapper objectMapper = new ObjectMapper();
