@@ -51,6 +51,9 @@ import com.google.common.io.Files
 
 buildscript {
     repositories {
+        maven {
+            url "https://maven.google.com"
+        }
         jcenter()
     }
     dependencies {
