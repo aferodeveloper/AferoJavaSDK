@@ -160,7 +160,7 @@ public class DeviceTagCollectionTest {
 
     private class TagTester {
 
-        final static String PATH_PREFIX = "resources/deviceTagCollection/";
+        final static String PATH_PREFIX = "deviceTagCollection/";
 
         final ResourceLoader resourceLoader = new ResourceLoader(PATH_PREFIX);
         final MockAferoClient aferoClient = new MockAferoClient(PATH_PREFIX);

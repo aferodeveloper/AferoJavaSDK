@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DeviceModelTest extends AferoTest {
 
-    static final String PATH_PREFIX = "resources/deviceModel/";
+    static final String PATH_PREFIX = "deviceModel/";
     private static final String DEVICE_ID = "deviceModel-model-id";
 
     public static DeviceModel createDeviceModel(DeviceProfile deviceProfile, AferoClient aferoClient) {

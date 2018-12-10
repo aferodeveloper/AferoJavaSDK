@@ -29,7 +29,7 @@ public class OfflineScheduleEventTest extends AferoTest {
 
     @Before
     public void setup() throws IOException {
-        deviceProfile = loadDeviceProfile("resources/offlineScheduleEvent/deviceProfile.json");
+        deviceProfile = loadDeviceProfile("offlineScheduleEvent/deviceProfile.json");
     }
 
     @Test
