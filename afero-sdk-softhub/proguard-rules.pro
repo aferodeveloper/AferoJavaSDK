@@ -24,4 +24,5 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class io.kiban.hubby.** { *; }
+-keep class io.afero.sdk.softhub.** { *; }
+-keep class io.afero.hubby.** { *; }
