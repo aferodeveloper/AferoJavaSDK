@@ -18,7 +18,7 @@ The SDK binaries are hosted privately on [JFrog](https://www.jfrog.com/artifacto
     repositories {
         maven {
             url "https://afero.jfrog.io/afero/afero-java-sdk"
-            artifactUrls = ["https://afero.jfrog.io/afero/hubby-android"]
+            artifactUrls "https://afero.jfrog.io/afero/hubby-android"
             credentials {
                 username myAferoArtifactoryUserName
                 password myAferoArtifactoryPassword
