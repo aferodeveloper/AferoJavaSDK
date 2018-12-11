@@ -3,7 +3,6 @@
  */
 
 apply plugin: 'com.android.library'
-apply plugin: "com.mobbeel.plugin"
 
 repositories {
     maven {
@@ -12,9 +11,6 @@ repositories {
             username = project.aferoArtifactoryUserName
             password = project.aferoArtifactoryPassword
         }
-    }
-    maven {
-        url "https://maven.google.com"
     }
 }
 
@@ -44,7 +40,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    api fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation project(path: ':afero-sdk-core')
 
@@ -69,6 +65,23 @@ publishing {
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
 //            artifact packageJavadoc
+
+            pom.withXml {
+                def dependenciesNode = asNode().appendNode('dependencies')
+
+                configurations.api.allDependencies.each {
+                    def hasGroup = it.group != null
+                    def hasName = (it.name != null && !"unspecified".equals(it.name))
+                    def hasVersion = (it.version != null && !"unspecified".equals(it.version))
+
+                    if (hasGroup && hasName && hasVersion) {
+                        def depNode = dependenciesNode.appendNode('dependency')
+                        depNode.appendNode('groupId', it.group)
+                        depNode.appendNode('artifactId', it.name)
+                        depNode.appendNode('version', it.version)
+                    }
+                }
+            }
         }
     }
 }
