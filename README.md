@@ -1,8 +1,8 @@
 ---
 author: Tony Myles
 title: "AferoJavaSDK"
-date: 2018-Dec-9
-status: 1.0.9
+date: 2019-Jan-9
+status: 1.0.10
 ---
 
 # AferoJavaSDK
@@ -35,30 +35,30 @@ The SDK is composed of four separate modules.
 
 The `afero-sdk-core` module is required for base functionality such as interacting with the Afero Cloud and manipulating devices.
 ```Gradle
-    implementation 'io.afero.sdk:afero-sdk-core:1.0.9'
+    implementation 'io.afero.sdk:afero-sdk-core:1.0.10'
 ```
 
 The `afero-sdk-client-retrofit2` module provides an optional implementation of the AferoClient REST API interface using [Retrofit2](http://square.github.io/retrofit/) and [okhttp3](http://square.github.io/okhttp/). If you choose not to include this module in your project, you will need to develop your own implementation of AferoClient using your preferred http client library.
 
 ```Gradle
-    implementation 'io.afero.sdk:afero-sdk-client-retrofit2:1.0.9'
+    implementation 'io.afero.sdk:afero-sdk-client-retrofit2:1.0.10'
 ```
 
 The `afero-sdk-android` module is required for Android development.
 ```Gradle
-    implementation 'io.afero.sdk:afero-sdk-android:1.0.9'
+    implementation 'io.afero.sdk:afero-sdk-android:1.0.10'
 ```
 
 The `afero-sdk-softhub` module is required for soft hub functionality on Android.
 ```Gradle
-    implementation 'io.afero.sdk:afero-sdk-softhub:1.0.9'
-    implementation "io.afero.sdk:hubby:1.0.786@aar"
+    implementation 'io.afero.sdk:afero-sdk-softhub:1.0.10'
+    implementation "io.afero.sdk:hubby:1.0.792@aar"
 ```
 
 ## LICENSE
 
   AFERO CONFIDENTIAL AND PROPRIETARY INFORMATION
-  © Copyright 2017-2018 Afero, Inc, All Rights Reserved.
+  © Copyright 2017-2019 Afero, Inc, All Rights Reserved.
 
   Any use and distribution of this software is subject to the terms
   of the License and Services Agreement between Afero, Inc. and licensee.
