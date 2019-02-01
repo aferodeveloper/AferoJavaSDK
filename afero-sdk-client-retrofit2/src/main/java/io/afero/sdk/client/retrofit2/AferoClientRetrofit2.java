@@ -11,15 +11,24 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
+import io.afero.sdk.client.afero.models.AccountDescriptionBody;
+import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.client.afero.models.CreateAccountBody;
+import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
+import io.afero.sdk.client.afero.models.DeviceRules;
 import io.afero.sdk.client.afero.models.DeviceTag;
+import io.afero.sdk.client.afero.models.DeviceVersions;
 import io.afero.sdk.client.afero.models.ErrorBody;
+import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
@@ -29,6 +38,7 @@ import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
+import io.afero.sdk.client.retrofit2.models.NameDeviceBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.DeviceEventSource;
 import io.afero.sdk.conclave.models.DeviceSync;
@@ -324,6 +334,20 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
+     * Create a new Afero Cloud user account.
+     *
+     * @param body parameters for the new account including first/last name and password
+     * @return {@link CreateAccountResponse} that includes the accountId
+     */
+    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body) {
+        return mAferoService.createAccount(body);
+    }
+
+    public Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body) {
+        return mAferoService.putAccountDescription(accountId, body);
+    }
+
+    /**
      * Initiates OAuth2 authentication with the specified user and password.
      *
      * <p>
@@ -423,6 +447,14 @@ public class AferoClientRetrofit2 implements AferoClient {
     public Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel) {
         return mAferoService.deviceDisassociate(mOwnerAccountId, deviceModel.getId())
             .map(new RxUtils.Mapper<Void, DeviceModel>(deviceModel));
+    }
+
+    public Observable<NameDeviceBody> putFriendlyName(String deviceId, String name) {
+        return mAferoService.putFriendlyName(getActiveAccountId(), deviceId, new NameDeviceBody(name));
+    }
+
+    public Observable<DeviceVersions> getDeviceVersions(String deviceId) {
+        return mAferoService.getDeviceVersions(getActiveAccountId(), deviceId);
     }
 
     /**
@@ -600,6 +632,57 @@ public class AferoClientRetrofit2 implements AferoClient {
     @Override
     public Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId) {
         return mAferoService.postConclaveAccess(mActiveAccountId, new ConclaveAccessBody());
+    }
+
+    public Observable<DeviceInfoExtendedData> getDeviceInfo(String deviceId) {
+        return mAferoService.getDeviceInfo(getActiveAccountId(), deviceId);
+    }
+
+    public Observable<ActionResponse[]> ruleExecuteActions(String ruleId, RuleExecuteBody body) {
+        return mAferoService.ruleExecuteActions(getActiveAccountId(), ruleId, body);
+    }
+    public Observable<DeviceRules.Rule[]> getDeviceRules(String deviceId) {
+        return mAferoService.getDeviceRules(getActiveAccountId(), deviceId);
+    }
+
+    public Observable<DeviceRules.Rule[]> getAccountRules() {
+        return mAferoService.getAccountRules(getActiveAccountId());
+    }
+
+    public Observable<DeviceRules.Schedule> putSchedule(String scheduleId, DeviceRules.Schedule schedule) {
+        return mAferoService.putSchedule(getActiveAccountId(), scheduleId, schedule);
+    }
+
+    public Observable<DeviceRules.Schedule> postSchedule(DeviceRules.Schedule schedule) {
+        return mAferoService.postSchedule(getActiveAccountId(), schedule);
+    }
+
+    public Observable<DeviceRules.Rule> postRule(DeviceRules.Rule rule) {
+        return mAferoService.postRule(getActiveAccountId(), rule);
+    }
+
+    public Observable<DeviceRules.Rule> putRule(String ruleId, DeviceRules.Rule rule) {
+        return mAferoService.putRule(getActiveAccountId(), ruleId, rule);
+    }
+
+    public Observable<Void> deleteRule(String ruleId) {
+        return mAferoService.deleteRule(getActiveAccountId(), ruleId);
+    }
+
+    public Observable<AccountUserSummary> getAccountUserSummary() {
+        return mAferoService.getAccountUserSummary(getActiveAccountId());
+    }
+
+    public Observable<Void> postInvite(InvitationDetails invite) {
+        return mAferoService.postInvite(getActiveAccountId(), invite);
+    }
+
+    public Observable<Void> deleteInvite(String invitationId) {
+        return mAferoService.deleteInvite(getActiveAccountId(), invitationId);
+    }
+
+    public Observable<Void> deleteUser(String userId) {
+        return mAferoService.deleteUser(getActiveAccountId(), userId);
     }
 
     /**

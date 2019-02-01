@@ -4,14 +4,23 @@
 
 package io.afero.sdk.client.retrofit2.api;
 
+import io.afero.sdk.client.afero.models.AccountDescriptionBody;
+import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.client.afero.models.CreateAccountBody;
+import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
+import io.afero.sdk.client.afero.models.DeviceRules;
 import io.afero.sdk.client.afero.models.DeviceTag;
+import io.afero.sdk.client.afero.models.DeviceVersions;
+import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
@@ -20,6 +29,7 @@ import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
+import io.afero.sdk.client.retrofit2.models.NameDeviceBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceProfile;
@@ -55,6 +65,11 @@ public interface AferoClientAPI {
             @Field("grant_type") String grantType,
             @Field("refresh_token") String refreshToken,
             @Header("Authorization") String authorization
+    );
+
+    @POST(V1 + "accounts")
+    Observable<CreateAccountResponse> createAccount(
+        @Body CreateAccountBody body
     );
 
     @POST(V1 + "credentials/{email}/passwordReset")
@@ -207,5 +222,103 @@ public interface AferoClientAPI {
             @Path("accountId") String accountId,
             @Path("deviceId") String deviceId,
             @Body ViewRequest[] body
+    );
+
+    @PUT(V1 + "accounts/{accountId}/description")
+    Observable<AccountDescriptionBody> putAccountDescription(
+        @Path("accountId") String accountId,
+        @Body AccountDescriptionBody body
+    );
+
+    @GET(V1 + "accounts/{accountId}/devices/{deviceId}?expansions=extendedData")
+    Observable<DeviceInfoExtendedData> getDeviceInfo(
+        @Path("accountId") String accountId,
+        @Path("deviceId") String deviceId
+    );
+
+    @GET(V1 + "accounts/{accountId}/devices/{deviceId}/rules?expansions=schedule")
+    Observable<DeviceRules.Rule[]> getDeviceRules(
+        @Path("accountId") String accountId,
+        @Path("deviceId") String deviceId
+    );
+
+    @GET(V1 + "accounts/{accountId}/rules?expansions=schedule")
+    Observable<DeviceRules.Rule[]> getAccountRules(
+        @Path("accountId") String accountId
+    );
+
+    @PUT(V1 + "accounts/{accountId}/schedules/{scheduleId}")
+    Observable<DeviceRules.Schedule> putSchedule(
+        @Path("accountId") String accountId,
+        @Path("scheduleId") String scheduleId,
+        @Body DeviceRules.Schedule schedule
+    );
+
+    @POST(V1 + "accounts/{accountId}/schedules")
+    Observable<DeviceRules.Schedule> postSchedule(
+        @Path("accountId") String accountId,
+        @Body DeviceRules.Schedule schedule
+    );
+
+    @POST(V1 + "accounts/{accountId}/rules")
+    Observable<DeviceRules.Rule> postRule(
+        @Path("accountId") String accountId,
+        @Body DeviceRules.Rule rule
+    );
+
+    @PUT(V1 + "accounts/{accountId}/rules/{ruleId}")
+    Observable<DeviceRules.Rule> putRule(
+        @Path("accountId") String accountId,
+        @Path("ruleId") String ruleId,
+        @Body DeviceRules.Rule rule
+    );
+
+    @DELETE(V1 + "accounts/{accountId}/rules/{ruleId}")
+    Observable<Void> deleteRule(
+        @Path("accountId") String accountId,
+        @Path("ruleId") String ruleId
+    );
+
+    @POST(V1 + "accounts/{accountId}/rules/{ruleId}/actions")
+    Observable<ActionResponse[]> ruleExecuteActions(
+        @Path("accountId") String accountId,
+        @Path("ruleId") String ruleId,
+        @Body RuleExecuteBody body
+    );
+
+    @PUT(V1 + "accounts/{accountId}/devices/{deviceId}/friendlyName")
+    Observable<NameDeviceBody> putFriendlyName(
+        @Path("accountId") String accountId,
+        @Path("deviceId") String deviceId,
+        @Body NameDeviceBody body
+    );
+
+    @GET(V1 + "accounts/{accountId}/accountUserSummary")
+    Observable<AccountUserSummary> getAccountUserSummary(
+        @Path("accountId") String accountId
+    );
+
+    @POST(V1 + "accounts/{accountId}/invitations")
+    Observable<Void> postInvite(
+        @Path("accountId") String accountId,
+        @Body InvitationDetails details
+    );
+
+    @DELETE(V1 + "accounts/{accountId}/invitations/{invitationId}")
+    Observable<Void> deleteInvite(
+        @Path("accountId") String accountId,
+        @Path("invitationId") String invitationId
+    );
+
+    @DELETE(V1 + "accounts/{accountId}/userAccountAccess/{userId}")
+    Observable<Void> deleteUser(
+        @Path("accountId") String accountId,
+        @Path("userId") String userId
+    );
+
+    @GET(V1 + "accounts/{accountId}/devices/{deviceId}/versions")
+    Observable<DeviceVersions> getDeviceVersions(
+        @Path("accountId") String accountId,
+        @Path("deviceId") String deviceId
     );
 }

@@ -6,12 +6,19 @@ package io.afero.sdk.client.afero;
 
 import java.util.TimeZone;
 
+import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.client.afero.models.CreateAccountBody;
+import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
+import io.afero.sdk.client.afero.models.DeviceRules;
 import io.afero.sdk.client.afero.models.DeviceTag;
+import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
@@ -22,6 +29,8 @@ import io.afero.sdk.device.DeviceProfile;
 import rx.Observable;
 
 public interface AferoClient {
+
+    Observable<CreateAccountResponse> createAccount(CreateAccountBody body);
 
     Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode);
 
@@ -54,11 +63,37 @@ public interface AferoClient {
 
     Observable<DeviceModel> deviceDisassociate(DeviceModel deviceModel);
 
+    Observable<DeviceInfoExtendedData> getDeviceInfo(String deviceId);
+
     Observable<Void> putDeviceTimeZone(DeviceModel deviceModel, TimeZone tz);
 
     Observable<TimeZone> getDeviceTimeZone(DeviceModel deviceModel);
 
     Observable<DeviceSync[]> getDevicesWithState();
+
+    Observable<ActionResponse[]> ruleExecuteActions(String ruleId, RuleExecuteBody body);
+
+    Observable<DeviceRules.Rule[]> getDeviceRules(String deviceId);
+
+    Observable<DeviceRules.Rule[]> getAccountRules();
+
+    Observable<DeviceRules.Schedule> putSchedule(String scheduleId, DeviceRules.Schedule schedule);
+
+    Observable<DeviceRules.Schedule> postSchedule(DeviceRules.Schedule schedule);
+
+    Observable<DeviceRules.Rule> postRule(DeviceRules.Rule rule);
+
+    Observable<DeviceRules.Rule> putRule(String ruleId, DeviceRules.Rule rule);
+
+    Observable<Void> deleteRule(String ruleId);
+
+    Observable<AccountUserSummary> getAccountUserSummary();
+
+    Observable<Void> postInvite(InvitationDetails invite);
+
+    Observable<Void> deleteInvite(String invitationId);
+
+    Observable<Void> deleteUser(String userId);
 
     String getActiveAccountId();
 

@@ -11,12 +11,19 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import io.afero.sdk.client.afero.AferoClient;
+import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
+import io.afero.sdk.client.afero.models.CreateAccountBody;
+import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
+import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
+import io.afero.sdk.client.afero.models.DeviceRules;
 import io.afero.sdk.client.afero.models.DeviceTag;
+import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
@@ -48,6 +55,11 @@ public class MockAferoClient implements AferoClient {
 
     public MockAferoClient(String pathPrefix) {
         mLoader = new ResourceLoader(pathPrefix);
+    }
+
+    @Override
+    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body) {
+        return null;
     }
 
     @Override
@@ -272,6 +284,11 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
+    public Observable<DeviceInfoExtendedData> getDeviceInfo(String deviceId) {
+        return null;
+    }
+
+    @Override
     public Observable<Void> putDeviceTimeZone(DeviceModel deviceModel, TimeZone tz) {
         if (hasNextCallFailure()) {
             return nextCallFailObservable();
@@ -301,6 +318,66 @@ public class MockAferoClient implements AferoClient {
                 return mLoader.createObjectFromJSONResource(mFileNameGetDevices, DeviceSync[].class);
             }
         });
+    }
+
+    @Override
+    public Observable<ActionResponse[]> ruleExecuteActions(String ruleId, RuleExecuteBody body) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceRules.Rule[]> getDeviceRules(String deviceId) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceRules.Rule[]> getAccountRules() {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceRules.Schedule> putSchedule(String scheduleId, DeviceRules.Schedule schedule) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceRules.Schedule> postSchedule(DeviceRules.Schedule schedule) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceRules.Rule> postRule(DeviceRules.Rule rule) {
+        return null;
+    }
+
+    @Override
+    public Observable<DeviceRules.Rule> putRule(String ruleId, DeviceRules.Rule rule) {
+        return null;
+    }
+
+    @Override
+    public Observable<Void> deleteRule(String ruleId) {
+        return null;
+    }
+
+    @Override
+    public Observable<AccountUserSummary> getAccountUserSummary() {
+        return null;
+    }
+
+    @Override
+    public Observable<Void> postInvite(InvitationDetails invite) {
+        return null;
+    }
+
+    @Override
+    public Observable<Void> deleteInvite(String invitationId) {
+        return null;
+    }
+
+    @Override
+    public Observable<Void> deleteUser(String userId) {
+        return null;
     }
 
     @Override
