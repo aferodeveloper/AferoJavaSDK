@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 1.1.0 *(2019-02-01)*
+----------------------------
+ * New: Added several new API calls to `AferoClient` (and `AferoClientRetrofit2`) to support creating accounts, rules, and account sharing.
+ * New: Added `RuleCollection`, `DeviceRuleCollection`, and `RuleBuilder` utility classes.
+
 Version 1.0.10 *(2019-01-09)*
 ----------------------------
  * Changed: Updated `AferoSofthub` to softhub version 1.0.792 to pick up latest fixes.
