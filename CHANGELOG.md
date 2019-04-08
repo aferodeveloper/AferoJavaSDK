@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.2.0 *(2019-04-08)*
+----------------------------
+ * New: Added support for associating devices via BLE scan magic. Apps can now subscribe to `AferoSoftHub.observeSetupModeDevices()` to receive notification of a device that is available for association.
+
 Version 1.1.0 *(2019-02-01)*
 ----------------------------
  * New: Added several new API calls to `AferoClient` (and `AferoClientRetrofit2`) to support creating accounts, rules, and account sharing.
