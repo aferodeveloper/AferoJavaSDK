@@ -28,6 +28,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnEditorAction;
 import io.afero.aferolab.addDevice.AddDeviceView;
+import io.afero.aferolab.addDevice.AddSetupModeDeviceView;
 import io.afero.aferolab.attributeEditor.AttributeEditorView;
 import io.afero.aferolab.deviceInspector.DeviceInspectorView;
 import io.afero.aferolab.deviceList.DeviceListView;
@@ -165,6 +166,20 @@ public class MainActivity extends AppCompatActivity {
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, "appId: " + BuildConfig.APPLICATION_ID);
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
+        mAferoSofthub.observeSetupModeDevices()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(new Observer<AferoSofthub.SetupModeDeviceInfo>() {
+                @Override
+                public void onCompleted() {}
+
+                @Override
+                public void onError(Throwable e) {}
+
+                @Override
+                public void onNext(AferoSofthub.SetupModeDeviceInfo setupModeDeviceInfo) {
+                    onSetupModeDeviceDetected(setupModeDeviceInfo);
+                }
+            });
 
         mDeviceListView.start(mDeviceCollection);
         mDeviceListView.getDeviceOnClick()
@@ -331,6 +346,23 @@ public class MainActivity extends AppCompatActivity {
             mAferoSofthub.start()
                 .subscribe(mAferoSofthubStartObserver);
         }
+    }
+
+    private void onSetupModeDeviceDetected(AferoSofthub.SetupModeDeviceInfo setupModeDeviceInfo) {
+        final AddSetupModeDeviceView view = AddSetupModeDeviceView.create(mRootView);
+        view.start(mDeviceCollection, mAferoClient, setupModeDeviceInfo);
+        view.getObservable().subscribe(new Observer<AddSetupModeDeviceView>() {
+            @Override
+            public void onCompleted() {
+                view.stop();
+            }
+
+            @Override
+            public void onError(Throwable e) {}
+
+            @Override
+            public void onNext(AddSetupModeDeviceView addDeviceView) {}
+        });
     }
 
     @OnEditorAction(R.id.edit_text_password)
