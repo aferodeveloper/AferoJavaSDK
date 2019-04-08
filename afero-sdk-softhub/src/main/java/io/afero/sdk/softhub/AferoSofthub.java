@@ -201,12 +201,12 @@ public class AferoSofthub {
         return mCompleteSubject;
     }
 
-    Observable<String> observeAssociation() {
-        return mAssociateSubject;
+    public Observable<SetupModeDeviceInfo> observeSetupModeDevices() {
+        return mSetupModeDeviceSubject;
     }
 
-    Observable<SetupModeDeviceInfo> observeSetupModeDevices() {
-        return mSetupModeDeviceSubject;
+    Observable<String> observeAssociation() {
+        return mAssociateSubject;
     }
 
     public void onPause() {
