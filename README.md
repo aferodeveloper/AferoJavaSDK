@@ -52,7 +52,7 @@ The `afero-sdk-android` module is required for Android development.
 The `afero-sdk-softhub` module is required for soft hub functionality on Android.
 ```Gradle
     implementation 'io.afero.sdk:afero-sdk-softhub:1.2.0'
-    implementation "io.afero.sdk:hubby:1.0.822@aar"
+    implementation "io.afero.sdk:hubby:1.0.825@aar"
 ```
 
 ## LICENSE
