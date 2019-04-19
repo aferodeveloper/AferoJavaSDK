@@ -353,11 +353,15 @@ public class AferoSofthub {
                 public void onError(Throwable e) {
                     AfLog.e("AferoSofthub startup error - deviceAssociate failed");
                     AfLog.e(e);
+
+                    Hubby.secureHubAssociationCompleted(Hubby.AssociationStatus.FAILED_PERMANENT);
+
                     startError(e);
                 }
 
                 @Override
                 public void onNext(DeviceAssociateResponse response) {
+                    Hubby.secureHubAssociationCompleted(Hubby.AssociationStatus.SUCCESS);
                     mAssociateSubject.onNext(response.deviceId);
                 }
             });
