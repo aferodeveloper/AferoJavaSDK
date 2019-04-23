@@ -304,7 +304,12 @@ public class AferoSofthub {
             }
         }
 
-        final String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
+        final String setupDirName = "shs" + (
+            Build.MANUFACTURER +
+            Build.MODEL +
+            mHubType.toString() +
+            mAferoClient.getActiveAccountId()
+        ).hashCode();
 
         HashMap<Hubby.Config,String> config = new HashMap<>(1);
         config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
@@ -354,14 +359,14 @@ public class AferoSofthub {
                     AfLog.e("AferoSofthub startup error - deviceAssociate failed");
                     AfLog.e(e);
 
-                    Hubby.secureHubAssociationCompleted(Hubby.AssociationStatus.FAILED_PERMANENT);
+                    mHubbyImpl.secureHubAssociationCompleted(Hubby.AssociationStatus.FAILED_PERMANENT);
 
                     startError(e);
                 }
 
                 @Override
                 public void onNext(DeviceAssociateResponse response) {
-                    Hubby.secureHubAssociationCompleted(Hubby.AssociationStatus.SUCCESS);
+                    mHubbyImpl.secureHubAssociationCompleted(Hubby.AssociationStatus.SUCCESS);
                     mAssociateSubject.onNext(response.deviceId);
                 }
             });
@@ -587,6 +592,8 @@ public class AferoSofthub {
         void stop();
 
         String getDeviceId();
+
+        void secureHubAssociationCompleted(Hubby.AssociationStatus status);
     }
 
     private class NativeHubbyImpl implements HubbyImpl {
@@ -613,6 +620,11 @@ public class AferoSofthub {
         @Override
         public String getDeviceId() {
             return Hubby.getId();
+        }
+
+        @Override
+        public void secureHubAssociationCompleted(Hubby.AssociationStatus status) {
+            Hubby.secureHubAssociationCompleted(status);
         }
     }
 

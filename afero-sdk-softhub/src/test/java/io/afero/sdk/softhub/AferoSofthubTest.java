@@ -507,6 +507,11 @@ public class AferoSofthubTest {
             return "mock-hub-id";
         }
 
+        @Override
+        public void secureHubAssociationCompleted(Hubby.AssociationStatus status) {
+
+        }
+
         void callbackInitializationCompleted() {
             mCallback.initializationComplete();
         }
