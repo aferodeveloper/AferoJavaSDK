@@ -3,7 +3,7 @@ Change Log
 
 Version 1.2.0 *(2019-04-08)*
 ----------------------------
- * Changed: Updated `AferoSofthub` to softhub version 1.0.832 to pick up latest fixes.
+ * Changed: Updated `AferoSofthub` to softhub version 1.0.837 to pick up latest fixes.
  * New: Added support for associating devices via BLE scan magic. Apps can now subscribe to `AferoSoftHub.observeSetupModeDevices()` to receive notification of a device that is available for association.
  * Changed: `AferoSofthub` now reports association failures to `Hubby`, allowing for proper recovery.
 
