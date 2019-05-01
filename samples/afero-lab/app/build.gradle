@@ -64,7 +64,7 @@ dependencies {
     implementation "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
     implementation "io.afero.sdk:afero-sdk-android:${sdkVersion}@aar"
     implementation "io.afero.sdk:afero-sdk-softhub:${sdkVersion}@aar"
-    implementation "io.afero.sdk:hubby:1.0.832@aar"
+    implementation "io.afero.sdk:hubby:1.0.837@aar"
 
     // https://github.com/square/retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
