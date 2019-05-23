@@ -72,6 +72,23 @@ public class AferoSofthub {
     private PublishSubject<AferoSofthub> mStartSubject;
     private final PublishSubject<NotificationCallback.CompleteReason> mCompleteSubject = PublishSubject.create();
     private final PublishSubject<String> mAssociateSubject = PublishSubject.create();
+    private final PublishSubject<SetupModeDeviceInfo> mSetupModeDeviceSubject = PublishSubject.create();
+
+    public class SetupModeDeviceInfo {
+
+        public final String deviceId;
+        public final String associationId;
+
+        private SetupModeDeviceInfo() {
+            deviceId = null;
+            associationId = null;
+        }
+
+        private SetupModeDeviceInfo(String deviceId, String associationId) {
+            this.deviceId = deviceId;
+            this.associationId = associationId;
+        }
+    }
 
     private final Action0 mStartOnSubscribe = new Action0() {
         @Override
@@ -184,6 +201,10 @@ public class AferoSofthub {
         return mCompleteSubject;
     }
 
+    public Observable<SetupModeDeviceInfo> observeSetupModeDevices() {
+        return mSetupModeDeviceSubject;
+    }
+
     Observable<String> observeAssociation() {
         return mAssociateSubject;
     }
@@ -283,7 +304,12 @@ public class AferoSofthub {
             }
         }
 
-        final String setupDirName = "shs" + (Build.MANUFACTURER + Build.MODEL + mAferoClient.getActiveAccountId()).hashCode();
+        final String setupDirName = "shs" + (
+            Build.MANUFACTURER +
+            Build.MODEL +
+            mHubType.toString() +
+            mAferoClient.getActiveAccountId()
+        ).hashCode();
 
         HashMap<Hubby.Config,String> config = new HashMap<>(1);
         config.put(Hubby.Config.SOFT_HUB_SETUP_PATH, mSetupPath + "/" + setupDirName);
@@ -332,14 +358,22 @@ public class AferoSofthub {
                 public void onError(Throwable e) {
                     AfLog.e("AferoSofthub startup error - deviceAssociate failed");
                     AfLog.e(e);
+
+                    mHubbyImpl.secureHubAssociationCompleted(Hubby.AssociationStatus.FAILED_PERMANENT);
+
                     startError(e);
                 }
 
                 @Override
                 public void onNext(DeviceAssociateResponse response) {
+                    mHubbyImpl.secureHubAssociationCompleted(Hubby.AssociationStatus.SUCCESS);
                     mAssociateSubject.onNext(response.deviceId);
                 }
             });
+    }
+
+    private void onSetupModeDeviceDetected(String deviceId, String assId, long profileVersion) {
+        mSetupModeDeviceSubject.onNext(new SetupModeDeviceInfo(deviceId, assId));
     }
 
     private void onOtaStateChange(String deviceId, OtaCallback.OtaState otaState, int offset, int total) {
@@ -500,6 +534,15 @@ public class AferoSofthub {
             }
         }
 
+        @Override
+        public void setupModeDeviceDetected(String deviceId, String assId, long profileVersion) {
+            AfLog.d("HubbyNotificationCallback.secureHubAssociationNeeded: assId=" + assId);
+            AferoSofthub hub = mRef.get();
+            if (hub != null) {
+                hub.onSetupModeDeviceDetected(deviceId, assId, profileVersion);
+            }
+        }
+
         private CompleteReason completeReasonfromInt(int i) {
             for (CompleteReason cr : mCompleteReasonValues) {
                 if (cr.ordinal() == i) {
@@ -549,6 +592,8 @@ public class AferoSofthub {
         void stop();
 
         String getDeviceId();
+
+        void secureHubAssociationCompleted(Hubby.AssociationStatus status);
     }
 
     private class NativeHubbyImpl implements HubbyImpl {
@@ -575,6 +620,11 @@ public class AferoSofthub {
         @Override
         public String getDeviceId() {
             return Hubby.getId();
+        }
+
+        @Override
+        public void secureHubAssociationCompleted(Hubby.AssociationStatus status) {
+            Hubby.secureHubAssociationCompleted(status);
         }
     }
 

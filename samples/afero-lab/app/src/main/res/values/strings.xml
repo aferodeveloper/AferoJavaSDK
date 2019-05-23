@@ -68,4 +68,6 @@
     <string name="tag_editor_not_editable_message">System tags are not editable</string>
     <string name="tag_editor_title_edit">Edit Tag</string>
     <string name="tag_editor_title_new">New Tag</string>
+    <string name="add_device_message">A Wild Device Appeared!</string>
+    <string name="add_device_prompt">Would you like to add it to your collection?</string>
 </resources>

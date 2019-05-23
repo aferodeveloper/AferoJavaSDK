@@ -14,7 +14,7 @@ repositories {
     }
 }
 
-final String hubbyVersion = "1.0.792" 
+final String hubbyVersion = "1.0.840"
 final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {
@@ -47,7 +47,7 @@ dependencies {
     api "io.afero.sdk:hubby:${hubbyVersion}@aar"
 
     implementation 'io.reactivex:rxjava:1.3.0'
-    implementation 'com.android.support:support-annotations:27.1.1'
+    implementation 'com.android.support:support-annotations:28.0.0'
 
     // https://github.com/robolectric/robolectric
     testImplementation 'org.robolectric:robolectric:3.3.1'
