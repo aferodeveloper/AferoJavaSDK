@@ -1,6 +1,9 @@
 Change Log
 ==========
 
+Version 1.2.1 *(2019-05-23)*
+ * Changed: `AferoSofthub` now defaults to enterprise mode.
+
 Version 1.2.0 *(2019-05-23)*
 ----------------------------
  * Changed: Updated `AferoSofthub` to softhub version 1.0.840 to pick up latest fixes.
