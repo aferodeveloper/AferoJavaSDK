@@ -46,12 +46,12 @@ public class AferoSofthubTest {
     }
 
     @Test
-    public void defaultHubTypeIsConsumer() throws Exception {
+    public void defaultHubTypeIsEnterprise() throws Exception {
         makeAferoSofthubTester()
             .startHubby()
             .waitUntilStartedCalled()
 
-            .verifyDefaultHubTypeIsConsumer()
+            .verifyDefaultHubTypeIsEnterprise()
         ;
     }
 
