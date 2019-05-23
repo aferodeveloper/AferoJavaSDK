@@ -39,7 +39,7 @@ publishing {
             groupId rootProject.group
 
             artifact("$buildDir/libs/${project.getName()}.jar")
-            artifact packageJavadoc
+//            artifact packageJavadoc
 
             pom.withXml {
                 def dependencies = asNode().appendNode('dependencies')

@@ -1,7 +1,7 @@
 ---
 author: Tony Myles
 title: "AferoJavaSDK"
-date: 2019-Apr-8
+date: 2019-May-23
 status: 1.2.0
 ---
 
@@ -52,7 +52,7 @@ The `afero-sdk-android` module is required for Android development.
 The `afero-sdk-softhub` module is required for soft hub functionality on Android.
 ```Gradle
     implementation 'io.afero.sdk:afero-sdk-softhub:1.2.0'
-    implementation "io.afero.sdk:hubby:1.0.837@aar"
+    implementation "io.afero.sdk:hubby:1.0.840@aar"
 ```
 
 ## LICENSE
