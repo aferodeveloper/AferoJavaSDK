@@ -32,8 +32,6 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
-import static io.afero.sdk.softhub.AferoSofthub.HubType.CONSUMER;
-
 public class AferoSofthub {
 
     public enum HubType {
@@ -113,7 +111,7 @@ public class AferoSofthub {
         mContextRef = new WeakReference<>(context);
         mAferoClient = aferoClient;
         mAppInfo = appInfo;
-        mHubType = hubType != null ? hubType : CONSUMER;
+        mHubType = hubType != null ? hubType : HubType.ENTERPRISE;
 
         mNotificationCallback = new HubbyNotificationCallback(this);
 
@@ -156,7 +154,7 @@ public class AferoSofthub {
         @NonNull AferoClient aferoClient,
         @Nullable String appInfo
     ) {
-        return acquireInstance(context, aferoClient, appInfo, CONSUMER);
+        return acquireInstance(context, aferoClient, appInfo, HubType.ENTERPRISE);
     }
 
     /**
