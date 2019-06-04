@@ -79,6 +79,18 @@ public interface AferoClientAPI {
             @Header("Authorization") String authorization
     );
 
+    @POST(V1 + "shortvalues/{resetCode}/passwordReset")
+    Observable<Void> resetPasswordWithCode(
+        @Path("resetCode") String resetCode,
+        @Body String newPassword
+    );
+
+    @POST(V1 + "credentials/{email}/passwordReset")
+    Observable<Void> sendPasswordRecoveryEmail(
+        @Path("email") String email,
+        @Header("x-afero-app") String appIdAndPlatformBase64Encoded
+    );
+
     @GET(V1 + "users/me")
     Observable<UserDetails> usersMe();
 
