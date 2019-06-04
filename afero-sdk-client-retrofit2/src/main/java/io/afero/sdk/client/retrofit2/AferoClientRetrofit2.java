@@ -6,6 +6,7 @@ package io.afero.sdk.client.retrofit2;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +56,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Route;
 import okhttp3.logging.HttpLoggingInterceptor;
+import okio.ByteString;
 import retrofit2.HttpException;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -385,7 +387,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
-     * Afero Cloud API call to asynchronously trigger a password reset email to be sent to the
+     * Afero Cloud API call to trigger a password reset email to be sent to the
      * specified email address.
      *
      * @param email address to which the reset email will be sent
@@ -396,7 +398,32 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
-     * Afero Cloud API call to asynchronously fetch the {@link UserDetails} which includes the
+     * Afero Cloud API call to reset the account password.
+     *
+     * @param resetCode code provided via password reset email sent via {@link #sendPasswordRecoveryEmail(String, String)}
+     * @param newPassword new password to be used for account authentication
+     * @return {@link Observable} that initiates the transaction when subscribed
+     */
+    public Observable<Void> resetPasswordWithCode(String resetCode, String newPassword) {
+        return mAferoService.resetPasswordWithCode(resetCode, newPassword);
+    }
+
+    /**
+     * Afero Cloud API call to send the user a password recovery email with reset code.
+     *
+     * @param appId unique platform identifier for the calling application which will used to select the appropriate email template
+     * @return {@link Observable} that initiates the transaction when subscribed
+     */
+    public Observable<Void> sendPasswordRecoveryEmail(String email, String appId) {
+        String appIdAndPlatform = appId + ":" + System.getProperty("os.name").toUpperCase();
+        byte[] bytes = appIdAndPlatform.getBytes(StandardCharsets.UTF_8);
+        String appIdAndPlatformBase64Encoded = ByteString.of(bytes).base64();
+
+        return mAferoService.sendPasswordRecoveryEmail(email, appIdAndPlatformBase64Encoded);
+    }
+
+    /**
+     * Afero Cloud API call to fetch the {@link UserDetails} which includes the
      * account ID used in {@link #setOwnerAndActiveAccountId(String)}
      *
      * @return {@link Observable} that emits {@link UserDetails} in {@link rx.Observer#onNext}.
