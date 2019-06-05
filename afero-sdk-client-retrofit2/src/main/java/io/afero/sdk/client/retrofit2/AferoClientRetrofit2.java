@@ -589,6 +589,16 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
+     * @param associationId Device association ID returned from AferoSofthub in {@link AferoSofthub.SetupModeDeviceInfo}
+     * @param version DeviceProfile version number returned from AferoSofthub in {@link AferoSofthub.SetupModeDeviceInfo}
+     * @return {@link Observable} that emits a {@link DeviceProfile} in {@link rx.Observer#onNext}.
+     */
+    @Override
+    public Observable<DeviceProfile> getDeviceProfilePreAssociation(String associationId, int version) {
+        return mAferoService.deviceProfiles(associationId, version);
+    }
+
+    /**
      * <p><b>For internal use only. Use {@link DeviceCollection} instead to manage {@link DeviceModel} objects.</b></p>
      *
      * Afero Cloud API call to fetch the {@link DeviceProfile} attached to the specified device.

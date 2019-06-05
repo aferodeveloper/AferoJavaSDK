@@ -196,6 +196,12 @@ public interface AferoClientAPI {
             @Query("imageSize") String imageSize
     );
 
+    @GET(V1 + "devices/{associationId}/deviceProfiles/versions/{versionNumber}")
+    Observable<DeviceProfile> deviceProfiles(
+        @Path("associationId") String associationId,
+        @Path("versionNumber") int versionNumber
+    );
+
     @POST(V1 + "accounts/{accountId}/devices/{deviceId}/requests")
     Observable<WriteResponse[]> postDeviceRequest(
             @Path("accountId") String accountId,

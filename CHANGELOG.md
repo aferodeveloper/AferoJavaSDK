@@ -4,6 +4,7 @@ Change Log
 Version 1.3.0 *(2019-06-04)*
 ----------------------------
  * New: Added `AferoClient` calls for new password reset flow. See `AferoClient.sendPasswordRecoveryEmail` and `AferoClient.resetPasswordWithCode`.
+ * New: Added `AferoClient` call to fetch a `DeviceProfile` for device prior to association. This is useful for display information for nearby devices that are in setup-mode for BLE based association. See `AferoClient.getDeviceProfilePreAssociation`.
 
 Version 1.2.1 *(2019-05-23)*
 ----------------------------
