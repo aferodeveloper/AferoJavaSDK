@@ -1,7 +1,12 @@
 Change Log
 ==========
 
+Version 1.3.0 *(2019-06-04)*
+----------------------------
+ * New: Added `AferoClient` calls for new password reset flow. See `AferoClient.sendPasswordRecoveryEmail` and `AferoClient.resetPasswordWithCode`.
+
 Version 1.2.1 *(2019-05-23)*
+----------------------------
  * Changed: `AferoSofthub` now defaults to enterprise mode.
 
 Version 1.2.0 *(2019-05-23)*
