@@ -341,10 +341,12 @@ public class AferoClientRetrofit2 implements AferoClient {
      * @param body parameters for the new account including first/last name and password
      * @return {@link CreateAccountResponse} that includes the accountId
      */
+    @Override
     public Observable<CreateAccountResponse> createAccount(CreateAccountBody body) {
         return mAferoService.createAccount(body);
     }
 
+    @Override
     public Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body) {
         return mAferoService.putAccountDescription(accountId, body);
     }
@@ -400,10 +402,11 @@ public class AferoClientRetrofit2 implements AferoClient {
     /**
      * Afero Cloud API call to reset the account password.
      *
-     * @param resetCode code provided via password reset email sent via {@link #sendPasswordRecoveryEmail(String, String)}
+     * @param resetCode code provided via password reset email sent via {@link #sendPasswordRecoveryEmail(String, String, String)}
      * @param newPassword new password to be used for account authentication
      * @return {@link Observable} that initiates the transaction when subscribed
      */
+    @Override
     public Observable<Void> resetPasswordWithCode(String resetCode, String newPassword) {
         return mAferoService.resetPasswordWithCode(resetCode, newPassword);
     }
@@ -414,8 +417,9 @@ public class AferoClientRetrofit2 implements AferoClient {
      * @param appId unique platform identifier for the calling application which will used to select the appropriate email template
      * @return {@link Observable} that initiates the transaction when subscribed
      */
-    public Observable<Void> sendPasswordRecoveryEmail(String email, String appId) {
-        String appIdAndPlatform = appId + ":" + System.getProperty("os.name").toUpperCase();
+    @Override
+    public Observable<Void> sendPasswordRecoveryEmail(String email, String appId, String platform) {
+        String appIdAndPlatform = appId + ":" + platform.toUpperCase();
         byte[] bytes = appIdAndPlatform.getBytes(StandardCharsets.UTF_8);
         String appIdAndPlatformBase64Encoded = ByteString.of(bytes).base64();
 

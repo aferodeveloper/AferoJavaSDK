@@ -6,6 +6,7 @@ package io.afero.sdk.client.afero;
 
 import java.util.TimeZone;
 
+import io.afero.sdk.client.afero.models.AccountDescriptionBody;
 import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
@@ -56,6 +57,25 @@ public interface AferoClient {
     Observable<DeviceTag> putDeviceTag(String deviceId, DeviceTag deviceTag);
 
     Observable<Void> deleteDeviceTag(String deviceId, String tagId);
+
+    Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body);
+
+    /**
+     * Afero Cloud API call to reset the account password.
+     *
+     * @param resetCode code provided via password reset email sent via {@link #sendPasswordRecoveryEmail(String, String, String)}
+     * @param newPassword new password to be used for account authentication
+     * @return {@link Observable} that initiates the transaction when subscribed
+     */
+    Observable<Void> resetPasswordWithCode(String resetCode, String newPassword);
+
+    /**
+     * Afero Cloud API call to send the user a password recovery email with reset code.
+     *
+     * @param appId unique platform identifier for the calling application which will used to select the appropriate email template
+     * @return {@link Observable} that initiates the transaction when subscribed
+     */
+    Observable<Void> sendPasswordRecoveryEmail(String email, String appId, String platform);
 
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified);
 
