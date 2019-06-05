@@ -132,6 +132,11 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
+    public Observable<DeviceProfile> getDeviceProfilePreAssociation(String associationId, int version) {
+        return null;
+    }
+
+    @Override
     public Observable<ConclaveAccessDetails> postConclaveAccess() {
         if (hasNextCallFailure()) {
             return nextCallFailObservable();

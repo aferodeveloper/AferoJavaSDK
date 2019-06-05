@@ -43,6 +43,8 @@ public interface AferoClient {
 
     Observable<DeviceProfile[]> getAccountDeviceProfiles();
 
+    Observable<DeviceProfile> getDeviceProfilePreAssociation(String associationId, int version);
+
     @Deprecated
     Observable<ConclaveAccessDetails> postConclaveAccess(String mobileClientId);
 
