@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import io.afero.sdk.client.afero.AferoClient;
+import io.afero.sdk.client.afero.models.AccountDescriptionBody;
 import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
@@ -237,6 +238,21 @@ public class MockAferoClient implements AferoClient {
                 return null;
             }
         });
+    }
+
+    @Override
+    public Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body) {
+        return null;
+    }
+
+    @Override
+    public Observable<Void> resetPasswordWithCode(String resetCode, String newPassword) {
+        return null;
+    }
+
+    @Override
+    public Observable<Void> sendPasswordRecoveryEmail(String email, String appId, String platform) {
+        return null;
     }
 
     @Override
