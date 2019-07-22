@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.Vector;
 
 import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.AferoClient;
@@ -21,8 +22,12 @@ import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.MockDeviceEventSource;
 import io.afero.sdk.client.mock.ResourceLoader;
+import io.afero.sdk.conclave.ConclaveMessage;
 import io.afero.sdk.conclave.models.DeviceSync;
+import io.afero.sdk.utils.MetricUtil;
+import io.afero.sdk.utils.RxUtils;
 import rx.Observer;
+import rx.Subscription;
 import rx.functions.Action1;
 
 import static org.junit.Assert.assertEquals;
@@ -125,6 +130,8 @@ public class DeviceModelTest extends AferoTest {
                 .deviceModelUpdate(1, ATTRIBUTE_ID, ATTRIBUTE_VALUE)
 
                 .verifyWriteResultStatus(ATTRIBUTE_ID, AttributeWriter.Result.Status.SUCCESS)
+                .verifyWriteMetrics()
+                .end()
         ;
     }
 
@@ -138,10 +145,22 @@ public class DeviceModelTest extends AferoTest {
         final MockAferoClient aferoClient = new MockAferoClient();
         final DeviceModel deviceModel;
         TreeMap<Integer, AttributeWriter.Result> writeResults = new TreeMap<>();
+        Subscription metricsSubscription;
+        final Vector<ConclaveMessage.Metric> metrics = new Vector<>();
 
         WriteAttributeTester() throws IOException {
             deviceProfile = resourceLoader.createObjectFromJSONResource("deviceModelTestProfile.json", DeviceProfile.class);
             deviceModel = new DeviceModel(DEVICE_ID, deviceProfile, false, aferoClient);
+            metricsSubscription = MetricUtil.getInstance().getEventObservable().subscribe(new Action1<ConclaveMessage.Metric>() {
+                @Override
+                public void call(ConclaveMessage.Metric metric) {
+                    metrics.add(metric);
+                }
+            });
+        }
+
+        void end() {
+            RxUtils.safeUnSubscribe(metricsSubscription);
         }
 
         WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
@@ -170,6 +189,21 @@ public class DeviceModelTest extends AferoTest {
 
         WriteAttributeTester verifyWriteResultStatus(int attrId, AttributeWriter.Result.Status resultStatus) {
             assertEquals(resultStatus, writeResults.get(attrId).status);
+            return this;
+        }
+
+        WriteAttributeTester verifyWriteMetrics() {
+            assertEquals(metrics.size(), 1);
+
+            ConclaveMessage.Metric metric = metrics.firstElement();
+            assertEquals(metric.peripherals.size(), 1);
+
+            ConclaveMessage.Metric.MetricsFields measurement = metric.peripherals.get(0);
+            assertEquals(measurement.name, "AttributeChangeRTT");
+            assertEquals(measurement.peripheralId, deviceModel.getId());
+            assertNotEquals(measurement.elapsed, 0);
+            assertTrue(measurement.success);
+
             return this;
         }
     }
