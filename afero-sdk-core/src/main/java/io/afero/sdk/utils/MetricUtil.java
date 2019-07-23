@@ -79,7 +79,7 @@ public class MetricUtil {
     public void reportWriteResult(String deviceId, AttributeWriter.Result writeResult) {
         ConclaveMessage.Metric.FailureReason reason = null;
 
-        if (writeResult.statusCode != 0) {
+        if (!writeResult.isSuccess()) {
             reason = ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR;
         }
 
