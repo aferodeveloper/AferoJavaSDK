@@ -287,5 +287,10 @@ public class ConclaveMessage {
             }
             peripherals.add(m);
         }
+
+        public boolean isEmpty() {
+            return (application == null || application.isEmpty()) &&
+                (peripherals == null || peripherals.isEmpty());
+        }
     }
 }

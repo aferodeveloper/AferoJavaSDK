@@ -127,6 +127,7 @@ public class DeviceModelTest extends AferoTest {
 
         makeWriteAttributeTester()
                 .deviceModelWriteAttribute(ATTRIBUTE_ID, ATTRIBUTE_VALUE, AttributeValue.DataType.SINT8)
+                .pause()
                 .deviceModelUpdate(1, ATTRIBUTE_ID, ATTRIBUTE_VALUE)
 
                 .verifyWriteResultStatus(ATTRIBUTE_ID, AttributeWriter.Result.Status.SUCCESS)
@@ -160,7 +161,7 @@ public class DeviceModelTest extends AferoTest {
         }
 
         void end() {
-            RxUtils.safeUnSubscribe(metricsSubscription);
+            metricsSubscription = RxUtils.safeUnSubscribe(metricsSubscription);
         }
 
         WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
@@ -204,6 +205,15 @@ public class DeviceModelTest extends AferoTest {
             assertNotEquals(measurement.elapsed, 0);
             assertTrue(measurement.success);
 
+            return this;
+        }
+
+        WriteAttributeTester pause() {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                // ignore
+            }
             return this;
         }
     }

@@ -21,8 +21,8 @@ public class MetricUtil {
     private static final long WRITE_TIMEOUT_INTERVAL = 30000;
 
 
-    private Map<Integer,BeginEvent> beginRequestDeviceMetrics = new HashMap<>();
-    private Map<Integer,EndEvent> endRequestDeviceMetrics = new HashMap<>();
+    private final Map<Integer,BeginEvent> beginRequestDeviceMetrics = new HashMap<>();
+    private final Map<Integer,EndEvent> endRequestDeviceMetrics = new HashMap<>();
 
     private PublishSubject<ConclaveMessage.Metric> mEventSubject = PublishSubject.create();
 
@@ -118,7 +118,10 @@ public class MetricUtil {
                 beginRequestDeviceMetrics.remove(requestId);
                 endRequestDeviceMetrics.remove(requestId);
             }
-            mEventSubject.onNext(metric);
+
+            if (!metric.isEmpty()) {
+                mEventSubject.onNext(metric);
+            }
         }
     }
 
