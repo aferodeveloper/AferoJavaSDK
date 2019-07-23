@@ -526,7 +526,7 @@ public final class DeviceModel {
      *              }
      *
      *              &#64;Override
-     *              public void onError(Throwable t) {
+     *              public void onWriteError(Throwable t) {
      *                   // call failed, log the error
      *                   AfLog.e(t);
      *              }
@@ -814,6 +814,20 @@ public final class DeviceModel {
         MetricUtil.getInstance().reportWriteResult(getId(), writeResult);
     }
 
+    void onWriteError(Throwable e) {
+        ApiClientError error = new ApiClientError();
+        error.code = mAferoClient.getStatusCode(e);
+
+        final ConclaveMessage.Metric.FailureReason fr = e instanceof SocketTimeoutException
+            ? ConclaveMessage.Metric.FailureReason.SERVICE_API_TIMEOUT
+            : ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR;
+
+        MetricUtil.getInstance().reportError(getId(), 0L, fr);
+
+        mLastError = error;
+        mErrorSubject.onNext(error);
+    }
+
     Observable<WriteResponse[]> postBatchAttributeWrite(Collection<WriteRequest> requests, int retryCount, int statusCode) {
         WriteRequest[] reqArray = requests.toArray(new WriteRequest[0]);
         return mAferoClient.postBatchAttributeWrite(this, reqArray, retryCount, statusCode);
@@ -1001,30 +1015,6 @@ public final class DeviceModel {
         }
     }
 
-    void onError(Throwable e) {
-        ApiClientError error = new ApiClientError();
-        error.code = mAferoClient.getStatusCode(e);
-
-        final ConclaveMessage.Metric.FailureReason fr = e instanceof SocketTimeoutException
-                ? ConclaveMessage.Metric.FailureReason.SERVICE_API_TIMEOUT
-                : ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR;
-
-        MetricUtil.getInstance().reportError(getId(), 0L, fr);
-
-        mLastError = error;
-        mErrorSubject.onNext(error);
-    }
-
-    private void onError(int statusCode) {
-        ApiClientError error = new ApiClientError();
-        error.code = statusCode;
-
-        MetricUtil.getInstance().reportError(getId(), 0L, ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR);
-
-        mLastError = error;
-        mErrorSubject.onNext(error);
-    }
-
     private void startWaitingForUpdate() {
         mPendingWriteSubscription = Observable.just(this)
             .delay(WRITE_TIMEOUT_INTERVAL, TimeUnit.MILLISECONDS)
@@ -1061,19 +1051,7 @@ public final class DeviceModel {
 
         return hasChanged;
     }
-
-    private static class OnErrorDeviceRequest extends RxUtils.WeakAction1<Throwable, DeviceModel> {
-
-        OnErrorDeviceRequest(DeviceModel strongRef) {
-            super(strongRef);
-        }
-
-        @Override
-        public void call(DeviceModel deviceModel, Throwable t) {
-            deviceModel.onError(t);
-        }
-    }
-
+    
     private AttributeData getAttributeData(DeviceProfile.Attribute attribute) {
         if (attribute == null) {
             return null;

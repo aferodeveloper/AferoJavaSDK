@@ -351,7 +351,7 @@ public final class AttributeWriter {
             public void call(Throwable t) {
                 DeviceModel deviceModel = getDevice();
                 if (deviceModel != null) {
-                    deviceModel.onError(t);
+                    deviceModel.onWriteError(t);
                 }
             }
         };
