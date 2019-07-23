@@ -17,6 +17,7 @@ import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.models.DeviceError;
 import io.afero.sdk.conclave.models.DeviceSync;
+import io.afero.sdk.utils.Clock;
 import io.afero.sdk.utils.RxUtils;
 import rx.Emitter;
 import rx.Observable;
@@ -78,7 +79,9 @@ public final class AttributeWriter {
 
         public final int attributeId;
         public final Status status;
-        public final long timestampMs;
+        public final long roundTripTimeMs;
+        public final int statusCode;
+        public final int requestId;
 
         /**
          * @return {@code true} if the {@link Result#status} equals {@link Status#SUCCESS};
@@ -88,16 +91,21 @@ public final class AttributeWriter {
             return Status.SUCCESS.equals(status);
         }
 
-        private Result(int attrId, WriteResponse r, Status s) {
-            attributeId = attrId;
+        private Result(WriteRequestResponsePair wrrp, Status s, long endTimeMs) {
+            final WriteResponse r = wrrp.writeResponse;
+            attributeId = wrrp.writeRequest.attrId;
             status = s != null ? s : r.isSuccess() ? Status.SUCCESS : Status.FAILURE;
-            timestampMs = r.timestampMs;
+            roundTripTimeMs = endTimeMs - wrrp.startTimeMs;
+            statusCode = r.statusCode;
+            requestId = r.requestId;
         }
 
         private Result(int attrId) {
             attributeId = attrId;
             status = Status.NOT_ATTEMPTED;
-            timestampMs = 0;
+            roundTripTimeMs = 0;
+            statusCode = 0;
+            requestId = 0;
         }
     }
 
@@ -238,6 +246,8 @@ public final class AttributeWriter {
             return Observable.error(new IllegalArgumentException("DeviceModel is null"));
         }
 
+        final long now = Clock.getElapsedMillis();
+
         /*
          * For successful requests we're expecting a corresponding device update to
          * arrive later, so put the request/response in a list so we can match it up
@@ -261,7 +271,7 @@ public final class AttributeWriter {
 
                         // Requests and responses match up in order in their respective lists
                         // so zip them together into one object for easier processing...
-                        .zipWith(Observable.from(writeRequests), zipDeviceRequestWithRequestResponse())
+                        .zipWith(Observable.from(writeRequests), zipDeviceRequestWithRequestResponse(now))
 
                         .doOnNext(processResponse())
 
@@ -278,11 +288,11 @@ public final class AttributeWriter {
             });
     }
 
-    private Func2<WriteResponse, WriteRequest, WriteRequestResponsePair> zipDeviceRequestWithRequestResponse() {
+    private Func2<WriteResponse, WriteRequest, WriteRequestResponsePair> zipDeviceRequestWithRequestResponse(final long now) {
         return new Func2<WriteResponse, WriteRequest, WriteRequestResponsePair>() {
             @Override
             public WriteRequestResponsePair call(WriteResponse writeResponse, WriteRequest writeRequest) {
-                return new WriteRequestResponsePair(writeRequest, writeResponse);
+                return new WriteRequestResponsePair(writeRequest, writeResponse, now);
             }
         };
     }
@@ -293,10 +303,12 @@ public final class AttributeWriter {
             public void call(WriteRequestResponsePair wrrp) {
                 mResultsNotAttempted.remove(wrrp.writeRequest.attrId);
 
+                final long now = Clock.getElapsedMillis();
+
                 if (wrrp.writeResponse.isSuccess()) {
                     mPendingResponses.put(wrrp.writeResponse.requestId, wrrp);
                 } else {
-                    mResultEmitter.onNext(new Result(wrrp.writeRequest.attrId, wrrp.writeResponse, Result.Status.FAILURE));
+                    mResultEmitter.onNext(new Result(wrrp, Result.Status.FAILURE, now));
 
                     if (mPendingResponses.isEmpty()) {
                         mResultEmitter.onCompleted();
@@ -339,7 +351,7 @@ public final class AttributeWriter {
             public void call(Throwable t) {
                 DeviceModel deviceModel = getDevice();
                 if (deviceModel != null) {
-                    deviceModel.onError(t);
+                    deviceModel.onWriteError(t);
                 }
             }
         };
@@ -357,13 +369,15 @@ public final class AttributeWriter {
                             .concatWith(Observable.<Result>error(throwable));
                 }
 
+                final long now = Clock.getElapsedMillis();
+
                 if (throwable instanceof TimeoutException) {
                     if (!mPendingResponses.isEmpty()) {
                         return Observable.from(mPendingResponses.values())
                             .map(new Func1<WriteRequestResponsePair, Result>() {
                                 @Override
                                 public Result call(WriteRequestResponsePair wrrp) {
-                                    return new Result(wrrp.writeRequest.attrId, wrrp.writeResponse, Result.Status.TIMEOUT);
+                                    return new Result(wrrp, Result.Status.TIMEOUT, now);
                                 }
                             })
                             .concatWith(Observable.<Result>error(throwable));
@@ -379,7 +393,8 @@ public final class AttributeWriter {
         return new Func1<WriteRequestResponsePair, Result>() {
             @Override
             public Result call(WriteRequestResponsePair wrrp) {
-                return new Result(wrrp.writeRequest.attrId, wrrp.writeResponse, null);
+                final long now = Clock.getElapsedMillis();
+                return new Result(wrrp, null, now);
             }
         };
     }
@@ -437,7 +452,8 @@ public final class AttributeWriter {
         // if this deviceSync matches one of our requestIds, emit it
         WriteRequestResponsePair wrrp = mPendingResponses.remove(requestId);
         if (wrrp != null) {
-            mResultEmitter.onNext(new Result(wrrp.writeRequest.attrId, wrrp.writeResponse, status));
+            final long now = Clock.getElapsedMillis();
+            mResultEmitter.onNext(new Result(wrrp, status, now));
         }
 
         // no more responses left means we're done
@@ -462,10 +478,12 @@ public final class AttributeWriter {
     private class WriteRequestResponsePair {
         final WriteRequest writeRequest;
         final WriteResponse writeResponse;
+        final long startTimeMs;
 
-        private WriteRequestResponsePair(WriteRequest dr, WriteResponse rr) {
+        private WriteRequestResponsePair(WriteRequest dr, WriteResponse rr, long st) {
             writeRequest = dr;
             writeResponse = rr;
+            startTimeMs = st;
         }
     }
 

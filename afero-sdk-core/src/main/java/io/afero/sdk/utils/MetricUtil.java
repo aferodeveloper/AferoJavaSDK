@@ -12,6 +12,7 @@ import java.util.Set;
 
 import io.afero.sdk.conclave.ConclaveMessage;
 import io.afero.sdk.conclave.ConclaveMessage.Metric.FailureReason;
+import io.afero.sdk.device.AttributeWriter;
 import rx.Observable;
 import rx.subjects.PublishSubject;
 
@@ -20,8 +21,8 @@ public class MetricUtil {
     private static final long WRITE_TIMEOUT_INTERVAL = 30000;
 
 
-    private Map<Integer,BeginEvent> beginRequestDeviceMetrics = new HashMap<>();
-    private Map<Integer,EndEvent> endRequestDeviceMetrics = new HashMap<>();
+    private final Map<Integer,BeginEvent> beginRequestDeviceMetrics = new HashMap<>();
+    private final Map<Integer,EndEvent> endRequestDeviceMetrics = new HashMap<>();
 
     private PublishSubject<ConclaveMessage.Metric> mEventSubject = PublishSubject.create();
 
@@ -47,7 +48,6 @@ public class MetricUtil {
                 beginRequestDeviceMetrics.put(requestId, new BeginEvent(time, deviceId));
                 Set<Integer> beginKeys = beginRequestDeviceMetrics.keySet();
                 Set<Integer> endKeys = endRequestDeviceMetrics.keySet();
-
                 Set<Integer> result = new HashSet<>(beginKeys);
                 result.retainAll(endKeys);
                 reportRequestIds(result);
@@ -76,32 +76,52 @@ public class MetricUtil {
         mEventSubject.onNext(metric);
     }
 
+    public void reportWriteResult(String deviceId, AttributeWriter.Result writeResult) {
+        ConclaveMessage.Metric.FailureReason reason = null;
 
-    private void reportRequestIds(Set<Integer> requesIds) {
-        if (requesIds.size() > 0 ) {
+        if (!writeResult.isSuccess()) {
+            reason = ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR;
+        }
+
+        ConclaveMessage.Metric metric = new ConclaveMessage.Metric();
+        ConclaveMessage.Metric.MetricsFields measurement =
+            new ConclaveMessage.Metric.MetricsFields(
+                deviceId,
+                writeResult.roundTripTimeMs,
+                writeResult.isSuccess(),
+                reason != null ? reason.toString() : null);
+        metric.addPeripheralMetric(measurement);
+
+        mEventSubject.onNext(metric);
+    }
+
+    private void reportRequestIds(Set<Integer> requestIds) {
+        if (requestIds.size() > 0 ) {
             ConclaveMessage.Metric metric = new ConclaveMessage.Metric();
 
-            for (Integer requesId : requesIds) {
-                BeginEvent beginEvent = beginRequestDeviceMetrics.get(requesId);
-                EndEvent endEvent = endRequestDeviceMetrics.get(requesId);
+            for (Integer requestId : requestIds) {
+                BeginEvent beginEvent = beginRequestDeviceMetrics.get(requestId);
+                EndEvent endEvent = endRequestDeviceMetrics.get(requestId);
 
                 if (beginEvent != null && endEvent != null && beginEvent.time <= endEvent.time) {
                     long elapsed = endEvent.time - beginEvent.time;
 
                     ConclaveMessage.Metric.MetricsFields measurement =
-                            new ConclaveMessage.Metric.MetricsFields(beginEvent.deviceId,
-                                    elapsed,
-                                    endEvent.success,
-                                    endEvent.reason != null ? endEvent.reason.toString() : null);
+                        new ConclaveMessage.Metric.MetricsFields(
+                            beginEvent.deviceId,
+                            elapsed,
+                            endEvent.success,
+                            endEvent.reason != null ? endEvent.reason.toString() : null);
                     metric.addPeripheralMetric(measurement);
-                } else {
-                    mEventSubject.onError(new AssertionError());
                 }
 
-                beginRequestDeviceMetrics.remove(requesId);
-                endRequestDeviceMetrics.remove(requesId);
+                beginRequestDeviceMetrics.remove(requestId);
+                endRequestDeviceMetrics.remove(requestId);
             }
-            mEventSubject.onNext(metric);
+
+            if (!metric.isEmpty()) {
+                mEventSubject.onNext(metric);
+            }
         }
     }
 

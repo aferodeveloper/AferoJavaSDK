@@ -17,14 +17,12 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import io.afero.sdk.client.afero.AferoClient;
-import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.AferoError;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.DeviceStatus;
 import io.afero.sdk.client.afero.models.DeviceTag;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.LocationState;
-import io.afero.sdk.client.afero.models.PostActionBody;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.conclave.ConclaveMessage;
@@ -126,9 +124,6 @@ public final class DeviceModel {
     private final TimeZoneValue mTimeZoneValue = new TimeZoneValue();
 
     private AferoError mLastError;
-
-    private OnNextDeviceRequest mOnNextDeviceRequestResponse;
-    private OnErrorDeviceRequest mOnErrorDeviceRequestResponse;
 
     private DeviceTagCollection mTags;
 
@@ -531,7 +526,7 @@ public final class DeviceModel {
      *              }
      *
      *              &#64;Override
-     *              public void onError(Throwable t) {
+     *              public void onWriteError(Throwable t) {
      *                   // call failed, log the error
      *                   AfLog.e(t);
      *              }
@@ -816,74 +811,31 @@ public final class DeviceModel {
     }
 
     void onWriteResult(AttributeWriter.Result writeResult) {
-        // as results come in cancel the timers on corresponding attributes
-        // or let existing logic in update handle it?
+        MetricUtil.getInstance().reportWriteResult(getId(), writeResult);
     }
 
-    Observable<WriteResponse[]> postAttributeWriteRequests(Collection<WriteRequest> requests) {
+    void onWriteError(Throwable e) {
+        ApiClientError error = new ApiClientError();
+        error.code = mAferoClient.getStatusCode(e);
 
-        mLastError = null;
+        final ConclaveMessage.Metric.FailureReason fr = e instanceof SocketTimeoutException
+            ? ConclaveMessage.Metric.FailureReason.SERVICE_API_TIMEOUT
+            : ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR;
 
-        for (WriteRequest dr : requests) {
-            AttributeData data = mAttributes.get(dr.attrId);
-            DeviceProfile.Attribute attribute = getAttributeById(dr.attrId);
-            if (data != null && attribute != null) {
-                data.mPendingValue = new AttributeValue(dr.value, attribute.getDataType());
-                data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
+        MetricUtil.getInstance().reportError(getId(), 0L, fr);
 
-                startWaitingForUpdate();
-            }
-        }
-
-        mUpdateSubject.onNext(this);
-
-        if (mOnNextDeviceRequestResponse == null) {
-            mOnNextDeviceRequestResponse = new OnNextDeviceRequest(this);
-        }
-        if (mOnErrorDeviceRequestResponse == null) {
-            mOnErrorDeviceRequestResponse = new OnErrorDeviceRequest(this);
-        }
-
-        WriteRequest[] reqArray = requests.toArray(new WriteRequest[requests.size()]);
-        return mAferoClient.postBatchAttributeWrite(this, reqArray, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED);
+        mLastError = error;
+        mErrorSubject.onNext(error);
     }
 
     Observable<WriteResponse[]> postBatchAttributeWrite(Collection<WriteRequest> requests, int retryCount, int statusCode) {
-        return mAferoClient.postBatchAttributeWrite(this, requests.toArray(new WriteRequest[requests.size()]), retryCount, statusCode);
-    }
-
-    /**
-     * Used for testing.
-     */
-    void writeAttribute(DeviceProfile.Attribute attribute, AttributeValue value) {
-
-        if (mAferoClient == null) return;
-
-        final int attrId = attribute.getId();
-        PostActionBody body = new PostActionBody(attrId, value.toString());
-        mAferoClient.postAttributeWrite(this, body, WRITE_ATTRIBUTE_RETRY_COUNT, HTTP_LOCKED)
-                .subscribe(new ActionObserver(this, Clock.getElapsedMillis()));
-
-        AttributeData data = mAttributes.get(attrId);
-        if (data != null) {
-            data.mPendingValue = value;
-            data.mExpectedUpdateTime = Clock.getElapsedMillis() + WRITE_TIMEOUT_INTERVAL;
-
-            startWaitingForUpdate();
-        }
-
-        mLastError = null;
-
-        mUpdateSubject.onNext(this);
+        WriteRequest[] reqArray = requests.toArray(new WriteRequest[0]);
+        return mAferoClient.postBatchAttributeWrite(this, reqArray, retryCount, statusCode);
     }
 
     void update(DeviceSync deviceSync) {
 
         mDeviceSyncPreUpdateSubject.onNext(deviceSync);
-
-        if (deviceSync.hasRequestId()) {
-            MetricUtil.getInstance().end(deviceSync.requestId, Clock.getElapsedMillis(), true, null);
-        }
 
         final boolean hasValidValues = deviceSync.hasValidAttributeValues();
         boolean hasChanged = false;
@@ -945,11 +897,6 @@ public final class DeviceModel {
     }
 
     void onError(DeviceError deviceError) {
-        // Only report hub errors that are the result of requests (See ANDROID-580)
-        if (deviceError.requestId != 0) {
-            MetricUtil.getInstance().end(deviceError.requestId, Clock.getElapsedMillis(), false, ConclaveMessage.Metric.FailureReason.HUB_ERROR);
-        }
-
         mLastError = deviceError;
         mErrorSubject.onNext(deviceError);
     }
@@ -1068,30 +1015,6 @@ public final class DeviceModel {
         }
     }
 
-    void onError(Throwable e) {
-        ApiClientError error = new ApiClientError();
-        error.code = mAferoClient.getStatusCode(e);
-
-        final ConclaveMessage.Metric.FailureReason fr = e instanceof SocketTimeoutException
-                ? ConclaveMessage.Metric.FailureReason.SERVICE_API_TIMEOUT
-                : ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR;
-
-        MetricUtil.getInstance().reportError(getId(), 0L, fr);
-
-        mLastError = error;
-        mErrorSubject.onNext(error);
-    }
-
-    private void onError(int statusCode) {
-        ApiClientError error = new ApiClientError();
-        error.code = statusCode;
-
-        MetricUtil.getInstance().reportError(getId(), 0L, ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR);
-
-        mLastError = error;
-        mErrorSubject.onNext(error);
-    }
-
     private void startWaitingForUpdate() {
         mPendingWriteSubscription = Observable.just(this)
             .delay(WRITE_TIMEOUT_INTERVAL, TimeUnit.MILLISECONDS)
@@ -1128,60 +1051,7 @@ public final class DeviceModel {
 
         return hasChanged;
     }
-
-    private static class ActionObserver extends RxUtils.WeakObserver<ActionResponse, DeviceModel> {
-
-        long timestamp;
-
-        ActionObserver(DeviceModel strongRef, long t) {
-            super(strongRef);
-            timestamp = t;
-        }
-
-        @Override
-        public void onCompleted(DeviceModel deviceModel) {
-
-        }
-
-        @Override
-        public void onError(DeviceModel deviceModel, Throwable e) {
-            deviceModel.onError(e);
-        }
-
-        @Override
-        public void onNext(DeviceModel deviceModel, ActionResponse response) {
-            MetricUtil.getInstance().begin(response.requestId, deviceModel.getId(), timestamp);
-        }
-    }
-
-    private static class OnNextDeviceRequest extends RxUtils.WeakAction1<WriteResponse, DeviceModel> {
-
-        OnNextDeviceRequest(DeviceModel strongRef) {
-            super(strongRef);
-        }
-
-        @Override
-        public void call(DeviceModel deviceModel, WriteResponse writeResponse) {
-            if (writeResponse.isSuccess()) {
-                MetricUtil.getInstance().begin(writeResponse.requestId, deviceModel.getId(), writeResponse.timestampMs);
-            } else {
-                deviceModel.onError(writeResponse.statusCode);
-            }
-        }
-    }
-
-    private static class OnErrorDeviceRequest extends RxUtils.WeakAction1<Throwable, DeviceModel> {
-
-        OnErrorDeviceRequest(DeviceModel strongRef) {
-            super(strongRef);
-        }
-
-        @Override
-        public void call(DeviceModel deviceModel, Throwable t) {
-            deviceModel.onError(t);
-        }
-    }
-
+    
     private AttributeData getAttributeData(DeviceProfile.Attribute attribute) {
         if (attribute == null) {
             return null;

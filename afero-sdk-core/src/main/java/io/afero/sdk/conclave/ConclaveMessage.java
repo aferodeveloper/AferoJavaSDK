@@ -4,6 +4,7 @@
 
 package io.afero.sdk.conclave;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -286,6 +287,12 @@ public class ConclaveMessage {
                 peripherals = new ArrayList<>(1);
             }
             peripherals.add(m);
+        }
+
+        @JsonIgnore
+        public boolean isEmpty() {
+            return (application == null || application.isEmpty()) &&
+                (peripherals == null || peripherals.isEmpty());
         }
     }
 }

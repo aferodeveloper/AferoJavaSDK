@@ -15,7 +15,6 @@ import io.afero.sdk.AferoTest;
 import io.afero.sdk.conclave.ConclaveMessage;
 import rx.observers.TestSubscriber;
 
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -69,12 +68,9 @@ public class MetricUtilTest extends AferoTest {
         util.getEventObservable().subscribe(subscriber);
         util.end(1,200,true,null);
         util.begin(1,"1",300);
-        List<Throwable> errors = subscriber.getOnErrorEvents();
         List<ConclaveMessage.Metric> events = subscriber.getOnNextEvents();
 
-        assertEquals(1, errors.size());
         assertEquals(0, events.size());
-        assertTrue(errors.get(0) instanceof AssertionError);
     }
 
     @Test
