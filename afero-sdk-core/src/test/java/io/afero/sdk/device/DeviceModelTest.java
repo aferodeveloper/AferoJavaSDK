@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -19,6 +20,7 @@ import io.afero.sdk.AferoTest;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.client.afero.models.DeviceTag;
+import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.mock.MockAferoClient;
 import io.afero.sdk.client.mock.MockDeviceEventSource;
 import io.afero.sdk.client.mock.ResourceLoader;
@@ -26,6 +28,7 @@ import io.afero.sdk.conclave.ConclaveMessage;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.utils.MetricUtil;
 import io.afero.sdk.utils.RxUtils;
+import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
 import rx.functions.Action1;
@@ -136,6 +139,27 @@ public class DeviceModelTest extends AferoTest {
         ;
     }
 
+    @Test
+    public void testWriteAttributeWithError() throws IOException {
+        final int ATTRIBUTE_ID = 100;
+        final String ATTRIBUTE_VALUE = "32";
+
+        makeWriteAttributeTester()
+            .addAttributeWriteResponse(1, WriteResponse.STATUS_FAILURE)
+            .commitWriteResponses()
+
+            .deviceModelWriteAttribute(ATTRIBUTE_ID, ATTRIBUTE_VALUE, AttributeValue.DataType.SINT8)
+
+            .deviceModelUpdate(1, ATTRIBUTE_ID, ATTRIBUTE_VALUE)
+
+            .verifyWriteResultStatus(ATTRIBUTE_ID, AttributeWriter.Result.Status.FAILURE)
+
+            .verifyWriteMetric(0, ConclaveMessage.Metric.FailureReason.SERVICE_API_ERROR)
+
+            .end()
+        ;
+    }
+
     private WriteAttributeTester makeWriteAttributeTester() throws IOException {
         return new WriteAttributeTester();
     }
@@ -148,6 +172,7 @@ public class DeviceModelTest extends AferoTest {
         TreeMap<Integer, AttributeWriter.Result> writeResults = new TreeMap<>();
         Subscription metricsSubscription;
         final Vector<ConclaveMessage.Metric> metrics = new Vector<>();
+        final ArrayList<WriteResponse> postBatchAttributeWriteResponses = new ArrayList<>();
 
         WriteAttributeTester() throws IOException {
             deviceProfile = resourceLoader.createObjectFromJSONResource("deviceModelTestProfile.json", DeviceProfile.class);
@@ -166,14 +191,24 @@ public class DeviceModelTest extends AferoTest {
 
         WriteAttributeTester deviceModelWriteAttribute(int attrId, String value, AttributeValue.DataType type) {
             deviceModel.writeAttributes()
-                    .put(attrId, new AttributeValue(value, type))
-                    .commit()
-                    .subscribe(new Action1<AttributeWriter.Result>() {
-                        @Override
-                        public void call(AttributeWriter.Result wr) {
-                            writeResults.put(wr.attributeId, wr);
-                        }
-                    });
+                .put(attrId, new AttributeValue(value, type))
+                .commit()
+                .subscribe(new Observer<AttributeWriter.Result>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(AttributeWriter.Result wr) {
+                        writeResults.put(wr.attributeId, wr);
+                    }
+                });
 
             return this;
         }
@@ -184,6 +219,26 @@ public class DeviceModelTest extends AferoTest {
             ds.attribute = new DeviceSync.AttributeEntry(attrId, value);
             ds.setDeviceId(deviceModel.getId());
             deviceModel.update(ds);
+
+            return this;
+        }
+
+        WriteAttributeTester addAttributeWriteResponse(int reqId, String requestResponseStatus) {
+
+            WriteResponse wr = new WriteResponse();
+            wr.requestId = reqId;
+            wr.status = requestResponseStatus;
+            wr.timestampMs = System.currentTimeMillis();
+
+            postBatchAttributeWriteResponses.add(wr);
+
+            return this;
+        }
+
+        WriteAttributeTester commitWriteResponses() {
+            WriteResponse[] rr = new WriteResponse[postBatchAttributeWriteResponses.size()];
+            postBatchAttributeWriteResponses.toArray(rr);
+            aferoClient.setPostBatchAttributeWriteResponse(Observable.just(rr));
 
             return this;
         }
@@ -204,6 +259,25 @@ public class DeviceModelTest extends AferoTest {
             assertEquals(measurement.peripheralId, deviceModel.getId());
             assertNotEquals(measurement.elapsed, 0);
             assertTrue(measurement.success);
+
+            return this;
+        }
+
+        WriteAttributeTester verifyWriteMetric(int index, ConclaveMessage.Metric.FailureReason reason) {
+
+            ConclaveMessage.Metric metric = metrics.get(index);
+            assertEquals(metric.peripherals.size(), 1);
+
+            ConclaveMessage.Metric.MetricsFields measurement = metric.peripherals.get(0);
+            assertEquals(measurement.name, "AttributeChangeRTT");
+            assertEquals(measurement.peripheralId, deviceModel.getId());
+            assertNotEquals(measurement.elapsed, 0);
+
+            if (reason != null) {
+                assertEquals(reason.toString(), measurement.failure_reason);
+            } else {
+                assertTrue(measurement.success);
+            }
 
             return this;
         }
