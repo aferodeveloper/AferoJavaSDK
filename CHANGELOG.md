@@ -1,10 +1,11 @@
 Change Log
 ==========
 
-Version 1.3.1 *(2019-07-26)*
+Version 1.4.0 *(2019-07-26)*
 ----------------------------
  * Fix: Refactor attribute write metrics which had been inadvertently disabled.
  * Fix: Javadoc is once again published for the `android` and `softhub` modules.
+ * New: Added `AferoClient` call `resendVerificationEmail`, to resend a verification token for a new account.
 
 Version 1.3.0 *(2019-06-04)*
 ----------------------------

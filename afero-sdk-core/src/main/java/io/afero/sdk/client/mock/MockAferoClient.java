@@ -261,6 +261,11 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
+    public Observable<Void> resendVerificationEmail(String email, String appId) {
+        return null;
+    }
+
+    @Override
     public Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified) {
         if (hasNextCallFailure()) {
             return nextCallFailObservable();
