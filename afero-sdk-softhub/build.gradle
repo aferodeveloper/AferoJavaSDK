@@ -14,7 +14,7 @@ repositories {
     }
 }
 
-final String hubbyVersion = "1.0.840"
+final String hubbyVersion = "1.0.842"
 final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {
@@ -55,6 +55,35 @@ dependencies {
     testImplementation 'com.squareup.retrofit2:retrofit:2.3.0'
 }
 
+// build a jar with source files
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    failOnError false
+    source = android.sourceSets.main.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.compile
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
+}
+
+// build a jar with javadoc
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
 publishing {
     publications {
         aar(MavenPublication) {
@@ -64,7 +93,7 @@ publishing {
             groupId rootProject.group
 
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-//            artifact packageJavadoc
+            artifact javadocJar
 
             pom.withXml {
                 def dependenciesNode = asNode().appendNode('dependencies')
@@ -86,6 +115,4 @@ publishing {
     }
 }
 
-artifactoryPublish {
-    publications(publishing.publications.aar)
-}
+

@@ -427,6 +427,21 @@ public class AferoClientRetrofit2 implements AferoClient {
     }
 
     /**
+     * Afero Cloud API call to resend an account verification email.
+     *
+     * @param email email address to which the account verification email will be sent
+     * @param appId unique platform identifier for the calling application which will used to select the appropriate email template
+     * @return {@link Observable} that initiates the transaction when subscribed
+     */
+    @Override
+    public Observable<Void> resendVerificationEmail(String email, String appId) {
+        byte[] bytes = appId.getBytes(StandardCharsets.UTF_8);
+        String appIdBase64Encoded = ByteString.of(bytes).base64();
+
+        return mAferoService.resendVerificationEmail(email, appIdBase64Encoded);
+    }
+
+    /**
      * Afero Cloud API call to fetch the {@link UserDetails} which includes the
      * account ID used in {@link #setOwnerAndActiveAccountId(String)}
      *

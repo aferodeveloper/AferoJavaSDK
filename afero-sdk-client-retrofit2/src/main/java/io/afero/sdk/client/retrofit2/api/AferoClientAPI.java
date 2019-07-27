@@ -91,6 +91,12 @@ public interface AferoClientAPI {
         @Header("x-afero-app") String appIdAndPlatformBase64Encoded
     );
 
+    @POST(V1 + "accounts/{accountId}/credentials/{email}/resendVerification")
+    Observable<Void> resendVerificationEmail(
+        @Path("email") String email,
+        @Header("x-afero-app") String appIdBase64Encoded
+    );
+
     @GET(V1 + "users/me")
     Observable<UserDetails> usersMe();
 
