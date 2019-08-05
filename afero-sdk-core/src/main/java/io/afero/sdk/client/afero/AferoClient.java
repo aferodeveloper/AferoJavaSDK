@@ -33,6 +33,8 @@ public interface AferoClient {
 
     Observable<CreateAccountResponse> createAccount(CreateAccountBody body);
 
+    Observable<CreateAccountResponse> createAccount(CreateAccountBody body, String appId, String platform);
+
     Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode);
 
     Observable<WriteResponse[]> postBatchAttributeWrite(DeviceModel deviceModel, WriteRequest[] body, int maxRetryCount, int statusCode);

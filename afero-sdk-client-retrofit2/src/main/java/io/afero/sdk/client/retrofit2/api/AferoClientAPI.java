@@ -72,6 +72,12 @@ public interface AferoClientAPI {
         @Body CreateAccountBody body
     );
 
+    @POST(V1 + "accounts")
+    Observable<CreateAccountResponse> createAccount(
+        @Body CreateAccountBody body,
+        @Header("x-afero-app") String appIdAndPlatformBase64Encoded
+    );
+
     @POST(V1 + "credentials/{email}/passwordReset")
     Observable<Void> resetPassword(
             @Path("email") String email,
