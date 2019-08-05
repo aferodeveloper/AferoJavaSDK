@@ -64,6 +64,11 @@ public class MockAferoClient implements AferoClient {
     }
 
     @Override
+    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body, String appId, String platform) {
+        return null;
+    }
+
+    @Override
     public Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode) {
         if (hasNextCallFailure()) {
             return nextCallFailObservable();

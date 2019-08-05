@@ -346,6 +346,21 @@ public class AferoClientRetrofit2 implements AferoClient {
         return mAferoService.createAccount(body);
     }
 
+    /**
+     * Create a new Afero Cloud user account.
+     *
+     * @param body parameters for the new account including first/last name and password
+     * @return {@link CreateAccountResponse} that includes the accountId
+     */
+    @Override
+    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body, String appId, String platform) {
+        String appIdAndPlatform = appId + ":" + platform.toUpperCase();
+        byte[] bytes = appIdAndPlatform.getBytes(StandardCharsets.UTF_8);
+        String appIdAndPlatformBase64Encoded = ByteString.of(bytes).base64();
+
+        return mAferoService.createAccount(body, appIdAndPlatformBase64Encoded);
+    }
+
     @Override
     public Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body) {
         return mAferoService.putAccountDescription(accountId, body);
