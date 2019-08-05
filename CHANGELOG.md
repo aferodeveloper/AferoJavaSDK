@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.4.1 *(2019-08-05)*
+----------------------------
+ * New: Added a new `AferoClient.createAccount` that accepts `appId` and `platform` to enabled custom partner verification emails
+
 Version 1.4.0 *(2019-07-26)*
 ----------------------------
  * Fix: Refactor attribute write metrics which had been inadvertently disabled.

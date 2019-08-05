@@ -5,7 +5,7 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.4.0'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.4.1'
 
 repositories {
     maven {
@@ -17,14 +17,20 @@ repositories {
         }
     }
 }
+configurations.all {
+    resolutionStrategy {
+        force 'com.android.support:support-v4:27.1.0'
+    }
+}
+
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
 
     defaultConfig {
         applicationId 'io.afero.aferolab'
         minSdkVersion 19
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName '1.0'
 
@@ -88,9 +94,9 @@ dependencies {
     // https://github.com/dm77/barcodescanner
     implementation 'me.dm7.barcodescanner:zxing:1.9.13'
 
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support:recyclerview-v7:26.1.0'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:recyclerview-v7:27.1.1'
 
     testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:cardview-v7:26.1.0'
+    implementation 'com.android.support:cardview-v7:27.1.1'
 }
