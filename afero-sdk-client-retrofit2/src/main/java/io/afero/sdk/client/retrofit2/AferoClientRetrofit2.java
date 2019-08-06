@@ -1014,7 +1014,7 @@ public class AferoClientRetrofit2 implements AferoClient {
         }
     }
 
-    private AccessToken internalRefreshAccessToken(String refreshToken, String grantType) throws IOException {
+    protected AccessToken internalRefreshAccessToken(String refreshToken, String grantType) throws IOException {
         Response<AccessToken> response = mAferoService
                 .refreshAccessToken(grantType, refreshToken, mOAuthAuthorizationBase64)
                 .execute();
