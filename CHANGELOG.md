@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.4.3 *(2019-08-22)*
+----------------------------
+ * Changed: Updated `AferoSofthub` to softhub version 1.0.844 to pick up latest fixes.
+
 Version 1.4.2 *(2019-08-06)*
 ----------------------------
  * Changed: `AferoClient.internalRefreshAccessToken` is now protected instead of private.
