@@ -9,6 +9,9 @@ status: 1.4.3
 
 An SDK for interacting with the Afero service and peripheral platform.
 
+This project adheres to the Contributor Covenant [code of conduct](CODE_OF_CONDUCT.md).
+By participating, you are expected to uphold this code.
+
 ## Getting Started
 ### Specifying the Repository
 
@@ -55,4 +58,6 @@ The `afero-sdk-softhub` module is required for soft hub functionality on Android
     implementation "io.afero.sdk:hubby:1.0.844@aar"
 ```
 
+## License
 
+[MIT](LICENSE)
