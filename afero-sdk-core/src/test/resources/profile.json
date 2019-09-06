@@ -1,0 +1,110 @@
+{
+    "profileId": "94f11dea-4250-4ba6-8187-6b0fcdef04d4",
+    "schemaVersion": 1,
+    "profileVersion": 1,
+    "partnerId": "kiban-839f59e6-18a3-4d82-818d-42df5cc0c3cf",
+    "ignoreMe": "bogus",
+    "uiGauge": {
+        "type": "moban"
+    },
+    "services": [
+        {
+            "id": 100,
+            "attributes": [
+                {
+                    "id": 200,
+                    "dataType": "uint8",
+                    "semanticType": "power",
+                    "operations": ["read","write"],
+                    "description": {
+                        "label": {
+                            "base": "Power"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "presentation": {
+        "attributeOptions": {
+            "200": {
+                "valueOptions": [
+                    {
+                        "match": "1",
+                        "apply": {
+                            "label": "one"
+                        }
+                    },
+                    {
+                        "match": "2",
+                        "apply": {
+                            "label": "two"
+                        }
+                    }
+                ],
+                "rangeOptions": {
+                    "min": 100,
+                    "max": 200,
+                    "step": 5,
+                    "unitLabel": "unit"
+                }
+            }
+        },
+        "gauge": {
+            "label": "TestLabel",
+            "foreground": {
+                "images": [
+                    {
+                        "uri": "https://cdn.afero.io/gaugeIcon.png"
+                    }
+                ]
+            }
+        },
+        "groups": [
+            {
+                "label": "groupLabel1",
+                "controls": [ 100 ],
+                "gauge": {
+                    "foreground": {
+                        "images": [
+                            {
+                                "uri": "https://cdn.afero.io/fgIcon0.png"
+                            },
+                            {
+                                "uri": "https://cdn.afero.io/fgIcon1.png"
+                            }
+                        ]
+                    },
+                    "background": {
+                        "images": [
+                            {
+                                "uri": "https://cdn.afero.io/bgIcon.png"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "label": "groupLabel2",
+                "gauge": {
+                    "foreground": {
+                        "images": [
+                            {
+                                "uri": "https://cdn.afero.io/fgIcon.png"
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "controls": [
+            {
+                "id": 100,
+                "controlType": "menuControl",
+                "attributeMap": {
+                    "value": 200
+                }
+            }
+        ]
+    }
+}

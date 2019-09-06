@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2017 Afero, Inc. All rights reserved.
+ */
+
+apply plugin: 'com.android.application'
+
+repositories {
+    maven {
+        url "https://afero.jfrog.io/afero/afero-java-sdk"
+        credentials {
+            username artifactory_username
+            password artifactory_password
+        }
+    }
+}
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "26.0.0"
+    defaultConfig {
+        applicationId "io.afero.aferolab"
+        minSdkVersion 19
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+        buildConfigField 'String', 'AFERO_SERVICE_URL', project.hasProperty('aferoServiceUrl') ? "${project.aferoServiceUrl}" : "https://api.afero.io"
+        buildConfigField 'String', 'AFERO_CLIENT_ID', project.aferoClientId
+        buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.aferoClientSecret
+    }
+    buildTypes {
+        debug {
+            buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BODY'
+        }
+        release {
+            buildConfigField 'okhttp3.logging.HttpLoggingInterceptor.Level', 'HTTP_LOG_LEVEL', 'okhttp3.logging.HttpLoggingInterceptor.Level.BASIC'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile 'io.afero.sdk:afero-sdk-core:0.6.0'
+    compile 'io.afero.sdk:afero-sdk-client-retrofit2:0.6.0'
+    compile 'io.afero.sdk:afero-sdk-android:0.6.0'
+    compile 'io.afero.sdk:afero-sdk-softhub:0.6.0'
+    compile 'io.afero.sdk:hubby:1.0.482@aar'
+
+    // https://github.com/square/retrofit
+    compile 'com.squareup.retrofit2:retrofit:2.3.0'
+    compile 'com.squareup.retrofit2:converter-jackson:2.3.0'
+    compile 'com.squareup.retrofit2:adapter-rxjava:2.3.0'
+
+    // https://github.com/square/okhttp
+    compile 'com.squareup.okhttp3:okhttp:3.8.0'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.8.0'
+
+    // https://github.com/ReactiveX/RxAndroid
+    compile 'io.reactivex:rxandroid:1.2.1'
+
+    // https://github.com/ReactiveX/RxJava
+    compile 'io.reactivex:rxjava:1.3.0'
+
+    // http://jakewharton.github.io/butterknife/
+    compile 'com.jakewharton:butterknife:8.5.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
+
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:recyclerview-v7:25.3.1'
+
+    testCompile 'junit:junit:4.12'
+}

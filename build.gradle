@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ */
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:latest.release"
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven {
+            url "https://afero.jfrog.io/afero/afero-java-sdk"
+            credentials {
+                username = project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
+                password = project.hasProperty('artifactory_password') ? "${project.artifactory_password}" : ""
+            }
+        }
+    }
+
+    apply plugin: 'com.jfrog.artifactory'
+    apply plugin: 'maven-publish'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.1'
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+Closure<Boolean> isCIBuild = { ->
+    return System.getenv('BUILD_NUMBER')
+}
+
+Closure<String> getCommandLineOutput = { ...args ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine args
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+Closure<String> gitDescribeFull = { match ->
+    return getCommandLineOutput('git', 'describe', '--match', match ?: '*')
+}
+
+Closure<String> gitDescribeAbbrev = { match ->
+    return getCommandLineOutput('git', 'describe', '--match', match ?: '*', '--abbrev=0')
+}
+
+Closure<String> gitConfigEmail = { ->
+    return getCommandLineOutput('git', 'config', 'user.email')
+}
+
+Closure<String> getSDKVersion = { ->
+    final String versionTagMatch = 'v*'
+    String version
+
+    if (isCIBuild()) {
+        version = gitDescribeFull(versionTagMatch)
+    } else {
+        String user = gitConfigEmail().split("@").getAt(0)
+        version = gitDescribeAbbrev(versionTagMatch) + '-dev-' + user
+    }
+
+    return version.drop(1) // drop the 'v'
+}
+
+group = "io.afero.sdk"
+
+subprojects {
+    // export a couple variables for subprojects to use
+    ext {
+        sdkVersion = getSDKVersion()
+        sdkGroupId = "io.afero.sdk"
+    }
+}
+
+artifactory {
+    contextUrl = 'https://afero.jfrog.io/afero'
+    publish {
+        repository {
+            repoKey = 'afero-java-sdk'
+            username = project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
+            password = project.hasProperty('artifactory_password') ? "${project.artifactory_password}" : ""
+        }
+        defaults {
+            publications('aar', 'jar')
+            publishArtifacts = true
+            publishPom = true
+        }
+    }
+
+    clientConfig.info.setBuildNumber(System.getenv('BUILD_NUMBER') ?: 'dev')
+}
+
+task sdkDebugTask {
+    doLast {
+        println project.hasProperty('artifactory_username') ? "${project.artifactory_username}" : ""
+    }
+}
