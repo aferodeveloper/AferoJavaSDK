@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 1.4.4 *(2019-09-09)*
+----------------------------
+ * Fixed: Added logic to `ConclaveDeviceEventSource.stop()` to clear the access credentials and account id.
+ * Removed: `ConclaveDeviceEventSource.setAccountId()` since this function is defunct.
+
 Version 1.4.3 *(2019-08-22)*
 ----------------------------
  * Changed: Updated `AferoSofthub` to softhub version 1.0.844 to pick up latest fixes.

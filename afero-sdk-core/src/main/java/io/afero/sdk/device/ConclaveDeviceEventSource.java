@@ -109,12 +109,6 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
         return mAccountId != null;
     }
 
-    public void setAccountId(String accountId) {
-        mAccountId = accountId;
-        mConclaveAccessManager.resetAccess();
-        mConclaveAccessDetails = null;
-    }
-
     public void setSessionTracing(boolean enabled) {
         mSessionTrace = enabled;
     }
@@ -145,6 +139,10 @@ public class ConclaveDeviceEventSource implements DeviceEventSource {
             mConclaveSubscription.unsubscribe();
             mConclaveSubscription = null;
         }
+
+        mAccountId = null;
+        mConclaveAccessManager.resetAccess();
+        mConclaveAccessDetails = null;
 
         mConclaveClient.close();
     }
