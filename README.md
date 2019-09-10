@@ -60,4 +60,4 @@ The `afero-sdk-softhub` module is required for soft hub functionality on Android
 
 ## License
 
-[MIT](LICENSE)
+[MIT & ARM Permissive Binary](LICENSE)
