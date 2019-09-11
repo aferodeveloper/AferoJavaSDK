@@ -11,10 +11,6 @@ repositories {
     maven {
         url "https://afero.jfrog.io/afero/${sdkRepoKey}"
         artifactUrls "https://afero.jfrog.io/afero/hubby-android"
-        credentials {
-            username project.aferoArtifactoryUserName
-            password project.aferoArtifactoryPassword
-        }
     }
 }
 configurations.all {
