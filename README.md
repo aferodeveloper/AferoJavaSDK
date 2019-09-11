@@ -15,17 +15,13 @@ By participating, you are expected to uphold this code.
 ## Getting Started
 ### Specifying the Repository
 
-The SDK binaries are hosted privately on [JFrog](https://www.jfrog.com/artifactory/). To specify the repo use the following Gradle repository reference.
+The SDK binaries are hosted on [JFrog](https://www.jfrog.com/artifactory/). To specify the repo use the following Gradle repository reference.
 
 ```Gradle
     repositories {
         maven {
             url "https://afero.jfrog.io/afero/afero-java-sdk"
             artifactUrls "https://afero.jfrog.io/afero/hubby-android"
-            credentials {
-                username myAferoArtifactoryUserName
-                password myAferoArtifactoryPassword
-            }
         }
     }
 ```
