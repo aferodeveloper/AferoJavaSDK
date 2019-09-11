@@ -26,8 +26,6 @@ The SDK binaries are hosted on [JFrog](https://www.jfrog.com/artifactory/). To s
     }
 ```
 
-Replace `myAferoArtifactoryUserName` and `myAferoArtifactoryPassword` with the credentials provided by Afero.
-
 ### Specifying the Modules
 
 The SDK is composed of four separate modules.
