@@ -5,12 +5,16 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.4.4'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.4.5'
 
 repositories {
     maven {
         url "https://afero.jfrog.io/afero/${sdkRepoKey}"
         artifactUrls "https://afero.jfrog.io/afero/hubby-android"
+        credentials {
+            username = project.aferoArtifactoryUserName
+            password = project.aferoArtifactoryPassword
+        }
     }
 }
 configurations.all {
@@ -95,4 +99,5 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     implementation 'com.android.support:cardview-v7:27.1.1'
+    implementation 'com.android.support:design:27.1.1'
 }

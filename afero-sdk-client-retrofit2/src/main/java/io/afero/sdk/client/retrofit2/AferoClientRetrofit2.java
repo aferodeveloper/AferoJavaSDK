@@ -29,6 +29,7 @@ import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ResetPasswordBody;
 import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
@@ -423,7 +424,7 @@ public class AferoClientRetrofit2 implements AferoClient {
      */
     @Override
     public Observable<Void> resetPasswordWithCode(String resetCode, String newPassword) {
-        return mAferoService.resetPasswordWithCode(resetCode, newPassword);
+        return mAferoService.resetPasswordWithCode(resetCode, new ResetPasswordBody(newPassword));
     }
 
     /**

@@ -8,6 +8,7 @@ import android.content.Context;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,5 +78,13 @@ public class ScreenView extends FrameLayout implements BackStack.Stackable {
 
         //noinspection unchecked
         return (T) v;
+    }
+
+    public void showError(Throwable e, int statusCode) {
+        String errorString = getContext().getString(R.string.generic_error);
+        if (statusCode != 0) {
+            errorString += "  (" + statusCode + ")";
+        }
+        Snackbar.make(this, errorString, Snackbar.LENGTH_LONG).show();
     }
 }
