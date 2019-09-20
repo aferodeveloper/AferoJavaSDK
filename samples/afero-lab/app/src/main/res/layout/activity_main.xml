@@ -4,8 +4,7 @@
   ~ Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
   -->
 
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_view"
@@ -25,7 +24,7 @@
             android:background="?attr/colorPrimary"
             android:elevation="4dp"
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
         <LinearLayout
             android:id="@+id/group_sign_in"
@@ -42,8 +41,7 @@
                 android:hint="@string/email_label"
                 android:inputType="textEmailAddress|textNoSuggestions"
                 android:maxLines="1"
-                android:minWidth="150dp"
-                />
+                android:minWidth="150dp" />
 
             <io.afero.aferolab.widget.AferoEditText
                 android:id="@+id/edit_text_password"
@@ -53,8 +51,29 @@
                 android:hint="@string/password_label"
                 android:inputType="textPassword|textNoSuggestions"
                 android:maxLines="1"
-                android:minWidth="150dp"
-                />
+                android:minWidth="150dp" />
+
+            <Space
+                android:layout_width="1dp"
+                android:layout_height="30dp" />
+
+            <Button
+                android:id="@+id/button_sign_in"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/sign_in" />
+
+            <Space
+                android:layout_width="1dp"
+                android:layout_height="10dp" />
+
+            <Button
+                android:id="@+id/button_forgot_password"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/forgot_password" />
 
         </LinearLayout>
 
@@ -64,36 +83,32 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingEnd="20dp"
             android:paddingStart="20dp"
             android:paddingTop="15dp"
+            android:paddingEnd="20dp"
             android:visibility="gone">
 
             <TextView
                 android:id="@+id/text_account_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                />
+                android:layout_gravity="center_vertical" />
 
             <Space
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                />
+                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/text_network_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                />
+                android:layout_gravity="center_vertical" />
 
         </LinearLayout>
 
 
-        <io.afero.aferolab.deviceList.DeviceListView
-            xmlns:android="http://schemas.android.com/apk/res/android"
+        <io.afero.aferolab.deviceList.DeviceListView xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/device_list_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -103,16 +118,15 @@
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/device_recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                />
+                android:layout_height="match_parent" />
 
         </io.afero.aferolab.deviceList.DeviceListView>
 
 
     </LinearLayout>
 
-    <include layout="@layout/view_device_inspector"/>
+    <include layout="@layout/view_device_inspector" />
 
-    <include layout="@layout/view_attribute_editor"/>
+    <include layout="@layout/view_attribute_editor" />
 
 </FrameLayout>

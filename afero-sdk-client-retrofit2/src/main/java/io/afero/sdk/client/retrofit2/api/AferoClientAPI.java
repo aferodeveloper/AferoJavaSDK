@@ -20,6 +20,7 @@ import io.afero.sdk.client.afero.models.DeviceVersions;
 import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
+import io.afero.sdk.client.afero.models.ResetPasswordBody;
 import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
@@ -88,7 +89,7 @@ public interface AferoClientAPI {
     @POST(V1 + "shortvalues/{resetCode}/passwordReset")
     Observable<Void> resetPasswordWithCode(
         @Path("resetCode") String resetCode,
-        @Body String newPassword
+        @Body ResetPasswordBody body
     );
 
     @POST(V1 + "credentials/{email}/passwordReset")

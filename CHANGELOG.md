@@ -1,9 +1,14 @@
 Change Log
 ==========
 
+Version 1.4.5 *(2019-09-20)*
+----------------------------
+ * Fix: `AferoClient.resetPasswordWithCode` now actually works rather than returning a 400 error.
+ * New: AferoLab sample app now has a basic "Forgot Password" flow.
+
 Version 1.4.4 *(2019-09-09)*
 ----------------------------
- * Fixed: Added logic to `ConclaveDeviceEventSource.stop()` to clear the access credentials and account id.
+ * Fix: Added logic to `ConclaveDeviceEventSource.stop()` to clear the access credentials and account id.
  * Removed: `ConclaveDeviceEventSource.setAccountId()` since this function is defunct.
 
 Version 1.4.3 *(2019-08-22)*

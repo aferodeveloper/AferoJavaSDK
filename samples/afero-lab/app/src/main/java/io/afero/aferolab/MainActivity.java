@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
+ * Copyright (c) 2014-2019 Afero, Inc. All rights reserved.
  */
 
 package io.afero.aferolab;
@@ -26,6 +26,7 @@ import java.net.HttpURLConnection;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import butterknife.OnEditorAction;
 import io.afero.aferolab.addDevice.AddDeviceView;
 import io.afero.aferolab.addDevice.AddSetupModeDeviceView;
@@ -35,6 +36,7 @@ import io.afero.aferolab.deviceList.DeviceListView;
 import io.afero.aferolab.helper.BackStack;
 import io.afero.aferolab.helper.PermissionsHelper;
 import io.afero.aferolab.helper.PrefsHelper;
+import io.afero.aferolab.resetPassword.RequestCodeView;
 import io.afero.aferolab.widget.AferoEditText;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.android.clock.AndroidClock;
@@ -369,12 +371,23 @@ public class MainActivity extends AppCompatActivity {
     public boolean onEditorActionSignIn(TextView textView, int actionId, KeyEvent event) {
         if (AferoEditText.isDone(actionId, event)) {
             if (textView.getId() == R.id.edit_text_password) {
-                startSignIn(mEmailEditText.getText().toString(), mPasswordEditText.getText().toString());
-                mPasswordEditText.hideKeyboard();
+                onClickSignIn();
             }
         }
 
         return true;
+    }
+
+    @OnClick(R.id.button_sign_in)
+    public void onClickSignIn() {
+        mPasswordEditText.hideKeyboard();
+        startSignIn(mEmailEditText.getText().toString(), mPasswordEditText.getText().toString());
+    }
+
+    @OnClick(R.id.button_forgot_password)
+    public void onClickForgotPassword() {
+        mPasswordEditText.hideKeyboard();
+        RequestCodeView.create(mRootView).start(mAferoClient);
     }
 
     private void startSignIn(String email, String password) {
