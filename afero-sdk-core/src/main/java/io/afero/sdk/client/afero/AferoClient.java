@@ -10,8 +10,6 @@ import io.afero.sdk.client.afero.models.AccountDescriptionBody;
 import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.client.afero.models.CreateAccountBody;
-import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
 import io.afero.sdk.client.afero.models.DeviceRules;
@@ -30,10 +28,6 @@ import io.afero.sdk.device.DeviceProfile;
 import rx.Observable;
 
 public interface AferoClient {
-
-    Observable<CreateAccountResponse> createAccount(CreateAccountBody body);
-
-    Observable<CreateAccountResponse> createAccount(CreateAccountBody body, String appId, String platform);
 
     Observable<ActionResponse> postAttributeWrite(DeviceModel deviceModel, PostActionBody body, int maxRetryCount, int statusCode);
 
@@ -63,12 +57,6 @@ public interface AferoClient {
     Observable<Void> deleteDeviceTag(String deviceId, String tagId);
 
     Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body);
-
-    Observable<Void> resetPasswordWithCode(String resetCode, String newPassword);
-
-    Observable<Void> sendPasswordRecoveryEmail(String email, String appId, String platform);
-
-    Observable<Void> resendVerificationEmail(String email, String appId);
 
     Observable<DeviceAssociateResponse> deviceAssociateGetProfile(String associationId, boolean isOwnershipVerified);
 
