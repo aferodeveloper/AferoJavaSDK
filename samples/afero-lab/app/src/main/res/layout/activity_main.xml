@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <android.support.v7.widget.Toolbar
+        <androidx.appcompat.widget.Toolbar
             android:id="@+id/app_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
@@ -26,57 +26,12 @@
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
-        <LinearLayout
-            android:id="@+id/group_sign_in"
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/button_sign_in"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="15dp">
-
-            <io.afero.aferolab.widget.AferoEditText
-                android:id="@+id/edit_text_email"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:hint="@string/email_label"
-                android:inputType="textEmailAddress|textNoSuggestions"
-                android:maxLines="1"
-                android:minWidth="150dp" />
-
-            <io.afero.aferolab.widget.AferoEditText
-                android:id="@+id/edit_text_password"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:hint="@string/password_label"
-                android:inputType="textPassword|textNoSuggestions"
-                android:maxLines="1"
-                android:minWidth="150dp" />
-
-            <Space
-                android:layout_width="1dp"
-                android:layout_height="30dp" />
-
-            <Button
-                android:id="@+id/button_sign_in"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="@string/sign_in" />
-
-            <Space
-                android:layout_width="1dp"
-                android:layout_height="10dp" />
-
-            <Button
-                android:id="@+id/button_forgot_password"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="@string/forgot_password" />
-
-        </LinearLayout>
-
+            android:layout_gravity="center_horizontal"
+            android:text="@string/sign_in" />
 
         <LinearLayout
             android:id="@+id/group_status"
@@ -115,7 +70,7 @@
             android:layout_marginTop="10dp"
             android:clickable="true">
 
-            <android.support.v7.widget.RecyclerView
+            <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/device_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />

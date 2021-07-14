@@ -10,7 +10,8 @@ import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 
-public class AferoEditText extends android.support.v7.widget.AppCompatEditText {
+
+public class AferoEditText extends androidx.appcompat.widget.AppCompatEditText {
     public AferoEditText(Context context) {
         super(context);
     }
