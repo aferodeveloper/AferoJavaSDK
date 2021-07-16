@@ -15,8 +15,6 @@ import io.afero.sdk.client.afero.models.AccountDescriptionBody;
 import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.client.afero.models.CreateAccountBody;
-import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
 import io.afero.sdk.client.afero.models.DeviceRules;
@@ -56,16 +54,6 @@ public class MockAferoClient implements AferoClient {
 
     public MockAferoClient(String pathPrefix) {
         mLoader = new ResourceLoader(pathPrefix);
-    }
-
-    @Override
-    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body) {
-        return null;
-    }
-
-    @Override
-    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body, String appId, String platform) {
-        return null;
     }
 
     @Override
@@ -252,21 +240,6 @@ public class MockAferoClient implements AferoClient {
 
     @Override
     public Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body) {
-        return null;
-    }
-
-    @Override
-    public Observable<Void> resetPasswordWithCode(String resetCode, String newPassword) {
-        return null;
-    }
-
-    @Override
-    public Observable<Void> sendPasswordRecoveryEmail(String email, String appId, String platform) {
-        return null;
-    }
-
-    @Override
-    public Observable<Void> resendVerificationEmail(String email, String appId) {
         return null;
     }
 

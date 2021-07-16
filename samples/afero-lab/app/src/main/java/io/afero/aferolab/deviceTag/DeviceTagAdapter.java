@@ -1,12 +1,13 @@
 package io.afero.aferolab.deviceTag;
 
 
-import android.support.v7.util.SortedList;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.util.SortedListAdapterCallback;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SortedList;
+import androidx.recyclerview.widget.SortedListAdapterCallback;
 
 import io.afero.aferolab.R;
 import io.afero.sdk.device.DeviceModel;
@@ -19,7 +20,7 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-import static android.support.v7.util.SortedList.INVALID_POSITION;
+import static androidx.recyclerview.widget.SortedList.INVALID_POSITION;
 
 class DeviceTagAdapter extends RecyclerView.Adapter<DeviceTagAdapter.ViewHolder> {
 

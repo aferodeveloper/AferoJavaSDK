@@ -8,18 +8,19 @@ import android.animation.LayoutTransition;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.support.annotation.AttrRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.StringRes;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import androidx.annotation.AttrRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -254,8 +255,8 @@ public class DeviceInspectorView extends ScreenView {
     }
 
     private void startAttributeEditor(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
-        AttributeEditorView view = ButterKnife.findById(getRootView(), R.id.attribute_editor);
-        view.start(deviceModel, attribute);
+//        AttributeEditorView view = ButterKnife.findById(getRootView(), R.id.attribute_editor);
+//        view.start(deviceModel, attribute);
     }
 
     public void showWifiSetup(boolean isVisible) {

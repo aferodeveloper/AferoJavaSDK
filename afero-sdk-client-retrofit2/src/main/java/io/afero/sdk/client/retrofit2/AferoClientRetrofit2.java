@@ -4,7 +4,6 @@
 
 package io.afero.sdk.client.retrofit2;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -17,8 +16,6 @@ import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.client.afero.models.CreateAccountBody;
-import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
@@ -29,14 +26,12 @@ import io.afero.sdk.client.afero.models.ErrorBody;
 import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.ResetPasswordBody;
 import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
 import io.afero.sdk.client.retrofit2.api.AferoClientAPI;
-import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
@@ -50,12 +45,8 @@ import io.afero.sdk.device.DeviceProfile;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.utils.JSONUtils;
 import io.afero.sdk.utils.RxUtils;
-import okhttp3.Authenticator;
 import okhttp3.Credentials;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Route;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okio.ByteString;
 import retrofit2.HttpException;
@@ -79,12 +70,8 @@ import static okhttp3.OkHttpClient.Builder;
 @SuppressWarnings({ "WeakerAccess", "unused" })
 public class AferoClientRetrofit2 implements AferoClient {
 
-    public static final String GRANT_TYPE_PASSWORD = "password";
-    public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
 
-    private static final String AFERO_BASE_URL = "https://api.afero.io";
-
-    private static final String HEADER_AUTHORIZATION = "Authorization";
+    private static final String AFERO_BASE_URL = "https://api2.afero.net";
 
     private Config mConfig = new Config();
     private final OkHttpClient mHttpClient;
@@ -94,9 +81,7 @@ public class AferoClientRetrofit2 implements AferoClient {
     private String mActiveAccountId;
     private String mOwnerAccountId;
 
-    private AccessToken mAccessToken;
     private final Object mTokenRefreshLock = new Object();
-    private BehaviorSubject<AccessToken> mTokenSubject;
     private PublishSubject<String> mActiveAccountSubject = PublishSubject.create();
 
     /**
@@ -122,13 +107,13 @@ public class AferoClientRetrofit2 implements AferoClient {
                 e = new IllegalArgumentException("baseUrl must be specified");
             }
 
-            if (oauthClientId == null || oauthClientId.isEmpty()) {
-                e = new IllegalArgumentException("oauthClientId must be specified");
-            }
-
-            if (oauthClientSecret == null || oauthClientSecret.isEmpty()) {
-                e = new IllegalArgumentException("oauthClientSecret must be specified");
-            }
+//            if (oauthClientId == null || oauthClientId.isEmpty()) {
+//                e = new IllegalArgumentException("oauthClientId must be specified");
+//            }
+//
+//            if (oauthClientSecret == null || oauthClientSecret.isEmpty()) {
+//                e = new IllegalArgumentException("oauthClientSecret must be specified");
+//            }
 
             if (httpLogLevel == null) {
                 e = new IllegalArgumentException("httpLogLevel cannot be null");
@@ -245,9 +230,9 @@ public class AferoClientRetrofit2 implements AferoClient {
      *
      * @param config Config
      */
-    public AferoClientRetrofit2(Config config) {
+    public AferoClientRetrofit2(Config config, OkHttpClient httpClient) {
         mConfig = config;
-        mHttpClient = createHttpClient(config.httpLogLevel, config.defaultTimeout);
+        mHttpClient = httpClient;
         mAferoService = createRetrofit().create(AferoClientAPI.class);
         mOAuthAuthorizationBase64 = Credentials.basic(config.oauthClientId, config.oauthClientSecret);
     }
@@ -336,125 +321,10 @@ public class AferoClientRetrofit2 implements AferoClient {
         return mActiveAccountSubject;
     }
 
-    /**
-     * Create a new Afero Cloud user account.
-     *
-     * @param body parameters for the new account including first/last name and password
-     * @return {@link CreateAccountResponse} that includes the accountId
-     */
-    @Override
-    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body) {
-        return mAferoService.createAccount(body);
-    }
-
-    /**
-     * Create a new Afero Cloud user account.
-     *
-     * @param body parameters for the new account including first/last name and password
-     * @return {@link CreateAccountResponse} that includes the accountId
-     */
-    @Override
-    public Observable<CreateAccountResponse> createAccount(CreateAccountBody body, String appId, String platform) {
-        String appIdAndPlatform = appId + ":" + platform.toUpperCase();
-        byte[] bytes = appIdAndPlatform.getBytes(StandardCharsets.UTF_8);
-        String appIdAndPlatformBase64Encoded = ByteString.of(bytes).base64();
-
-        return mAferoService.createAccount(body, appIdAndPlatformBase64Encoded);
-    }
 
     @Override
     public Observable<AccountDescriptionBody> putAccountDescription(String accountId, AccountDescriptionBody body) {
         return mAferoService.putAccountDescription(accountId, body);
-    }
-
-    /**
-     * Initiates OAuth2 authentication with the specified user and password.
-     *
-     * <p>
-     * Example:
-     * <pre><code>
-     *     aferoClient.getAccessToken(userId, password, AferoClientRetrofit2.GRANT_TYPE_PASSWORD)
-     *         .subscribe(new Observer&lt;AccessToken&gt;() {
-     *              &#64;Override
-     *              public void onNext(AccessToken accessToken) {
-     *                   // token received, user is now authenticated
-     *                   aferoClient.setToken(accessToken);
-     *                   // we should now call aferoClient.usersMe() to get the account ID
-     *              }
-     *
-     *              &#64;Override
-     *              public void onError(Throwable t) {
-     *                   // call failed, log the error
-     *                   AfLog.e(t);
-     *              }
-     *
-     *              &#64;Override
-     *              public void onCompleted() {
-     *                  // call completed with no errors
-     *              }
-     *         });
-     * </code></pre>
-     * </p>
-     *
-     * @param user identifier for the user account - typically an email address
-     * @param password user's password
-     * @return {@link Observable} that emits an {@link AccessToken} in {@link rx.Observer#onNext}.
-     */
-    public Observable<AccessToken> getAccessToken(String user, String password) {
-        return mAferoService.getAccessToken(AferoClientRetrofit2.GRANT_TYPE_PASSWORD, user, password, mOAuthAuthorizationBase64);
-    }
-
-    /**
-     * Afero Cloud API call to trigger a password reset email to be sent to the
-     * specified email address.
-     *
-     * @param email address to which the reset email will be sent
-     * @return {@link Observable} that initiates the transaction when subscribed
-     */
-    public Observable<Void> resetPassword(String email) {
-        return mAferoService.resetPassword(email, "", mOAuthAuthorizationBase64);
-    }
-
-    /**
-     * Afero Cloud API call to reset the account password.
-     *
-     * @param resetCode code provided via password reset email sent via {@link #sendPasswordRecoveryEmail(String, String, String)}
-     * @param newPassword new password to be used for account authentication
-     * @return {@link Observable} that initiates the transaction when subscribed
-     */
-    @Override
-    public Observable<Void> resetPasswordWithCode(String resetCode, String newPassword) {
-        return mAferoService.resetPasswordWithCode(resetCode, new ResetPasswordBody(newPassword));
-    }
-
-    /**
-     * Afero Cloud API call to send the user a password recovery email with reset code.
-     *
-     * @param appId unique platform identifier for the calling application which will used to select the appropriate email template
-     * @return {@link Observable} that initiates the transaction when subscribed
-     */
-    @Override
-    public Observable<Void> sendPasswordRecoveryEmail(String email, String appId, String platform) {
-        String appIdAndPlatform = appId + ":" + platform.toUpperCase();
-        byte[] bytes = appIdAndPlatform.getBytes(StandardCharsets.UTF_8);
-        String appIdAndPlatformBase64Encoded = ByteString.of(bytes).base64();
-
-        return mAferoService.sendPasswordRecoveryEmail(email, appIdAndPlatformBase64Encoded);
-    }
-
-    /**
-     * Afero Cloud API call to resend an account verification email.
-     *
-     * @param email email address to which the account verification email will be sent
-     * @param appId unique platform identifier for the calling application which will used to select the appropriate email template
-     * @return {@link Observable} that initiates the transaction when subscribed
-     */
-    @Override
-    public Observable<Void> resendVerificationEmail(String email, String appId) {
-        byte[] bytes = appId.getBytes(StandardCharsets.UTF_8);
-        String appIdBase64Encoded = ByteString.of(bytes).base64();
-
-        return mAferoService.resendVerificationEmail(email, appIdBase64Encoded);
     }
 
     /**
@@ -845,7 +715,6 @@ public class AferoClientRetrofit2 implements AferoClient {
 
     /**
      * Signs out of the active account by calling {@link #deleteDeviceInfo}
-     * clears the active {@link AccessToken}.
      *
      * @param userId ID of the user returned via {@link #usersMe}
      * @param mobileDeviceId unique device ID generated by the app
@@ -858,49 +727,6 @@ public class AferoClientRetrofit2 implements AferoClient {
         } else {
             observable = rx.Observable.empty();
         }
-
-        observable.doOnTerminate(new Action0() {
-            @Override
-            public void call() {
-                synchronized (mTokenRefreshLock) {
-                    mAccessToken = null;
-
-                    BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-                    if (tokenSubject != null) {
-                        mTokenSubject = null;
-                        tokenSubject.onCompleted();
-                    }
-                }
-            }
-        }).subscribe(new RxUtils.IgnoreResponseObserver<Void>());
-    }
-
-    /**
-     * Sets the active OAuth token
-     *
-     * @param token {@link AccessToken} to become active
-     */
-    public void setToken(AccessToken token) {
-        mAccessToken = token;
-    }
-
-    /**
-     * @return currently active {@link AccessToken} or null if not signed in
-     */
-    public AccessToken getToken() {
-        return mAccessToken;
-    }
-
-    /**
-     * Observes token refreshes that typically occur due to token expiration.
-     *
-     * @return {@link Observable} that emits the refreshed {@link AccessToken} in {@link rx.Observer#onNext}.
-     */
-    public Observable<AccessToken> tokenRefreshObservable() {
-        if (mTokenSubject == null) {
-            mTokenSubject = BehaviorSubject.create();
-        }
-        return mTokenSubject;
     }
 
     /**
@@ -954,107 +780,6 @@ public class AferoClientRetrofit2 implements AferoClient {
             .addConverterFactory(JacksonConverterFactory.create(JSONUtils.getObjectMapper()))
             .baseUrl(getBaseUrl())
             .build();
-    }
-
-    private OkHttpClient createHttpClient(HttpLoggingInterceptor.Level logLevel, int defaultTimeout) {
-        return AfHttpClient.create(logLevel, defaultTimeout).newBuilder()
-            .addInterceptor(new AuthTokenInterceptor())
-            .authenticator(new RefreshTokenAuthenticator())
-            .build();
-    }
-
-    private class RefreshTokenAuthenticator implements Authenticator {
-        @Override
-        public Request authenticate(Route route, okhttp3.Response response) throws IOException {
-            if (responseCount(response) >= 2) {
-                synchronized (mTokenRefreshLock) {
-                    mAccessToken = null;
-                    notifyTokenException(new Exception("RefreshTokenAuthenticator: Too many retries"));
-                }
-
-                // If both the original call and the call with refreshed token failed,
-                // it will probably keep failing, so don't try again.
-                return null;
-            }
-
-            synchronized (mTokenRefreshLock) { // prevent concurrent token refreshes
-                AccessToken currentToken = mAccessToken;
-
-                if (currentToken != null && currentToken.refreshToken != null) {
-                    AfLog.d("AferoClient: Attempting to refresh token");
-
-                    // Get a new token
-                    try {
-                        mAccessToken = internalRefreshAccessToken(currentToken.refreshToken, GRANT_TYPE_REFRESH_TOKEN);
-                        if (mTokenSubject != null) {
-                            mTokenSubject.onNext(mAccessToken);
-                        }
-
-                        // Add new header to rejected request and retry it
-                        return response.request().newBuilder()
-                            .header(HEADER_AUTHORIZATION, mAccessToken.tokenType + " " + mAccessToken.accessToken)
-                            .build();
-
-                    } catch (Exception e) {
-                        AfLog.d("AferoClient: Failed to refresh token");
-                        mAccessToken = null;
-                        notifyTokenException(e);
-                    }
-                }
-            }
-
-            return null;
-        }
-    }
-
-    private void notifyTokenException(Exception e) {
-        BehaviorSubject<AccessToken> tokenSubject = mTokenSubject;
-        if (tokenSubject != null && !(tokenSubject.hasThrowable() || tokenSubject.hasCompleted())) {
-            mTokenSubject = null;
-            tokenSubject.onError(e);
-        }
-    }
-
-    protected AccessToken internalRefreshAccessToken(String refreshToken, String grantType) throws IOException {
-        Response<AccessToken> response = mAferoService
-                .refreshAccessToken(grantType, refreshToken, mOAuthAuthorizationBase64)
-                .execute();
-
-        if (!response.isSuccessful()) {
-            throw new HttpException(response);
-        }
-
-        if (response.body() == null) {
-            throw new IOException("Null AccessToken in response");
-        }
-
-        return response.body();
-    }
-
-    private static int responseCount(okhttp3.Response response) {
-        int result = 1;
-        while ((response = response.priorResponse()) != null) {
-            result++;
-        }
-        return result;
-    }
-
-    private class AuthTokenInterceptor implements Interceptor {
-
-        @Override
-        public okhttp3.Response intercept(Chain chain) throws IOException {
-            Request request = chain.request();
-
-            Request.Builder builder = request.newBuilder();
-            AccessToken requestToken = mAccessToken;
-            if (request.header(HEADER_AUTHORIZATION) == null && requestToken != null) {
-                String type = requestToken.tokenType != null ? requestToken.tokenType : "Bearer";
-                String auth = type + " " + requestToken.accessToken;
-                builder.header(HEADER_AUTHORIZATION, auth);
-            }
-
-            return chain.proceed(builder.build());
-        }
     }
 
     private static class RetryOnError implements Func1<Observable<? extends Throwable>, Observable<?>> {

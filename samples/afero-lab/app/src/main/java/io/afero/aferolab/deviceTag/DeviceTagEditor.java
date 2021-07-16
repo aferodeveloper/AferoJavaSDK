@@ -7,7 +7,6 @@ package io.afero.aferolab.deviceTag;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.support.annotation.StringRes;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -67,8 +66,9 @@ class DeviceTagEditor {
 
                 View view = LayoutInflater.from(mOwnerView.getContext())
                         .inflate(R.layout.view_tag_editor, mOwnerView, false);
-                mTagKeyEditText = ButterKnife.findById(view, R.id.tag_key_edit_text);
-                mTagValueEditText = ButterKnife.findById(view, R.id.tag_value_edit_text);
+
+                mTagKeyEditText = view.findViewById(R.id.tag_key_edit_text);
+                mTagValueEditText = view.findViewById( R.id.tag_value_edit_text);
 
                 if (mTag != null) {
                     if (mTag.getKey() != null) {

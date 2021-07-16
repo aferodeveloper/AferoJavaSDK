@@ -9,8 +9,6 @@ import io.afero.sdk.client.afero.models.AccountUserSummary;
 import io.afero.sdk.client.afero.models.ActionResponse;
 import io.afero.sdk.client.afero.models.ConclaveAccessBody;
 import io.afero.sdk.client.afero.models.ConclaveAccessDetails;
-import io.afero.sdk.client.afero.models.CreateAccountBody;
-import io.afero.sdk.client.afero.models.CreateAccountResponse;
 import io.afero.sdk.client.afero.models.DeviceAssociateBody;
 import io.afero.sdk.client.afero.models.DeviceAssociateResponse;
 import io.afero.sdk.client.afero.models.DeviceInfoExtendedData;
@@ -20,13 +18,11 @@ import io.afero.sdk.client.afero.models.DeviceVersions;
 import io.afero.sdk.client.afero.models.InvitationDetails;
 import io.afero.sdk.client.afero.models.Location;
 import io.afero.sdk.client.afero.models.PostActionBody;
-import io.afero.sdk.client.afero.models.ResetPasswordBody;
 import io.afero.sdk.client.afero.models.RuleExecuteBody;
 import io.afero.sdk.client.afero.models.ViewRequest;
 import io.afero.sdk.client.afero.models.ViewResponse;
 import io.afero.sdk.client.afero.models.WriteRequest;
 import io.afero.sdk.client.afero.models.WriteResponse;
-import io.afero.sdk.client.retrofit2.models.AccessToken;
 import io.afero.sdk.client.retrofit2.models.DeviceInfoBody;
 import io.afero.sdk.client.retrofit2.models.DeviceTimeZoneResponse;
 import io.afero.sdk.client.retrofit2.models.DeviceTimezone;
@@ -34,12 +30,9 @@ import io.afero.sdk.client.retrofit2.models.NameDeviceBody;
 import io.afero.sdk.client.retrofit2.models.UserDetails;
 import io.afero.sdk.conclave.models.DeviceSync;
 import io.afero.sdk.device.DeviceProfile;
-import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
-import retrofit2.http.Field;
-import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
@@ -50,59 +43,6 @@ import rx.Observable;
 
 public interface AferoClientAPI {
     static final String V1 = "/v1/";
-
-    @FormUrlEncoded
-    @POST("/oauth/token")
-    Observable<AccessToken> getAccessToken(
-            @Field("grant_type") String grantType,
-            @Field("username") String user,
-            @Field("password") String password,
-            @Header("Authorization") String authorization
-    );
-
-    @FormUrlEncoded
-    @POST("/oauth/token")
-    Call<AccessToken> refreshAccessToken(
-            @Field("grant_type") String grantType,
-            @Field("refresh_token") String refreshToken,
-            @Header("Authorization") String authorization
-    );
-
-    @POST(V1 + "accounts")
-    Observable<CreateAccountResponse> createAccount(
-        @Body CreateAccountBody body
-    );
-
-    @POST(V1 + "accounts")
-    Observable<CreateAccountResponse> createAccount(
-        @Body CreateAccountBody body,
-        @Header("x-afero-app") String appIdAndPlatformBase64Encoded
-    );
-
-    @POST(V1 + "credentials/{email}/passwordReset")
-    Observable<Void> resetPassword(
-            @Path("email") String email,
-            @Body String string,
-            @Header("Authorization") String authorization
-    );
-
-    @POST(V1 + "shortvalues/{resetCode}/passwordReset")
-    Observable<Void> resetPasswordWithCode(
-        @Path("resetCode") String resetCode,
-        @Body ResetPasswordBody body
-    );
-
-    @POST(V1 + "credentials/{email}/passwordReset")
-    Observable<Void> sendPasswordRecoveryEmail(
-        @Path("email") String email,
-        @Header("x-afero-app") String appIdAndPlatformBase64Encoded
-    );
-
-    @POST(V1 + "accounts/{accountId}/credentials/{email}/resendVerification")
-    Observable<Void> resendVerificationEmail(
-        @Path("email") String email,
-        @Header("x-afero-app") String appIdBase64Encoded
-    );
 
     @GET(V1 + "users/me")
     Observable<UserDetails> usersMe();
