@@ -35,9 +35,18 @@ android {
         versionName '1.0'
 
         buildConfigField 'String', 'AFERO_CLIENT_ID', project.aferoClientId
-        buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.aferoClientSecret
+        buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.findProperty('aferoClientSecret') ?: 'null'
         buildConfigField 'String', 'AFERO_SERVICE_URL', project.findProperty('aferoServiceUrl') ?: '"https://api.afero.io"'
         buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: '"prod"'
+
+        buildConfigField 'String', 'AFERO_OAUTH_AUTH_URL', project.findProperty('aferoOauthAuthUrl') ?: 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_TOKEN_URL', project.findProperty('aferoOauthTokenUrl') ?: 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_SCHEME', project.findProperty('aferoOauthRedirectScheme') ?: 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_HOST', project.findProperty('aferoOauthRedirectHost') ?: 'null'
+
+        manifestPlaceholders = [scheme: project.findProperty('aferoOauthRedirectScheme') ?: 'null',
+                                host: project.findProperty('aferoOauthRedirectHost') ?: 'null']
+
     }
 
     buildTypes {
@@ -66,10 +75,16 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // https://github.com/aferodeveloper/AferoJavaSDK
-    implementation "io.afero.sdk:afero-sdk-core:${sdkVersion}"
-    implementation "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
-    implementation "io.afero.sdk:afero-sdk-android:${sdkVersion}@aar"
-    implementation "io.afero.sdk:afero-sdk-softhub:${sdkVersion}@aar"
+//    implementation "io.afero.sdk:afero-sdk-core:${sdkVersion}"
+//    implementation "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
+//    implementation "io.afero.sdk:afero-sdk-android:${sdkVersion}@aar"
+//    implementation "io.afero.sdk:afero-sdk-softhub:${sdkVersion}@aar"
+    compile files('../../../afero-sdk-client-retrofit2/build/libs/afero-sdk-client-retrofit2.jar')
+    compile files('../../../afero-sdk-android/build/outputs/aar/afero-sdk-android-debug.aar')
+    compile files('../../../afero-sdk-core/build/libs/afero-sdk-core.jar')
+    compile files('../../../afero-sdk-softhub/build/outputs/aar/afero-sdk-softhub-debug.aar')
+
+
     implementation "io.afero.sdk:hubby:1.0.844@aar"
 
     // https://github.com/square/retrofit
@@ -100,4 +115,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     implementation 'com.android.support:cardview-v7:27.1.1'
     implementation 'com.android.support:design:27.1.1'
+
+    //https://github.com/openid/AppAuth-Android
+    implementation 'net.openid:appauth:0.9.1'
 }

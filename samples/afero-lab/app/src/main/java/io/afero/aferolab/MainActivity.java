@@ -4,12 +4,14 @@
 
 package io.afero.aferolab;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -19,7 +21,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import net.openid.appauth.AuthState;
+import net.openid.appauth.AuthorizationException;
+import net.openid.appauth.AuthorizationRequest;
+import net.openid.appauth.AuthorizationResponse;
+import net.openid.appauth.AuthorizationService;
+import net.openid.appauth.AuthorizationServiceConfiguration;
+import net.openid.appauth.ResponseTypeValues;
 
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
@@ -74,6 +88,11 @@ public class MainActivity extends AppCompatActivity {
     private AferoSofthub mAferoSofthub;
     private ConnectivityReceiver mConnectivityReceiver;
 
+    private ActivityResultLauncher<Intent> launcher;
+    private AuthorizationService mAuthService;
+    private AuthorizationServiceConfiguration mServiceConfig;
+    private AuthState mAuthState;
+
     private String mUserId;
 
     private final Observer<AferoSofthub> mAferoSofthubStartObserver = new RxUtils.IgnoreResponseObserver<>();
@@ -98,6 +117,12 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.edit_text_password)
     AferoEditText mPasswordEditText;
+
+    @BindView(R.id.button_forgot_password)
+    Button mForgotPasswordButton;
+
+    @BindView(R.id.button_sign_in)
+    Button mSignInButton;
 
     @BindView(R.id.group_sign_in)
     ViewGroup mSignInGroup;
@@ -135,14 +160,38 @@ public class MainActivity extends AppCompatActivity {
             ? new AccessToken(accessToken, refreshToken)
             : null;
 
-        AferoClientRetrofit2.Config aferoClientConfig = new AferoClientRetrofit2.ConfigBuilder()
+        AferoClientRetrofit2.ConfigBuilder configBuilder = new AferoClientRetrofit2.ConfigBuilder()
                 .oauthClientId(BuildConfig.AFERO_CLIENT_ID)
-                .oauthClientSecret(BuildConfig.AFERO_CLIENT_SECRET)
                 .baseUrl(BuildConfig.AFERO_SERVICE_URL)
-                .logLevel(BuildConfig.HTTP_LOG_LEVEL)
-                .build();
+                .logLevel(BuildConfig.HTTP_LOG_LEVEL);
 
-        mAferoClient = new AferoClientRetrofit2(aferoClientConfig);
+        if (BuildConfig.AFERO_CLIENT_SECRET != null) {
+            configBuilder.oauthClientSecret(BuildConfig.AFERO_CLIENT_SECRET);
+        }
+
+        if (BuildConfig.AFERO_OAUTH_AUTH_URL != null && BuildConfig.AFERO_OAUTH_TOKEN_URL != null) {
+            mServiceConfig =
+                    new AuthorizationServiceConfiguration(
+                            Uri.parse(BuildConfig.AFERO_OAUTH_AUTH_URL), // authorization endpoint
+                            Uri.parse(BuildConfig.AFERO_OAUTH_TOKEN_URL));
+            mAuthState = new AuthState(mServiceConfig);
+            launcher = registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            // There are no request codes
+                            Intent data = result.getData();
+                            AuthorizationResponse response = AuthorizationResponse.fromIntent(data);
+                            AuthorizationException ex = AuthorizationException.fromIntent(data);
+
+                            System.out.println("Access Token " + response.authorizationCode);
+                            exchangeAuthorizationCode(response);
+                        }
+                    });
+        }
+
+
+        mAferoClient = new AferoClientRetrofit2(configBuilder.build());
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
         mDeviceCollection = new DeviceCollection(mAferoClient);
@@ -320,6 +369,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupViews() {
+        if (BuildConfig.AFERO_OAUTH_AUTH_URL != null) {
+            mEmailEditText.setVisibility(View.GONE);
+            mPasswordEditText.setVisibility(View.GONE);
+            mForgotPasswordButton.setVisibility(View.GONE);
+        }
+
         if (isSignedIn()) {
             mSignInGroup.setVisibility(View.GONE);
             mStatusGroup.setVisibility(View.VISIBLE);
@@ -380,8 +435,30 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.button_sign_in)
     public void onClickSignIn() {
-        mPasswordEditText.hideKeyboard();
-        startSignIn(mEmailEditText.getText().toString(), mPasswordEditText.getText().toString());
+        if (BuildConfig.AFERO_OAUTH_AUTH_URL != null) {
+
+            mSignInButton.setEnabled(false);
+            showConclaveStatus(ConclaveClient.Status.CONNECTING);
+
+            AuthorizationRequest.Builder authRequestBuilder =
+                    new AuthorizationRequest.Builder(
+                            mServiceConfig, // the authorization service configuration
+                            "hubspace_android",
+                            // the client ID, typically pre-registered and static
+                            ResponseTypeValues.CODE, // the response_type value: we want a code
+                            Uri.parse("hubspace-app://loginredirect")
+                    );
+
+
+            mAuthService = new AuthorizationService(this);
+            Intent authIntent = mAuthService.getAuthorizationRequestIntent(authRequestBuilder.build());
+
+            launcher.launch(authIntent);
+        } else {
+
+            mPasswordEditText.hideKeyboard();
+            startSignIn(mEmailEditText.getText().toString(), mPasswordEditText.getText().toString());
+        }
     }
 
     @OnClick(R.id.button_forgot_password)

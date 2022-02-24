@@ -126,10 +126,6 @@ public class AferoClientRetrofit2 implements AferoClient {
                 e = new IllegalArgumentException("oauthClientId must be specified");
             }
 
-            if (oauthClientSecret == null || oauthClientSecret.isEmpty()) {
-                e = new IllegalArgumentException("oauthClientSecret must be specified");
-            }
-
             if (httpLogLevel == null) {
                 e = new IllegalArgumentException("httpLogLevel cannot be null");
             }
@@ -249,7 +245,7 @@ public class AferoClientRetrofit2 implements AferoClient {
         mConfig = config;
         mHttpClient = createHttpClient(config.httpLogLevel, config.defaultTimeout);
         mAferoService = createRetrofit().create(AferoClientAPI.class);
-        mOAuthAuthorizationBase64 = Credentials.basic(config.oauthClientId, config.oauthClientSecret);
+        mOAuthAuthorizationBase64 = config.oauthClientSecret != null ? Credentials.basic(config.oauthClientId, config.oauthClientSecret) : "";
     }
 
     // don't use me
