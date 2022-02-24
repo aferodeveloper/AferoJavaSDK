@@ -13,9 +13,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +23,9 @@ import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationException;
@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                             AuthorizationException ex = AuthorizationException.fromIntent(data);
 
                             System.out.println("Access Token " + response.authorizationCode);
-                            exchangeAuthorizationCode(response);
+//                            exchangeAuthorizationCode(response);
                         }
                     });
         }
@@ -596,6 +596,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         PermissionsHelper.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
     }
 

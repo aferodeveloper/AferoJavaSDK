@@ -10,7 +10,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import io.afero.aferolab.R;
 import io.afero.sdk.log.AfLog;

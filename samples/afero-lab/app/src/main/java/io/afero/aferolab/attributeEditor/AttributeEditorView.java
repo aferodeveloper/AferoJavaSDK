@@ -6,11 +6,6 @@ package io.afero.aferolab.attributeEditor;
 
 import android.animation.TimeInterpolator;
 import android.content.Context;
-import android.support.annotation.AttrRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v7.widget.CardView;
-import android.support.v7.widget.PopupMenu;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
@@ -25,6 +20,12 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
+
+import androidx.annotation.AttrRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.cardview.widget.CardView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;

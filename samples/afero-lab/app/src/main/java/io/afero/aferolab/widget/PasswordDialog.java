@@ -7,13 +7,14 @@ package io.afero.aferolab.widget;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.support.annotation.StringRes;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+
+import androidx.annotation.StringRes;
 
 import butterknife.ButterKnife;
 import io.afero.aferolab.R;
@@ -44,7 +45,7 @@ public class PasswordDialog {
 
                 View view = LayoutInflater.from(mViewGroup.getContext())
                         .inflate(R.layout.view_password_dialog, mViewGroup, false);
-                mPasswordEditText = ButterKnife.findById(view, R.id.password_edit_text);
+                mPasswordEditText = view.findViewById(R.id.password_edit_text);
 
                 mPasswordEditText.addTextChangedListener(new TextWatcher() {
                     @Override
