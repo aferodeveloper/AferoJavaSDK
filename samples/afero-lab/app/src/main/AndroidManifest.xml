@@ -40,8 +40,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="hubspace-app"
-                    android:host="loginredirect" />
+                    android:scheme="${oAuthRedirectScheme}"
+                    android:host="${oAuthRedirectHost}" />
             </intent-filter>
         </activity>
     </application>
