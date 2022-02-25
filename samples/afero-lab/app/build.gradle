@@ -91,7 +91,7 @@ dependencies {
     compile files('../../../afero-sdk-softhub/build/outputs/aar/afero-sdk-softhub-debug.aar')
 
 
-    implementation "io.afero.sdk:hubby:1.0.844@aar"
+    implementation "io.afero.sdk:hubby:1.0.957@aar"
 
     // https://github.com/square/retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
