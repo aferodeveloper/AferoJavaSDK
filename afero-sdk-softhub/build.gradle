@@ -14,7 +14,7 @@ repositories {
     }
 }
 
-final String hubbyVersion = "1.0.844"
+final String hubbyVersion = "1.0.957"
 final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {

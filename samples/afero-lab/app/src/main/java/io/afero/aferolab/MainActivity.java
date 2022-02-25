@@ -173,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
 
         AferoClientRetrofit2.ConfigBuilder configBuilder = new AferoClientRetrofit2.ConfigBuilder()
                 .oauthClientId(BuildConfig.AFERO_CLIENT_ID)
-                .baseUrl(BuildConfig.AFERO_SERVICE_URL)
+                .baseUrl("https://" + BuildConfig.AFERO_SERVICE_HOSTNAME)
                 .logLevel(BuildConfig.HTTP_LOG_LEVEL);
 
         if (BuildConfig.AFERO_CLIENT_SECRET != null) {
@@ -230,6 +230,9 @@ public class MainActivity extends AppCompatActivity {
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, "appId: " + BuildConfig.APPLICATION_ID);
         mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
+        mAferoSofthub.setHost(BuildConfig.AFERO_SERVICE_HOSTNAME);
+        mAferoSofthub.setHost(BuildConfig.AFERO_SOFTHUB_AUTHENTICATOR_CERT);
+
         mAferoSofthub.observeSetupModeDevices()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(new Observer<AferoSofthub.SetupModeDeviceInfo>() {

@@ -37,8 +37,9 @@ android {
 
         buildConfigField 'String', 'AFERO_CLIENT_ID', project.aferoClientId
         buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.findProperty('aferoClientSecret') ?: 'null'
-        buildConfigField 'String', 'AFERO_SERVICE_URL', project.findProperty('aferoServiceUrl') ?: '"https://api.afero.io"'
-        buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: '"prod"'
+        buildConfigField 'String', 'AFERO_SERVICE_HOSTNAME', project.findProperty('aferoServiceHostname') ?: '"api.afero.io"'
+        buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: 'null'
+        buildConfigField 'String', 'AFERO_SOFTHUB_AUTHENTICATOR_CERT', project.findProperty('aferoSofthubAuthenticatorCert') ?: 'null'
 
         buildConfigField 'String', 'AFERO_OAUTH_AUTH_URL', project.findProperty('aferoOauthAuthUrl') ?: 'null'
         buildConfigField 'String', 'AFERO_OAUTH_TOKEN_URL', project.findProperty('aferoOauthTokenUrl') ?: 'null'
