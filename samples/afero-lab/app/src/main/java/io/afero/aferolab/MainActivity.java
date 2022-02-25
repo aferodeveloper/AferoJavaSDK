@@ -13,6 +13,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,17 +26,23 @@ import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-
 import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationException;
 import net.openid.appauth.AuthorizationRequest;
 import net.openid.appauth.AuthorizationResponse;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.AuthorizationServiceConfiguration;
+import net.openid.appauth.ClientAuthentication;
 import net.openid.appauth.ResponseTypeValues;
+import net.openid.appauth.TokenRequest;
+import net.openid.appauth.TokenResponse;
 
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
@@ -66,6 +75,7 @@ import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.log.AfLog;
 import io.afero.sdk.softhub.AferoSofthub;
 import io.afero.sdk.utils.RxUtils;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Response;
 import rx.Observable;
 import rx.Observer;
@@ -137,12 +147,13 @@ public class MainActivity extends AppCompatActivity {
     TextView mNetworkStatus;
 
     private BackStack<ScreenView> mBackStack = new BackStack<>();
-
+    private LabClientHelper clientHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         ButterKnife.bind(this);
 
         ScreenView.setBackStack(mBackStack);
@@ -167,9 +178,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (BuildConfig.AFERO_CLIENT_SECRET != null) {
             configBuilder.oauthClientSecret(BuildConfig.AFERO_CLIENT_SECRET);
-        }
+            mAferoClient = new AferoClientRetrofit2(configBuilder.build(), null);
 
-        if (BuildConfig.AFERO_OAUTH_AUTH_URL != null && BuildConfig.AFERO_OAUTH_TOKEN_URL != null) {
+        } else if (BuildConfig.AFERO_OAUTH_AUTH_URL != null && BuildConfig.AFERO_OAUTH_TOKEN_URL != null) {
+            clientHelper = new LabClientHelper(HttpLoggingInterceptor.Level.BASIC, 60);
             mServiceConfig =
                     new AuthorizationServiceConfiguration(
                             Uri.parse(BuildConfig.AFERO_OAUTH_AUTH_URL), // authorization endpoint
@@ -185,19 +197,20 @@ public class MainActivity extends AppCompatActivity {
                             AuthorizationException ex = AuthorizationException.fromIntent(data);
 
                             System.out.println("Access Token " + response.authorizationCode);
-//                            exchangeAuthorizationCode(response);
+                            exchangeAuthorizationCode(response);
                         }
                     });
+            mAferoClient = new AferoClientRetrofit2(configBuilder.build(), clientHelper.getClient());
+        } else {
+            throw new IllegalArgumentException("Either configure client secret or auth/token/redirect url");
         }
-
-
-        mAferoClient = new AferoClientRetrofit2(configBuilder.build());
+        
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
         mDeviceCollection = new DeviceCollection(mAferoClient);
 
         if (token != null) {
-            mAferoClient.setToken(new AccessToken(accessToken, refreshToken));
+            setToken(token);
             mDeviceCollection.start()
                     .subscribe(new DeviceCollectionStartObserver(this));
         }
@@ -253,11 +266,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        if (mAferoClient.getToken() != null) {
+        //
+        if (getToken() != null) {
             // listen for token refresh failures
-            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new TokenObserver(this));
+            observeTokenRefresh();
 
             startDeviceStream();
         }
@@ -267,6 +279,54 @@ public class MainActivity extends AppCompatActivity {
         showConclaveStatus(ConclaveClient.Status.DISCONNECTED);
 
         PermissionsHelper.checkRequiredPermissions(this);
+    }
+
+    @MainThread
+    private void exchangeAuthorizationCode(AuthorizationResponse authorizationResponse) {
+        performTokenRequest(
+                authorizationResponse.createTokenExchangeRequest(),
+                this::handleCodeExchangeResponse);
+    }
+
+    @MainThread
+    private void performTokenRequest(
+            TokenRequest request,
+            AuthorizationService.TokenResponseCallback callback) {
+        ClientAuthentication clientAuthentication;
+        try {
+            clientAuthentication = mAuthState.getClientAuthentication();
+        } catch (ClientAuthentication.UnsupportedAuthenticationMethod ex) {
+            mSignInButton.setEnabled(false);
+
+            Log.d("main", "Token request cannot be made, client authentication for the token "
+                    + "endpoint could not be constructed (%s)", ex);
+            return;
+        }
+        mAuthService.performTokenRequest(
+                request,
+                clientAuthentication,
+                callback);
+    }
+
+
+
+    @WorkerThread
+    private void handleCodeExchangeResponse(
+            @Nullable TokenResponse tokenResponse,
+            @Nullable AuthorizationException authException) {
+
+
+        if (authException == null) {
+            PrefsHelper.saveAccessToken(this, tokenResponse.accessToken);
+            PrefsHelper.saveRefreshToken(this, tokenResponse.refreshToken);
+
+            setToken(new AccessToken(tokenResponse.accessToken, tokenResponse.refreshToken));
+
+            mAferoClient.usersMe()
+                    .subscribe(new SignInObserver(this));
+        }
+        mSignInButton.setEnabled(true);
+        setupViews();
     }
 
     @Override
@@ -350,6 +410,9 @@ public class MainActivity extends AppCompatActivity {
      */
     void onActionSignOut() {
         mAferoClient.signOut(null, null);
+        setToken(null);
+
+        setupViews();
     }
 
     @Override
@@ -399,6 +462,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startSofthub() {
+        Log.d("main","#### Start softhub ");
         if (!mAferoSofthub.isRunning()) {
             mAferoSofthub.start()
                 .subscribe(mAferoSofthubStartObserver);
@@ -443,10 +507,10 @@ public class MainActivity extends AppCompatActivity {
             AuthorizationRequest.Builder authRequestBuilder =
                     new AuthorizationRequest.Builder(
                             mServiceConfig, // the authorization service configuration
-                            "hubspace_android",
+                            BuildConfig.AFERO_CLIENT_ID,
                             // the client ID, typically pre-registered and static
                             ResponseTypeValues.CODE, // the response_type value: we want a code
-                            Uri.parse("hubspace-app://loginredirect")
+                            Uri.parse(BuildConfig.AFERO_OAUTH_REDIRECT_SCHEME + "://" + BuildConfig.AFERO_OAUTH_REDIRECT_HOST)
                     );
 
 
@@ -479,14 +543,13 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new SignInObserver(this));
     }
 
+    @UiThread
     private void onSignIn(UserDetails userDetails) {
 
         mPasswordEditText.setText("");
 
         // listen for token refresh failures
-        mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new TokenObserver(this));
+        observeTokenRefresh();
 
         mUserId = userDetails.userId;
         String accountId = null;
@@ -500,13 +563,13 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        PrefsHelper.saveAccessToken(this, mAferoClient.getToken().accessToken);
-        PrefsHelper.saveRefreshToken(this, mAferoClient.getToken().refreshToken);
+        PrefsHelper.saveAccessToken(this, getToken().accessToken);
+        PrefsHelper.saveRefreshToken(this, getToken().refreshToken);
         PrefsHelper.saveUserId(this, mUserId);
         PrefsHelper.saveAccountId(this, accountId);
         PrefsHelper.saveAccountName(this, accountName);
 
-        mAccountNameText.setText(accountName);
+        setName(accountName);
 
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
@@ -514,6 +577,16 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new DeviceCollectionStartObserver(this));
 
         startDeviceStream();
+    }
+
+    private void setName(final String name){
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                mAccountNameText.setText(name);
+
+            }
+        });
     }
 
     private void onSignInError(Throwable e) {
@@ -537,7 +610,7 @@ public class MainActivity extends AppCompatActivity {
 
         mDeviceEventSource.stop();
 
-        mAferoClient.setToken(null);
+        setToken(null);
         mAferoClient.clearAccount();
 
         if (mDeviceCollection.isStarted()) {
@@ -548,8 +621,34 @@ public class MainActivity extends AppCompatActivity {
         setupViews();
     }
 
+    private void setToken(AccessToken token) {
+        if (clientHelper != null) {
+            clientHelper.setToken(token);
+        } else {
+            mAferoClient.setToken(token);
+        }
+
+    }
+
+    private AccessToken getToken() {
+        return clientHelper != null ? clientHelper.getToken() : mAferoClient.getToken();
+    }
+
+    private void observeTokenRefresh() {
+        if (clientHelper != null) {
+            mTokenRefreshSubscription = clientHelper.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
+        } else {
+            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
+        }
+
+    }
+
     private boolean isSignedIn() {
-        return mAferoClient.getToken() != null;
+        return getToken() != null;
     }
 
     private void startDeviceStream() {
@@ -689,7 +788,7 @@ public class MainActivity extends AppCompatActivity {
     private class MapAccessTokenToUserDetails implements Func1<AccessToken, Observable<UserDetails>> {
         @Override
         public Observable<UserDetails> call(AccessToken accessToken) {
-            mAferoClient.setToken(accessToken);
+            setToken(accessToken);
             return mAferoClient.usersMe();
         }
     }

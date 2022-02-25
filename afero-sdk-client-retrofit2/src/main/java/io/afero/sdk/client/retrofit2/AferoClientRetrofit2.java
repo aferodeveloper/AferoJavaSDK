@@ -241,9 +241,9 @@ public class AferoClientRetrofit2 implements AferoClient {
      *
      * @param config Config
      */
-    public AferoClientRetrofit2(Config config) {
+    public AferoClientRetrofit2(Config config, OkHttpClient client) {
         mConfig = config;
-        mHttpClient = createHttpClient(config.httpLogLevel, config.defaultTimeout);
+        mHttpClient = client != null ? client : createHttpClient(config.httpLogLevel, config.defaultTimeout);
         mAferoService = createRetrofit().create(AferoClientAPI.class);
         mOAuthAuthorizationBase64 = config.oauthClientSecret != null ? Credentials.basic(config.oauthClientId, config.oauthClientSecret) : "";
     }
