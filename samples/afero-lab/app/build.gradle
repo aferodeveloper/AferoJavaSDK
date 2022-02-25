@@ -5,7 +5,7 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.4.5'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.5.0'
 
 repositories {
     maven {
@@ -82,15 +82,10 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // https://github.com/aferodeveloper/AferoJavaSDK
-//    implementation "io.afero.sdk:afero-sdk-core:${sdkVersion}"
-//    implementation "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
-//    implementation "io.afero.sdk:afero-sdk-android:${sdkVersion}@aar"
-//    implementation "io.afero.sdk:afero-sdk-softhub:${sdkVersion}@aar"
-    compile files('../../../afero-sdk-client-retrofit2/build/libs/afero-sdk-client-retrofit2.jar')
-    compile files('../../../afero-sdk-android/build/outputs/aar/afero-sdk-android-debug.aar')
-    compile files('../../../afero-sdk-core/build/libs/afero-sdk-core.jar')
-    compile files('../../../afero-sdk-softhub/build/outputs/aar/afero-sdk-softhub-debug.aar')
-
+    implementation "io.afero.sdk:afero-sdk-core:${sdkVersion}"
+    implementation "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
+    implementation "io.afero.sdk:afero-sdk-android:${sdkVersion}@aar"
+    implementation "io.afero.sdk:afero-sdk-softhub:${sdkVersion}@aar"
 
     implementation "io.afero.sdk:hubby:1.0.957@aar"
 

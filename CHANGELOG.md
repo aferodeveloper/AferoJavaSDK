@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 1.5.0 *(2022-02-24)*
+----------------------------
+ * New: Adds ability to configure the the underlying http client to enable oAuth to be handled by the app.
+ * New: Adds ability to configure softhub to connect to different services
+
 Version 1.4.5 *(2019-09-20)*
 ----------------------------
  * Fix: `AferoClient.resetPasswordWithCode` now actually works rather than returning a 400 error.
