@@ -196,8 +196,9 @@ public class MainActivity extends AppCompatActivity {
                             AuthorizationResponse response = AuthorizationResponse.fromIntent(data);
                             AuthorizationException ex = AuthorizationException.fromIntent(data);
 
-                            System.out.println("Access Token " + response.authorizationCode);
                             exchangeAuthorizationCode(response);
+                        } else {
+                            mSignInButton.setEnabled(true);
                         }
                     });
             mAferoClient = new AferoClientRetrofit2(configBuilder.build(), clientHelper.getClient());
@@ -435,7 +436,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupViews() {
-        if (BuildConfig.AFERO_OAUTH_AUTH_URL != null) {
+        if (BuildConfig.AFERO_CLIENT_SECRET == null) {
             mEmailEditText.setVisibility(View.GONE);
             mPasswordEditText.setVisibility(View.GONE);
             mForgotPasswordButton.setVisibility(View.GONE);
@@ -502,7 +503,9 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.button_sign_in)
     public void onClickSignIn() {
-        if (BuildConfig.AFERO_OAUTH_AUTH_URL != null) {
+        if (BuildConfig.AFERO_OAUTH_AUTH_URL != null
+                && BuildConfig.AFERO_OAUTH_REDIRECT_SCHEME != null &&
+                BuildConfig.AFERO_OAUTH_REDIRECT_HOST != null) {
 
             mSignInButton.setEnabled(false);
             showConclaveStatus(ConclaveClient.Status.CONNECTING);
