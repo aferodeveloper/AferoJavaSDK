@@ -43,11 +43,11 @@ android {
 
         buildConfigField 'String', 'AFERO_OAUTH_AUTH_URL', project.findProperty('aferoOauthAuthUrl') ?: 'null'
         buildConfigField 'String', 'AFERO_OAUTH_TOKEN_URL', project.findProperty('aferoOauthTokenUrl') ?: 'null'
-        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_SCHEME', project.findProperty('aferoOauthRedirectScheme') ?: 'null'
-        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_HOST', project.findProperty('aferoOauthRedirectHost') ?: 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_SCHEME', project.findProperty('aferoOauthRedirectScheme') != null ? '"' + project.findProperty('aferoOauthRedirectScheme') + '"' : 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_HOST',  project.findProperty('aferoOauthRedirectHost') != null ? '"' + project.findProperty('aferoOauthRedirectHost') + '"' : 'null'
 
-        manifestPlaceholders = [oAuthRedirectScheme: project.findProperty('aferoOauthRedirectScheme') ?: 'null',
-                                oAuthRedirectHost: project.findProperty('aferoOauthRedirectHost') ?: 'null']
+        manifestPlaceholders = [oAuthRedirectScheme: project.findProperty('aferoOauthRedirectScheme') != null ? project.findProperty('aferoOauthRedirectScheme') : "",
+                                oAuthRedirectHost: project.findProperty('aferoOauthRedirectHost') != null ? project.findProperty('aferoOauthRedirectHost') : ""]
 
     }
 
