@@ -10,10 +10,16 @@ final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.5.0'
 repositories {
     maven {
         url "https://afero.jfrog.io/afero/${sdkRepoKey}"
-        artifactUrls "https://afero.jfrog.io/afero/hubby-android"
+        artifactUrls "https://afero.jfrog.io/artifactory/hubby-android"
         credentials {
             username = project.aferoArtifactoryUserName
             password = project.aferoArtifactoryPassword
+        }
+        authentication {
+            basic(BasicAuthentication)
+        }
+        metadataSources {
+            artifact()
         }
     }
 }

@@ -10,7 +10,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.4.0'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1"
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.15.2'
         classpath "com.mobbeel.plugin:fat-aar:2.0.1"
     }
 }
@@ -19,6 +19,7 @@ allprojects {
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
 
     apply plugin: 'com.jfrog.artifactory'
