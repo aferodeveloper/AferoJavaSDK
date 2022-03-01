@@ -230,9 +230,17 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         mAferoSofthub = AferoSofthub.acquireInstance(this, mAferoClient, "appId: " + BuildConfig.APPLICATION_ID);
-        mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
-        mAferoSofthub.setHost(BuildConfig.AFERO_SERVICE_HOSTNAME);
-        mAferoSofthub.setHost(BuildConfig.AFERO_SOFTHUB_AUTHENTICATOR_CERT);
+        if (BuildConfig.AFERO_SOFTHUB_SERVICE != null) {
+            mAferoSofthub.setService(BuildConfig.AFERO_SOFTHUB_SERVICE);
+        }
+
+        if (BuildConfig.AFERO_SERVICE_HOSTNAME != null) {
+            mAferoSofthub.setHost(BuildConfig.AFERO_SERVICE_HOSTNAME);
+        }
+
+        if (BuildConfig.AFERO_SOFTHUB_AUTHENTICATOR_CERT != null) {
+            mAferoSofthub.setAuthCert(BuildConfig.AFERO_SOFTHUB_AUTHENTICATOR_CERT);
+        }
 
         mAferoSofthub.observeSetupModeDevices()
             .observeOn(AndroidSchedulers.mainThread())
