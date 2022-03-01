@@ -1,13 +1,14 @@
 package io.afero.aferolab.wifiSetup;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 
 import butterknife.ButterKnife;
 import io.afero.aferolab.R;
@@ -115,9 +116,9 @@ class WifiSSIDListAdapter extends ArrayAdapter<WifiSSIDEntry> {
             vh = new ViewHolder();
             view.setTag(vh);
             vh.topItemDivider = view.findViewById(R.id.top_item_divider);
-            vh.networkConnectedIndicator = ButterKnife.findById(view, R.id.network_connected);
-            vh.networkNameView = ButterKnife.findById(view, R.id.network_name);
-            vh.networkBarsView = ButterKnife.findById(view, R.id.network_wifi_bars);
+            vh.networkConnectedIndicator = view.findViewById(R.id.network_connected);
+            vh.networkNameView = view.findViewById(R.id.network_name);
+            vh.networkBarsView = view.findViewById(R.id.network_wifi_bars);
         }
 
         return vh;

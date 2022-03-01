@@ -5,15 +5,21 @@
 apply plugin: 'com.android.application'
 
 final String sdkRepoKey = project.findProperty('aferoSDKConsumeRepoKey') ?: 'afero-java-sdk'
-final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.4.5'
+final String sdkVersion = project.findProperty('aferoSDKVersion') ?: '1.5.0'
 
 repositories {
     maven {
         url "https://afero.jfrog.io/afero/${sdkRepoKey}"
-        artifactUrls "https://afero.jfrog.io/afero/hubby-android"
+        artifactUrls "https://afero.jfrog.io/artifactory/hubby-android"
         credentials {
             username = project.aferoArtifactoryUserName
             password = project.aferoArtifactoryPassword
+        }
+        authentication {
+            basic(BasicAuthentication)
+        }
+        metadataSources {
+            artifact()
         }
     }
 }
@@ -25,19 +31,30 @@ configurations.all {
 
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 30
 
     defaultConfig {
         applicationId 'io.afero.aferolab'
-        minSdkVersion 19
-        targetSdkVersion 27
+        minSdkVersion 26
+        targetSdkVersion 30
+
         versionCode 1
         versionName '1.0'
 
         buildConfigField 'String', 'AFERO_CLIENT_ID', project.aferoClientId
-        buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.aferoClientSecret
-        buildConfigField 'String', 'AFERO_SERVICE_URL', project.findProperty('aferoServiceUrl') ?: '"https://api.afero.io"'
-        buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: '"prod"'
+        buildConfigField 'String', 'AFERO_CLIENT_SECRET', project.findProperty('aferoClientSecret') ?: 'null'
+        buildConfigField 'String', 'AFERO_SERVICE_HOSTNAME', project.findProperty('aferoServiceHostname') ?: '"api.afero.io"'
+        buildConfigField 'String', 'AFERO_SOFTHUB_SERVICE', project.findProperty('aferoSofthubService') ?: 'null'
+        buildConfigField 'String', 'AFERO_SOFTHUB_AUTHENTICATOR_CERT', project.findProperty('aferoSofthubAuthenticatorCert') ?: 'null'
+
+        buildConfigField 'String', 'AFERO_OAUTH_AUTH_URL', project.findProperty('aferoOauthAuthUrl') ?: 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_TOKEN_URL', project.findProperty('aferoOauthTokenUrl') ?: 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_SCHEME', project.findProperty('aferoOauthRedirectScheme') != null ? '"' + project.findProperty('aferoOauthRedirectScheme') + '"' : 'null'
+        buildConfigField 'String', 'AFERO_OAUTH_REDIRECT_HOST',  project.findProperty('aferoOauthRedirectHost') != null ? '"' + project.findProperty('aferoOauthRedirectHost') + '"' : 'null'
+
+        manifestPlaceholders = [oAuthRedirectScheme: project.findProperty('aferoOauthRedirectScheme') != null ? project.findProperty('aferoOauthRedirectScheme') : "",
+                                oAuthRedirectHost: project.findProperty('aferoOauthRedirectHost') != null ? project.findProperty('aferoOauthRedirectHost') : ""]
+
     }
 
     buildTypes {
@@ -60,6 +77,11 @@ android {
         exclude 'META-INF/NOTICE'
         exclude 'META-INF/NOTICE.txt'
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
 }
 
 dependencies {
@@ -70,7 +92,8 @@ dependencies {
     implementation "io.afero.sdk:afero-sdk-client-retrofit2:${sdkVersion}"
     implementation "io.afero.sdk:afero-sdk-android:${sdkVersion}@aar"
     implementation "io.afero.sdk:afero-sdk-softhub:${sdkVersion}@aar"
-    implementation "io.afero.sdk:hubby:1.0.844@aar"
+
+    implementation "io.afero.sdk:hubby:1.0.957@aar"
 
     // https://github.com/square/retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
@@ -88,16 +111,20 @@ dependencies {
     implementation 'io.reactivex:rxjava:1.3.0'
 
     // http://jakewharton.github.io/butterknife/
-    implementation 'com.jakewharton:butterknife:8.5.1'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
+    implementation 'com.jakewharton:butterknife:10.2.3'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.3'
 
     // https://github.com/dm77/barcodescanner
     implementation 'me.dm7.barcodescanner:zxing:1.9.13'
 
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:recyclerview-v7:27.1.1'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+
 
     testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:cardview-v7:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
+
+    //https://github.com/openid/AppAuth-Android
+    implementation 'net.openid:appauth:0.9.1'
 }

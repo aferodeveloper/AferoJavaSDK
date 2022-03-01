@@ -8,21 +8,27 @@ repositories {
     maven {
         url "https://afero.jfrog.io/afero/hubby-android"
         credentials {
-            username = project.aferoArtifactoryUserName
-            password = project.aferoArtifactoryPassword
+            username project.aferoArtifactoryUserName
+            password project.aferoArtifactoryPassword
+        }
+        authentication {
+            basic(BasicAuthentication)
+        }
+        metadataSources {
+            artifact()
         }
     }
 }
 
-final String hubbyVersion = "1.0.844"
+final String hubbyVersion = "1.0.957"
 final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 30
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 26
+        targetSdkVersion 30
 
         versionCode 1
         versionName rootProject.version

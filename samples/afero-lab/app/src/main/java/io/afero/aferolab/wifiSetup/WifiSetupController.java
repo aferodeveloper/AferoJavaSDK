@@ -1,7 +1,8 @@
 package io.afero.aferolab.wifiSetup;
 
 import android.bluetooth.BluetoothAdapter;
-import android.support.annotation.StringRes;
+
+import androidx.annotation.StringRes;
 
 import java.util.concurrent.TimeUnit;
 

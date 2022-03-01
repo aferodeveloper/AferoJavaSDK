@@ -6,3 +6,5 @@ build
 .classpath
 bin
 .vscode
+.idea
+.gradle

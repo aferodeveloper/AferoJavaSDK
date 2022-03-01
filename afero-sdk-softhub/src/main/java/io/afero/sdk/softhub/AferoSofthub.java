@@ -66,6 +66,9 @@ public class AferoSofthub {
 
     private boolean mIsActive = true;
     private String mService;
+    private String mHost;
+    private String mAuthCert;
+
 
     private PublishSubject<AferoSofthub> mStartSubject;
     private final PublishSubject<NotificationCallback.CompleteReason> mCompleteSubject = PublishSubject.create();
@@ -238,6 +241,15 @@ public class AferoSofthub {
         return mStartSubject != null;
     }
 
+    public void setHost(@NonNull String host) {
+        mHost = host;
+    }
+
+    public void setAuthCert(@NonNull String cert) {
+        mAuthCert = cert;
+    }
+
+
     public void setService(@NonNull String service) {
         mService = service;
     }
@@ -314,6 +326,14 @@ public class AferoSofthub {
         config.put(Hubby.Config.OTA_WORKING_PATH, mOTAPath);
         config.put(Hubby.Config.HARDWARE_INFO, hwInfo);
         config.put(Hubby.Config.HUB_TYPE, mHubType.toString());
+
+        if (mHost != null) {
+            config.put(Hubby.Config.API_HOSTNAME, mHost);
+        }
+
+        if(mAuthCert != null) {
+            config.put(Hubby.Config.AUTHENTICATOR_CERT, mAuthCert);
+        }
 
         if (mService != null) {
             config.put(Hubby.Config.SERVICE, mService);
