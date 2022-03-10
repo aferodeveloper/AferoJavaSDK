@@ -523,6 +523,10 @@ public class DeviceCollection {
                     @Override
                     public void call(InvalidateMessage im) {
                         try {
+                            if (im.deviceId == null) {
+                                AfLog.e("Got invalidate without deviceId");
+                                return;
+                            }
                             DeviceModel deviceModel = getDevice(im.deviceId);
                             if (deviceModel == null) {
                                 AfLog.e("Got invalidate on unknown deviceId: " + im.deviceId);
