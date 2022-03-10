@@ -22,7 +22,16 @@ public class PermissionsHelper {
 
     // See http://developer.radiusnetworks.com/2015/09/29/is-your-beacon-app-ready-for-android-6.html
     public static void checkRequiredPermissions(Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            boolean hasCamera = activity.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+            boolean hasBluetooth = activity.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+
+            if (!hasCamera || !hasBluetooth) {
+                askUserForAllPermissions(activity);
+            } else {
+                AfLog.d("checkRequiredPermissions: permissions granted");
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Android M Permission check
             boolean hasLocation = activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
             boolean hasCamera = activity.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
@@ -42,7 +51,15 @@ public class PermissionsHelper {
         builder.setPositiveButton(android.R.string.ok, null);
         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
             public void onDismiss(DialogInterface dialog) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    activity.requestPermissions(
+                            new String[]{
+                                    Manifest.permission.BLUETOOTH_SCAN,
+                                    Manifest.permission.BLUETOOTH_CONNECT,
+                                    Manifest.permission.CAMERA
+                            },
+                            PERMISSION_REQUEST_ALL);
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     activity.requestPermissions(
                             new String[]{
                                     Manifest.permission.ACCESS_FINE_LOCATION,
