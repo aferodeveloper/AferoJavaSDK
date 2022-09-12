@@ -36,13 +36,13 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     private static byte EVENT_FLAGS_USES_DEVICE_TIMEZONE = 2;
 
     private static int compactFlag = 128;
-    private static int saturdayBit = 64;
-    private static int fridayBit = 32;
-    private static int thursdayBit = 16;
+    private static int saturdayBit = 1;
+    private static int fridayBit = 2;
+    private static int thursdayBit = 4;
     private static int wednesdayBit = 8;
-    private static int tuesdayBit = 4;
-    private static int mondayBit = 2;
-    private static int sundayBit = 1;
+    private static int tuesdayBit = 16;
+    private static int mondayBit = 32;
+    private static int sundayBit = 64;
     /*
         From http://wiki.afero.io/display/FIR/AfRac+Offline+Schedule+Design
 
