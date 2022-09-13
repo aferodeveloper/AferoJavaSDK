@@ -35,6 +35,14 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     private static byte EVENT_FLAGS_REPEATS = 1;
     private static byte EVENT_FLAGS_USES_DEVICE_TIMEZONE = 2;
 
+    private static int compactFlag = 128;
+    private static int saturdayBit = 1;
+    private static int fridayBit = 2;
+    private static int thursdayBit = 4;
+    private static int wednesdayBit = 8;
+    private static int tuesdayBit = 16;
+    private static int mondayBit = 32;
+    private static int sundayBit = 64;
     /*
         From http://wiki.afero.io/display/FIR/AfRac+Offline+Schedule+Design
 
@@ -54,13 +62,21 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     private int mId;
 
     private byte mFlags = (byte)(EVENT_FLAGS_REPEATS | EVENT_FLAGS_USES_DEVICE_TIMEZONE);
-    private int mDay;
+    private int mDay; // 1 - 7 in legacy representation. Bit representation day containts all days of the week
     private int mHour;
     private int mMinute;
+
+    private boolean useCompactDayRepresentation;
+
     private HashMap<Integer,AttributeValue> mAttributeValues = new HashMap<>();
 
 
     public OfflineScheduleEvent() {
+        useCompactDayRepresentation = false;
+    }
+
+    public OfflineScheduleEvent(boolean useCompactDayRepresentation) {
+        this.useCompactDayRepresentation = useCompactDayRepresentation;
     }
 
     OfflineScheduleEvent(int id, AttributeValue value, DeviceProfile dp) {
@@ -82,6 +98,11 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         mFlags = bb.get();
 
         mDay = bb.get();
+        boolean isCompact = (mDay & compactFlag) != 0;
+        if (isCompact) {
+            useCompactDayRepresentation = true;
+        }
+
         mHour = bb.get();
         mMinute = bb.get();
 
@@ -170,11 +191,79 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
     }
 
     public void setDay(int day) {
-        setIsInLocalTime(true);
-        mDay = day;
+        if (useCompactDayRepresentation) {
+            setIsInLocalTime(true);
+            mDay = mDay | compactFlag; // always set compact flag
+            if (day == SUNDAY) {
+                mDay = mDay | sundayBit;
+            }
+            if (day == MONDAY) {
+                mDay = mDay | mondayBit;
+            }
+            if (day == TUESDAY) {
+                mDay = mDay | tuesdayBit;
+            }
+            if (day == WEDNESDAY) {
+                mDay = mDay | wednesdayBit;
+            }
+            if (day == THURSDAY) {
+                mDay = mDay | thursdayBit;
+            }
+            if (day == FRIDAY) {
+                mDay = mDay | fridayBit;
+            }
+            if (day == SATURDAY) {
+                mDay = mDay | saturdayBit;
+            }
+        } else {
+            setIsInLocalTime(true);
+            mDay = day;
+        }
+    }
+
+    public boolean hasCompactDayRepresentation() {
+        return useCompactDayRepresentation;
+    }
+
+
+    public boolean hasDay(int day) {
+        if (!useCompactDayRepresentation) {
+            throw new IllegalStateException("Can not use has day if Event is not using compact day representation");
+        }
+
+        if ((mDay & compactFlag) == 0) {
+            return false;
+        }
+
+        if (day == SUNDAY) {
+             return (mDay & sundayBit) != 0;
+        }
+        if (day == MONDAY) {
+            return (mDay & mondayBit) != 0;
+        }
+        if (day == TUESDAY) {
+            return (mDay & tuesdayBit) != 0;
+        }
+        if (day == WEDNESDAY) {
+            return (mDay & wednesdayBit) != 0;
+        }
+        if (day == THURSDAY) {
+            return (mDay & thursdayBit) != 0;
+        }
+        if (day == FRIDAY) {
+            return (mDay & fridayBit) != 0;
+        }
+        if (day == SATURDAY) {
+            return (mDay & saturdayBit) != 0;
+        }
+        return false;
     }
 
     public int getDay() {
+        if (useCompactDayRepresentation) {
+            throw new IllegalStateException("Can not get day if Event is using compact day representation");
+        }
+
         return isInLocalTime() ? mDay : getLocalCalendar().get(OfflineScheduler.CALENDAR_DAY);
     }
 
