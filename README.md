@@ -2,7 +2,7 @@
 author: Tony Myles
 title: "AferoJavaSDK"
 date: 2022-March-10
-status: 1.5.1
+status: 1.5.2
 ---
 
 # AferoJavaSDK

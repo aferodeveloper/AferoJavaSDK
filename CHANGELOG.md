@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.5.2 *(2022-09-13)*
+----------------------------
+* New: Adds compact schedule days
+
 Version 1.5.0 *(2022-02-24)*
 ----------------------------
  * New: Adds ability to configure the the underlying http client to enable oAuth to be handled by the app.
