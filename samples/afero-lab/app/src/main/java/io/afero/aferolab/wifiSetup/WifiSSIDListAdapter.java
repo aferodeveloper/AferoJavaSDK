@@ -10,7 +10,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import butterknife.ButterKnife;
 import io.afero.aferolab.R;
 import io.afero.hubby.WifiSSIDEntry;
 import io.afero.sdk.log.AfLog;

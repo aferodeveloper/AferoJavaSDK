@@ -31,10 +31,14 @@ import io.afero.aferolab.deviceTag.DeviceTagsView;
 import io.afero.aferolab.widget.ProgressSpinnerView;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
+import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
+import io.afero.sdk.scheduler.OfflineScheduleEvent;
+import io.afero.sdk.scheduler.OfflineScheduler;
 import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 
@@ -196,6 +200,61 @@ public class DeviceInspectorView extends ScreenView {
     void onClickTagsButton() {
         DeviceTagsView tagsView = DeviceTagsView.create(this);
         tagsView.start(mController.getDeviceModel());
+    }
+
+    @OnClick(R.id.device_read_schedule_button)
+    void onClickReadScheduleButton() {
+        OfflineScheduler os = new OfflineScheduler();
+        os.start(mController.getDeviceModel());
+        os.readFromDevice();
+        os.getScheduleEvents()
+                .onBackpressureBuffer()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<OfflineScheduleEvent>() {
+                    @Override
+                    public void call(OfflineScheduleEvent event) {
+                        if (event.hasCompactDayRepresentation()) {
+                            // Event supports multiple weekdays
+                            for (int day = 1; day <= 7 ; day++ ) {
+                                System.out.println(event.hasDay(day));
+                            }
+                        } else {
+                            // Event only supports one day
+                            event.getDay();
+                        }
+                    }
+                });
+    }
+
+
+    @OnClick(R.id.device_write_schedule_button)
+    void onClickScheduleButton() {
+        OfflineScheduleEvent event = new OfflineScheduleEvent(true);
+        event.setId(59002);
+        event.setDay(OfflineScheduleEvent.SUNDAY);
+        event.setDay(OfflineScheduleEvent.MONDAY);
+        event.setDay(OfflineScheduleEvent.WEDNESDAY);
+        event.setDay(OfflineScheduleEvent.THURSDAY);
+        event.setDay(OfflineScheduleEvent.SATURDAY);
+
+        event.setHour(18);
+        event.setMinute(25);
+
+        final int value = 1;
+        AttributeValue av = new AttributeValue(Integer.toString(value), AttributeValue.DataType.SINT8);
+        event.addAttributeValue(1, av);
+
+//        System.out.println("Attribute: " +  event.toAttributeValueString());
+
+        OfflineScheduler os = new OfflineScheduler();
+
+
+        os.start(mController.getDeviceModel());
+
+        os.addEvent(event);
+        os.writeToDevice();
+        os.writeMasterSwitchFlag(true);
+
     }
 
     @OnClick(R.id.device_delete_button)

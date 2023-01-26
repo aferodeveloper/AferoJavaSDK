@@ -59,6 +59,8 @@
     <string name="wifi_please_wait">Please wait.\nThis may take a moment…</string>
     <string name="wifi_done">Done</string>
     <string name="device_tag_button_title">Tags</string>
+    <string name="device_read_schedule_button_title">Read Schedule</string>
+    <string name="device_write_schedule_button_title">Write Schedule</string>
     <string name="tag_title">Tags</string>
     <string name="tags_title">Tags</string>
     <string name="tag_key_hint">Key</string>

@@ -16,7 +16,6 @@ import android.widget.Button;
 
 import androidx.annotation.StringRes;
 
-import butterknife.ButterKnife;
 import io.afero.aferolab.R;
 import rx.Emitter;
 import rx.Observable;
