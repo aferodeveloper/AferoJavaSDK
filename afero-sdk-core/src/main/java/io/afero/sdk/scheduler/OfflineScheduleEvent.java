@@ -349,7 +349,7 @@ public class OfflineScheduleEvent implements Comparable<OfflineScheduleEvent> {
         return null;
     }
 
-    String toAttributeValueString() {
+    public String toAttributeValueString() {
 
         int byteCount = TIME_SPEC_BYTE_COUNT;
         for (AttributeValue av : mAttributeValues.values()) {
