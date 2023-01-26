@@ -532,7 +532,7 @@ public class MainActivity extends AppCompatActivity {
                             ResponseTypeValues.CODE, // the response_type value: we want a code
                             Uri.parse(BuildConfig.AFERO_OAUTH_REDIRECT_SCHEME + "://" + BuildConfig.AFERO_OAUTH_REDIRECT_HOST)
                     );
-
+            authRequestBuilder.setScopes("openid","offline_access");
             Intent authIntent = mAuthService.getAuthorizationRequestIntent(authRequestBuilder.build());
 
             launcher.launch(authIntent);
