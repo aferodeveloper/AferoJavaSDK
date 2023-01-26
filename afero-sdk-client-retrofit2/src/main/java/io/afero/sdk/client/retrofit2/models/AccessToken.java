@@ -24,7 +24,7 @@ public class AccessToken extends BaseResponse {
     @JsonProperty("refresh_token")
     public String refreshToken;
 
-    private String scope;
+    public String scope;
 
     public AccessToken() {
     }
