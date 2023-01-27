@@ -1,5 +1,9 @@
 Change Log
 ==========
+Version 1.5.3 *(2023-01-27)*
+----------------------------
+* Fixes access token refresh in sample app
+* Schedule sample 
 
 Version 1.5.2 *(2022-09-13)*
 ----------------------------
