@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
@@ -35,6 +36,7 @@ import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
+import io.afero.sdk.log.AfLog;
 import io.afero.sdk.scheduler.OfflineScheduleEvent;
 import io.afero.sdk.scheduler.OfflineScheduler;
 import rx.Observable;
@@ -204,6 +206,8 @@ public class DeviceInspectorView extends ScreenView {
 
     @OnClick(R.id.device_read_schedule_button)
     void onClickReadScheduleButton() {
+        AfLog.d("Read Scedules");
+
         OfflineScheduler os = new OfflineScheduler();
         os.start(mController.getDeviceModel());
         os.readFromDevice();
@@ -213,10 +217,12 @@ public class DeviceInspectorView extends ScreenView {
                 .subscribe(new Action1<OfflineScheduleEvent>() {
                     @Override
                     public void call(OfflineScheduleEvent event) {
+                        AfLog.d("Got event " + event);
+
                         if (event.hasCompactDayRepresentation()) {
                             // Event supports multiple weekdays
-                            for (int day = 1; day <= 7 ; day++ ) {
-                                System.out.println(event.hasDay(day));
+                            for (int day = 1; day <= 7; day++) {
+                                AfLog.d("Day " + event.hasDay(day));
                             }
                         } else {
                             // Event only supports one day
@@ -228,33 +234,33 @@ public class DeviceInspectorView extends ScreenView {
 
 
     @OnClick(R.id.device_write_schedule_button)
-    void onClickScheduleButton() {
-        OfflineScheduleEvent event = new OfflineScheduleEvent(true);
-        event.setId(59002);
-        event.setDay(OfflineScheduleEvent.SUNDAY);
-        event.setDay(OfflineScheduleEvent.MONDAY);
-        event.setDay(OfflineScheduleEvent.WEDNESDAY);
-        event.setDay(OfflineScheduleEvent.THURSDAY);
-        event.setDay(OfflineScheduleEvent.SATURDAY);
+    void onClickWriteScheduleButton() {
+        Toast toast = Toast.makeText(getContext(), "See code for example", Toast.LENGTH_SHORT);
+        toast.show();
 
-        event.setHour(18);
-        event.setMinute(25);
-
-        final int value = 1;
-        AttributeValue av = new AttributeValue(Integer.toString(value), AttributeValue.DataType.SINT8);
-        event.addAttributeValue(1, av);
-
-//        System.out.println("Attribute: " +  event.toAttributeValueString());
-
-        OfflineScheduler os = new OfflineScheduler();
-
-
-        os.start(mController.getDeviceModel());
-
-        os.addEvent(event);
-        os.writeToDevice();
-        os.writeMasterSwitchFlag(true);
-
+//        OfflineScheduleEvent event = new OfflineScheduleEvent(true);
+//        event.setId(59002);
+//        event.setDay(OfflineScheduleEvent.SUNDAY);
+//        event.setDay(OfflineScheduleEvent.MONDAY);
+//        event.setDay(OfflineScheduleEvent.WEDNESDAY);
+//        event.setDay(OfflineScheduleEvent.THURSDAY);
+//        event.setDay(OfflineScheduleEvent.SATURDAY);
+//
+//        event.setHour(18);
+//        event.setMinute(25);
+//
+//        final int value = 1;
+//        AttributeValue av = new AttributeValue(Integer.toString(value), AttributeValue.DataType.SINT8);
+//        event.addAttributeValue(1, av);
+//
+//        OfflineScheduler os = new OfflineScheduler();
+//
+//
+//        os.start(mController.getDeviceModel());
+//
+//        os.addEvent(event);
+//        os.writeToDevice();
+//        os.writeMasterSwitchFlag(true);
     }
 
     @OnClick(R.id.device_delete_button)
@@ -314,7 +320,7 @@ public class DeviceInspectorView extends ScreenView {
     }
 
     private void startAttributeEditor(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
-        AttributeEditorView view = getRootView().findViewById( R.id.attribute_editor);
+        AttributeEditorView view = getRootView().findViewById(R.id.attribute_editor);
         view.start(deviceModel, attribute);
 
     }
