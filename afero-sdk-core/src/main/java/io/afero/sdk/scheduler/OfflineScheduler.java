@@ -290,7 +290,7 @@ public class OfflineScheduler {
         }
     }
 
-    private synchronized boolean put(int id, OfflineScheduleEvent event) {
+    public synchronized boolean put(int id, OfflineScheduleEvent event) {
         OfflineScheduleEvent curEvent = mScheduleItems.get(id);
 
         if (curEvent != null || mScheduleItems.size() < getMaxCount()) {

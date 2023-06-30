@@ -1,5 +1,9 @@
 Change Log
 ==========
+Version 1.5.4 *(2023-06-30)*
+----------------------------
+* Make schedule put public.
+
 Version 1.5.3 *(2023-01-27)*
 ----------------------------
 * Fixes access token refresh in sample app
