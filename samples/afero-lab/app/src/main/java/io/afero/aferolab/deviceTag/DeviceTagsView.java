@@ -21,10 +21,8 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 import io.afero.aferolab.R;
+import io.afero.aferolab.databinding.ViewDeviceTagsBinding;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceTagCollection;
@@ -35,9 +33,7 @@ import rx.subjects.PublishSubject;
 
 public class DeviceTagsView extends ScreenView {
 
-    @BindView(R.id.tag_recycler_view)
-    RecyclerView mTagListView;
-
+    private ViewDeviceTagsBinding binding;
 
     private DeviceTagController mController;
     private DeviceTagAdapter mAdapter;
@@ -67,14 +63,16 @@ public class DeviceTagsView extends ScreenView {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewDeviceTagsBinding.bind(this);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        mTagListView.setLayoutManager(layoutManager);
+        binding.tagRecyclerView.setLayoutManager(layoutManager);
 
         DividerItemDecoration dividerDecoration = new DividerItemDecoration(getContext(), layoutManager.getOrientation());
         dividerDecoration.setDrawable(ContextCompat.getDrawable(getContext(), R.drawable.device_list_divider));
-        mTagListView.addItemDecoration(dividerDecoration);
+        binding.tagRecyclerView.addItemDecoration(dividerDecoration);
+
+        binding.addTagButton.setOnClickListener(v -> onClickAddTag());
     }
 
     public void start(DeviceModel deviceModel) {
@@ -83,13 +81,13 @@ public class DeviceTagsView extends ScreenView {
         mController = new DeviceTagController(this, deviceModel);
 
         mAdapter = new DeviceTagAdapter(deviceModel);
-        mTagListView.setAdapter(mAdapter);
+        binding.tagRecyclerView.setAdapter(mAdapter);
 
         mAdapter.getViewOnClick().subscribe(
                 new Action1<View>() {
                     @Override
                     public void call(View view) {
-                        int itemPosition = mTagListView.getChildLayoutPosition(view);
+                        int itemPosition = binding.tagRecyclerView.getChildLayoutPosition(view);
                         if (itemPosition != RecyclerView.NO_POSITION) {
                             mController.editTag(mAdapter.getTagAt(itemPosition));
                         }
@@ -103,7 +101,6 @@ public class DeviceTagsView extends ScreenView {
         super.stop();
     }
 
-    @OnClick(R.id.add_tag_button)
     void onClickAddTag() {
         mController.addTag();
     }

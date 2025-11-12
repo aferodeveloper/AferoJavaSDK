@@ -7,27 +7,17 @@ package io.afero.aferolab.deviceInspector;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import io.afero.aferolab.R;
+import io.afero.aferolab.databinding.ViewAttributeListItemBinding;
 import io.afero.sdk.client.afero.models.AttributeValue;
 import io.afero.sdk.device.DeviceModel;
 import io.afero.sdk.device.DeviceProfile;
 
-class AttributeListItemView extends LinearLayout {
+public class AttributeListItemView extends LinearLayout {
 
-    @BindView(R.id.attribute_id_text)
-    TextView mIdText;
-
-    @BindView(R.id.attribute_label_text)
-    TextView mLabelText;
-
-    @BindView(R.id.attribute_value_text)
-    TextView mValueText;
+    private ViewAttributeListItemBinding binding;
 
     public AttributeListItemView(Context context) {
         super(context);
@@ -44,14 +34,14 @@ class AttributeListItemView extends LinearLayout {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewAttributeListItemBinding.bind(this);
     }
 
     public void update(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
-        mIdText.setText(Integer.toString(attribute.getId()));
-        mLabelText.setText(attribute.getSemanticType() != null ? attribute.getSemanticType() : "");
+        binding.attributeIdText.setText(Integer.toString(attribute.getId()));
+        binding.attributeLabelText.setText(attribute.getSemanticType() != null ? attribute.getSemanticType() : "");
 
         AttributeValue value = deviceModel.getAttributeCurrentValue(attribute);
-        mValueText.setText(value != null ? value.toString() : "<null>");
+        binding.attributeValueText.setText(value != null ? value.toString() : "<null>");
     }
 }

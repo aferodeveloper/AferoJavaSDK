@@ -2,65 +2,46 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-apply plugin: 'java'
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     // https://github.com/FasterXML/jackson
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.8.5'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.8.5'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.8.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.20.1'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.20'
 
     // https://github.com/ReactiveX/RxJava
-    implementation 'io.reactivex:rxjava:1.3.0'
+    implementation 'io.reactivex:rxjava:1.3.8'
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_7
-targetCompatibility = JavaVersion.VERSION_1_7
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
-// Copy resources into build/classes so unit tests can find them. Must be a better way?
-task copyResourcesDirectoryToClasses(type: Copy){
-    from "${projectDir}/src/test/resources"
-    into "${buildDir}/classes/test/resources"
-}
-
-testClasses.dependsOn copyResourcesDirectoryToClasses
-
-publishing {
-    publications {
-        jar(MavenPublication) {
-            version = rootProject.version
-            artifactId project.getName()
-            groupId rootProject.group
-
-            artifact("$buildDir/libs/${project.getName()}.jar")
-//            artifact packageJavadoc
-
-            pom.withXml {
-                def dependencies = asNode().appendNode('dependencies')
-                configurations.getByName("compile").getResolvedConfiguration().getFirstLevelModuleDependencies().each {
-                    def dependency = dependencies.appendNode('dependency')
-                    dependency.appendNode('groupId', it.moduleGroup)
-                    dependency.appendNode('artifactId', it.moduleName)
-                    dependency.appendNode('version', it.moduleVersion)
-                }
+afterEvaluate {
+    publishing {
+        publications {
+	    release(MavenPublication) { 
+	        from components.java
+		groupId rootProject.group
+		version = rootProject.version
+		artifactId project.name
             }
-        }
+	}
+	repositories {
+	    maven {
+	        url = 'https://afero.jfrog.io/afero/afero-java-sdk'
+		credentials {
+		    username = project.findProperty('aferoArtifactoryUserName') ?: ""
+		    password = project.findProperty('aferoArtifactoryPassword') ?: ""
+		}
+	   }
+       }
     }
-}
-
-javadoc {
-    options.addStringOption('Xdoclint:none', '-quiet')
-    options.links("http://reactivex.io/RxJava/1.x/javadoc/")
-    options.links("http://fasterxml.github.io/jackson-annotations/javadoc/2.8/")
-    options.links("http://fasterxml.github.io/jackson-core/javadoc/2.8/")
-    options.links("http://fasterxml.github.io/jackson-databind/javadoc/2.8/")
-}
-
-task packageJavadoc(type: Jar) {
-    from javadoc
-    classifier = 'javadoc'
 }

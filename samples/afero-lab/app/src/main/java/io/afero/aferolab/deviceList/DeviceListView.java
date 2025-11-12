@@ -6,6 +6,7 @@ package io.afero.aferolab.deviceList;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -14,9 +15,8 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.afero.aferolab.R;
+import io.afero.aferolab.databinding.ViewDeviceListBinding;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.device.DeviceModel;
 import rx.Observable;
@@ -26,46 +26,51 @@ import rx.subjects.PublishSubject;
 
 public class DeviceListView extends FrameLayout {
 
-    @BindView(R.id.device_recycler_view)
-    RecyclerView mDeviceCardsView;
+    private ViewDeviceListBinding binding;
 
     private DeviceViewAdapter mAdapter;
     private final PublishSubject<DeviceModel> mOnClickDeviceSubject = PublishSubject.create();
 
     public DeviceListView(Context context) {
         super(context);
+        init();
     }
 
     public DeviceListView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        init();
     }
 
     public DeviceListView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        init();
+    }
+
+    private void init() {
+        binding = ViewDeviceListBinding.inflate(LayoutInflater.from(getContext()), this);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        binding.deviceRecyclerView.setLayoutManager(layoutManager);
+
+        DividerItemDecoration dividerDecoration = new DividerItemDecoration(getContext(), layoutManager.getOrientation());
+        dividerDecoration.setDrawable(ContextCompat.getDrawable(getContext(), R.drawable.device_list_divider));
+        binding.deviceRecyclerView.addItemDecoration(dividerDecoration);
     }
 
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
-
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        mDeviceCardsView.setLayoutManager(layoutManager);
-
-        DividerItemDecoration dividerDecoration = new DividerItemDecoration(getContext(), layoutManager.getOrientation());
-        dividerDecoration.setDrawable(ContextCompat.getDrawable(getContext(), R.drawable.device_list_divider));
-        mDeviceCardsView.addItemDecoration(dividerDecoration);
     }
 
     public void start(DeviceCollection deviceCollection) {
         mAdapter = new DeviceViewAdapter(deviceCollection);
-        mDeviceCardsView.setAdapter(mAdapter);
+        binding.deviceRecyclerView.setAdapter(mAdapter);
 
         mAdapter.getViewOnClick().subscribe(
                 new Action1<View>() {
                     @Override
                     public void call(View view) {
-                        int itemPosition = mDeviceCardsView.getChildLayoutPosition(view);
+                        int itemPosition = binding.deviceRecyclerView.getChildLayoutPosition(view);
                         if (itemPosition != RecyclerView.NO_POSITION) {
                             mOnClickDeviceSubject.onNext(mAdapter.getDeviceModelAt(itemPosition));
                         }
@@ -74,7 +79,9 @@ public class DeviceListView extends FrameLayout {
     }
 
     public void stop() {
-        mAdapter.stop();
+        if (mAdapter != null) {
+            mAdapter.stop();
+        }
     }
 
     public Observable<DeviceModel> getDeviceOnClick() {

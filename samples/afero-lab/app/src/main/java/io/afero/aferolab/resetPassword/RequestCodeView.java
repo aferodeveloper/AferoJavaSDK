@@ -12,22 +12,14 @@ import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 import io.afero.aferolab.R;
-import io.afero.aferolab.widget.AferoEditText;
-import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.aferolab.databinding.ViewRequestCodeBinding;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 
 public class RequestCodeView extends ScreenView {
 
-    @BindView(R.id.edit_text_email)
-    AferoEditText emailEditText;
-
-    @BindView(R.id.progress_request_code)
-    ProgressSpinnerView progressView;
+    private ViewRequestCodeBinding binding;
 
     private RequestCodeController mController;
 
@@ -51,7 +43,9 @@ public class RequestCodeView extends ScreenView {
     @Override
     public void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewRequestCodeBinding.bind(this);
+        binding.buttonRequestCode.setOnClickListener(v -> onClickRequestCode());
+        binding.buttonAlreadyHaveCode.setOnClickListener(v -> onClickAlreadyHaveCode());
     }
 
     public RequestCodeView start(AferoClient aferoClient) {
@@ -60,7 +54,7 @@ public class RequestCodeView extends ScreenView {
         mController = new RequestCodeController(this, aferoClient);
         mController.start();
 
-        emailEditText.showKeyboard();
+        binding.editTextEmail.showKeyboard();
 
         return this;
     }
@@ -77,23 +71,21 @@ public class RequestCodeView extends ScreenView {
         return false;
     }
 
-    @OnClick(R.id.button_request_code)
     void onClickRequestCode() {
-        emailEditText.hideKeyboard();
-        mController.onClickRequestCode(emailEditText.getText().toString());
+        binding.editTextEmail.hideKeyboard();
+        mController.onClickRequestCode(binding.editTextEmail.getText().toString());
     }
 
-    @OnClick(R.id.button_already_have_code)
     void onClickAlreadyHaveCode() {
-        emailEditText.hideKeyboard();
+        binding.editTextEmail.hideKeyboard();
         mController.onClickAlreadyHaveCode();
     }
 
     void showProgress() {
-        progressView.show();
+        binding.progressRequestCode.getRoot().setVisibility(View.VISIBLE);
     }
 
     void hideProgress() {
-        progressView.hide();
+        binding.progressRequestCode.getRoot().setVisibility(View.GONE);
     }
 }

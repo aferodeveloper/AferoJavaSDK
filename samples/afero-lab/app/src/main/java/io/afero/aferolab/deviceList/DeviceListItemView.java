@@ -7,24 +7,18 @@ package io.afero.aferolab.deviceList;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.afero.aferolab.R;
+import io.afero.aferolab.databinding.ViewDeviceListItemBinding;
 import io.afero.sdk.device.DeviceModel;
 
 public class DeviceListItemView extends FrameLayout {
 
-    @BindView(R.id.device_name)
-    TextView mNameText;
-
-    @BindView(R.id.device_status)
-    TextView mStatusText;
+    private ViewDeviceListItemBinding binding;
 
     public DeviceListItemView(@NonNull Context context) {
         super(context);
@@ -41,11 +35,11 @@ public class DeviceListItemView extends FrameLayout {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewDeviceListItemBinding.bind(this);
     }
 
     public void update(DeviceModel deviceModel) {
-        mNameText.setText(deviceModel.getName());
+        binding.deviceName.setText(deviceModel.getName());
 
         int statusResId = R.string.device_status_offline;
         if (deviceModel.isAvailable()) {
@@ -56,6 +50,6 @@ public class DeviceListItemView extends FrameLayout {
             }
         }
 
-        mStatusText.setText(statusResId);
+        binding.deviceStatus.setText(statusResId);
     }
 }

@@ -13,15 +13,12 @@ import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.afero.aferolab.R;
 
 
-class WifiBarsView extends FrameLayout {
+public class WifiBarsView extends FrameLayout {
 
-    @BindView(R.id.wifi_bars)
-    ImageView mWifiBarsImageView;
+    private ImageView mWifiBarsImageView;
 
     private static final int[] sBarsResIds = {
             R.drawable.ic_signal_wifi_0_bar_black_24dp,
@@ -56,7 +53,7 @@ class WifiBarsView extends FrameLayout {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        mWifiBarsImageView = findViewById(R.id.wifi_bars);
 
         mPresenter = new WifiBarsPresenter(this);
     }

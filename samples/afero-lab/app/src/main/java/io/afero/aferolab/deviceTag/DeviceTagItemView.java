@@ -4,24 +4,17 @@ package io.afero.aferolab.deviceTag;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import io.afero.aferolab.R;
+import io.afero.aferolab.databinding.ViewTagListItemBinding;
 import io.afero.sdk.device.DeviceTagCollection;
 
 public class DeviceTagItemView extends FrameLayout {
 
-    @BindView(R.id.tag_key_text)
-    TextView mKeyText;
-
-    @BindView(R.id.tag_value_text)
-    TextView mValueText;
+    private ViewTagListItemBinding binding;
 
     public DeviceTagItemView(@NonNull Context context) {
         super(context);
@@ -38,12 +31,12 @@ public class DeviceTagItemView extends FrameLayout {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewTagListItemBinding.bind(this);
     }
 
     public void update(DeviceTagCollection.Tag tag) {
-        mKeyText.setVisibility(tag.getKey() != null ? VISIBLE : GONE);
-        mKeyText.setText(tag.getKey());
-        mValueText.setText(tag.getValue());
+        binding.tagKeyText.setVisibility(tag.getKey() != null ? VISIBLE : GONE);
+        binding.tagKeyText.setText(tag.getKey());
+        binding.tagValueText.setText(tag.getValue());
     }
 }

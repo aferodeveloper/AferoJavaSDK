@@ -40,17 +40,6 @@
 # https://github.com/square/picasso#proguard
 -dontwarn com.squareup.okhttp.**
 
-# ButterKnife
-# http://jakewharton.github.io/butterknife/
--keep class butterknife.** { *; }
--dontwarn butterknife.internal.**
--keep class **$$ViewBinder { *; }
--keepclasseswithmembernames class * {
-    @butterknife.* <fields>;
-}
--keepclasseswithmembernames class * {
-    @butterknife.* <methods>;
-}
 
 # RxJava
 # https://github.com/ReactiveX/RxJava/issues/1415

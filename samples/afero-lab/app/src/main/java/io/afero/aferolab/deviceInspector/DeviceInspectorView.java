@@ -9,11 +9,9 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.AttrRes;
@@ -23,13 +21,11 @@ import androidx.annotation.StringRes;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 import io.afero.aferolab.R;
+import io.afero.aferolab.addDevice.AddDeviceView;
 import io.afero.aferolab.attributeEditor.AttributeEditorView;
+import io.afero.aferolab.databinding.ViewDeviceInspectorBinding;
 import io.afero.aferolab.deviceTag.DeviceTagsView;
-import io.afero.aferolab.widget.ProgressSpinnerView;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.client.afero.models.AttributeValue;
@@ -47,42 +43,7 @@ import rx.subjects.PublishSubject;
 
 public class DeviceInspectorView extends ScreenView {
 
-    @BindView(R.id.device_name_text)
-    TextView mDeviceNameText;
-
-    @BindView(R.id.device_status_text)
-    TextView mDeviceStatusText;
-
-    @BindView(R.id.device_attribute_recycler_view)
-    RecyclerView mAttributeListView;
-
-    @BindView(R.id.device_info_card)
-    ViewGroup mDeviceInfoCard;
-
-    @BindView(R.id.attributes_card)
-    ViewGroup mAttributesCard;
-
-    @BindView(R.id.view_scrim)
-    View mScrimView;
-
-    @BindView(R.id.device_inspector_progress)
-    ProgressSpinnerView mProgressView;
-
-    @BindView(R.id.device_info_extra_open)
-    ImageButton mDeviceInfoOpenButton;
-
-    @BindView(R.id.device_info_extra_close)
-    ImageButton mDeviceInfoCloseButton;
-
-    @BindView(R.id.device_info_container)
-    ViewGroup mDeviceInfoContainer;
-
-    @BindView(R.id.device_info_extra_container)
-    ViewGroup mDeviceInfoExtraContainer;
-
-    @BindView(R.id.wifi_connect_button)
-    Button mWifiConnectButton;
-
+    private ViewDeviceInspectorBinding binding;
 
     private static final int TRANSITION_DURATION = 200;
 
@@ -102,12 +63,20 @@ public class DeviceInspectorView extends ScreenView {
         super(context, attrs, defStyleAttr);
     }
 
+    public static DeviceInspectorView create(ViewGroup parent) {
+        DeviceInspectorView view = (DeviceInspectorView) LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.view_device_inspector, parent, false);
+        parent.addView(view);
+
+        return view;
+    }
+
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewDeviceInspectorBinding.bind(this);
 
-        LayoutTransition lt = mDeviceInfoCard.getLayoutTransition();
+        LayoutTransition lt = binding.deviceInfoCard.getLayoutTransition();
         if (lt != null) {
             lt.enableTransitionType(LayoutTransition.CHANGING);
             lt.setStartDelay(LayoutTransition.CHANGING, 0);
@@ -115,15 +84,23 @@ public class DeviceInspectorView extends ScreenView {
             lt.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0);
         }
 
-        lt = mAttributesCard.getLayoutTransition();
+        lt = binding.attributesCard.getLayoutTransition();
         if (lt != null) {
             lt.enableTransitionType(LayoutTransition.CHANGING);
             lt.setStartDelay(LayoutTransition.CHANGING, 0);
         }
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        mAttributeListView.setLayoutManager(layoutManager);
-        mAttributeListView.setAdapter(mAttributeAdapter);
+        binding.deviceAttributeRecyclerView.setLayoutManager(layoutManager);
+        binding.deviceAttributeRecyclerView.setAdapter(mAttributeAdapter);
+
+        binding.deviceInfoExtraOpen.setOnClickListener(v -> onClickDeviceInfoOpen());
+        binding.deviceInfoExtraClose.setOnClickListener(v -> onClickDeviceInfoClose());
+        binding.deviceTagButton.setOnClickListener(v -> onClickTagsButton());
+        binding.deviceReadScheduleButton.setOnClickListener(v -> onClickReadScheduleButton());
+        binding.deviceWriteScheduleButton.setOnClickListener(v -> onClickWriteScheduleButton());
+        binding.deviceDeleteButton.setOnClickListener(v -> onClickDelete());
+        binding.wifiConnectButton.setOnClickListener(v -> onClickWifiConnect());
     }
 
     public void start(DeviceModel deviceModel, DeviceCollection deviceCollection, AferoClient aferoClient) {
@@ -143,7 +120,7 @@ public class DeviceInspectorView extends ScreenView {
                 .subscribe(new Action1<View>() {
                     @Override
                     public void call(View view) {
-                        int pos = mAttributeListView.getChildAdapterPosition(view);
+                        int pos = binding.deviceAttributeRecyclerView.getChildAdapterPosition(view);
                         if (pos != RecyclerView.NO_POSITION) {
                             startAttributeEditor(mController.getDeviceModel(), mAttributeAdapter.getAttributeAt(pos));
                         }
@@ -177,34 +154,30 @@ public class DeviceInspectorView extends ScreenView {
     }
 
     public void setDeviceNameText(String name) {
-        mDeviceNameText.setText(name);
+        binding.deviceNameText.setText(name);
     }
 
     public void setDeviceStatusText(@StringRes int statusResId) {
-        mDeviceStatusText.setText(statusResId);
+        binding.deviceStatusText.setText(statusResId);
     }
 
-    @OnClick(R.id.device_info_extra_open)
     void onClickDeviceInfoOpen() {
-        mDeviceInfoExtraContainer.setVisibility(VISIBLE);
-        mDeviceInfoOpenButton.setVisibility(GONE);
-        mDeviceInfoCloseButton.setVisibility(VISIBLE);
+        binding.deviceInfoExtraContainer.setVisibility(VISIBLE);
+        binding.deviceInfoExtraOpen.setVisibility(GONE);
+        binding.deviceInfoExtraClose.setVisibility(VISIBLE);
     }
 
-    @OnClick(R.id.device_info_extra_close)
     void onClickDeviceInfoClose() {
-        mDeviceInfoExtraContainer.setVisibility(GONE);
-        mDeviceInfoOpenButton.setVisibility(VISIBLE);
-        mDeviceInfoCloseButton.setVisibility(GONE);
+        binding.deviceInfoExtraContainer.setVisibility(GONE);
+        binding.deviceInfoExtraOpen.setVisibility(VISIBLE);
+        binding.deviceInfoExtraClose.setVisibility(GONE);
     }
 
-    @OnClick(R.id.device_tag_button)
     void onClickTagsButton() {
         DeviceTagsView tagsView = DeviceTagsView.create(this);
         tagsView.start(mController.getDeviceModel());
     }
 
-    @OnClick(R.id.device_read_schedule_button)
     void onClickReadScheduleButton() {
         AfLog.d("Read Scedules");
 
@@ -233,7 +206,6 @@ public class DeviceInspectorView extends ScreenView {
     }
 
 
-    @OnClick(R.id.device_write_schedule_button)
     void onClickWriteScheduleButton() {
         Toast toast = Toast.makeText(getContext(), "See code for example", Toast.LENGTH_SHORT);
         toast.show();
@@ -263,7 +235,6 @@ public class DeviceInspectorView extends ScreenView {
 //        os.writeMasterSwitchFlag(true);
     }
 
-    @OnClick(R.id.device_delete_button)
     void onClickDelete() {
         new AlertDialog.Builder(getContext())
                 .setMessage(R.string.dialog_message_remove_device)
@@ -277,7 +248,6 @@ public class DeviceInspectorView extends ScreenView {
                 .show();
     }
 
-    @OnClick(R.id.wifi_connect_button)
     void onClickWifiConnect() {
         mController.onWifiConnect();
     }
@@ -288,27 +258,27 @@ public class DeviceInspectorView extends ScreenView {
     }
 
     void showProgress() {
-        mProgressView.show();
+        binding.deviceInspectorProgress.getRoot().setVisibility(View.VISIBLE);
     }
 
     void hideProgress() {
-        mProgressView.hide();
+        binding.deviceInspectorProgress.getRoot().setVisibility(View.GONE);
     }
 
     private void startEnterTransition() {
         setVisibility(VISIBLE);
-        mScrimView.setAlpha(0);
-        mScrimView.animate().alpha(1).setDuration(TRANSITION_DURATION);
-        mDeviceInfoCard.setTranslationX(getWidth());
-        mDeviceInfoCard.animate().translationX(0).setDuration(TRANSITION_DURATION);
-        mAttributesCard.setTranslationX(getWidth());
-        mAttributesCard.animate().translationX(0).setDuration(TRANSITION_DURATION);
+        binding.viewScrim.setAlpha(0);
+        binding.viewScrim.animate().alpha(1).setDuration(TRANSITION_DURATION);
+        binding.deviceInfoCard.setTranslationX(getWidth());
+        binding.deviceInfoCard.animate().translationX(0).setDuration(TRANSITION_DURATION);
+        binding.attributesCard.setTranslationX(getWidth());
+        binding.attributesCard.animate().translationX(0).setDuration(TRANSITION_DURATION);
     }
 
     private void startExitTransition() {
-        mScrimView.animate().alpha(0).setDuration(TRANSITION_DURATION);
-        mDeviceInfoCard.animate().translationX(getWidth()).setDuration(TRANSITION_DURATION);
-        mAttributesCard.animate().translationX(getWidth())
+        binding.viewScrim.animate().alpha(0).setDuration(TRANSITION_DURATION);
+        binding.deviceInfoCard.animate().translationX(getWidth()).setDuration(TRANSITION_DURATION);
+        binding.attributesCard.animate().translationX(getWidth())
                 .setDuration(TRANSITION_DURATION)
                 .withEndAction(new Runnable() {
                     @Override
@@ -326,10 +296,10 @@ public class DeviceInspectorView extends ScreenView {
     }
 
     public void showWifiSetup(boolean isVisible) {
-        mWifiConnectButton.setVisibility(isVisible ? VISIBLE : GONE);
+        binding.wifiConnectButton.setVisibility(isVisible ? VISIBLE : GONE);
     }
 
     public void enableWifiSetup(boolean isEnabled) {
-        mWifiConnectButton.setEnabled(isEnabled);
+        binding.wifiConnectButton.setEnabled(isEnabled);
     }
 }

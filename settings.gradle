@@ -1,5 +1,12 @@
 /*
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral() // Optional, but good practice
+    }
+}
 
-include ':afero-sdk-core', ':afero-sdk-softhub', ':afero-sdk-android', ':afero-sdk-client-retrofit2'
+include ':afero-sdk-core', ':afero-sdk-softhub', ':afero-sdk-android', ':afero-sdk-client-retrofit2', ':samples:afero-lab'

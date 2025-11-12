@@ -16,22 +16,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.CompoundButton;
-import android.widget.ImageButton;
 import android.widget.SeekBar;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
-import androidx.cardview.widget.CardView;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.OnEditorAction;
 import io.afero.aferolab.R;
+import io.afero.aferolab.databinding.ViewAttributeEditorBinding;
 import io.afero.aferolab.widget.AferoEditText;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.device.DeviceModel;
@@ -49,38 +43,7 @@ public class AttributeEditorView extends ScreenView {
         BYTES
     }
 
-    @BindView(R.id.attribute_id_text)
-    TextView mAttributeIdText;
-
-    @BindView(R.id.attribute_label_text)
-    TextView mAttributeLabelText;
-
-    @BindView(R.id.attribute_data_type_text)
-    TextView mAttributeDataTypeText;
-
-    @BindView(R.id.attribute_timestamp_text)
-    TextView mAttributeTimestampText;
-
-    @BindView(R.id.attribute_value_options_label)
-    TextView mAttributeValueOptionsLabelText;
-
-    @BindView(R.id.attribute_value_text)
-    AferoEditText mAttributeValueEditText;
-
-    @BindView(R.id.attribute_value_seekbar)
-    SeekBar mAttributeValueSeekBar;
-
-    @BindView(R.id.attribute_value_switch)
-    Switch mAttributeValueSwitch;
-
-    @BindView(R.id.attribute_value_button)
-    ImageButton mAttributeValueButton;
-
-    @BindView(R.id.view_scrim)
-    View mScrimView;
-
-    @BindView(R.id.attribute_editor_card)
-    CardView mAttributeCard;
+    private ViewAttributeEditorBinding binding;
 
     private PopupMenu mPopupMenu;
 
@@ -134,7 +97,7 @@ public class AttributeEditorView extends ScreenView {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewAttributeEditorBinding.bind(this);
 
         setOnClickListener(new OnClickListener() {
             @Override
@@ -143,23 +106,25 @@ public class AttributeEditorView extends ScreenView {
             }
         });
 
-        mAttributeValueSeekBar.setMax(Integer.MAX_VALUE);
-        mAttributeValueSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
-        mAttributeValueSwitch.setOnCheckedChangeListener(mSwitchChangeListener);
+        binding.attributeValueSeekbar.setMax(Integer.MAX_VALUE);
+        binding.attributeValueSeekbar.setOnSeekBarChangeListener(mSeekBarChangeListener);
+        binding.attributeValueSwitch.setOnCheckedChangeListener(mSwitchChangeListener);
+        binding.attributeValueButton.setOnClickListener(v -> onClickAttributeButton());
+        binding.attributeValueText.setOnEditorActionListener((textView, actionId, event) -> onAttributeValueEditorAction(textView, actionId, event));
     }
 
     public void start(DeviceModel deviceModel, DeviceProfile.Attribute attribute) {
         if (!isStarted()) {
             pushOnBackStack();
 
-            mAttributeValueEditText.setEnabled(false);
-            mAttributeValueEditText.setVisibility(VISIBLE);
-            mAttributeValueSeekBar.setVisibility(View.GONE);
-            mAttributeValueSwitch.setVisibility(View.GONE);
-            mAttributeValueButton.setVisibility(View.GONE);
-            mAttributeValueEditText.setFilters(new InputFilter[]{});
-            mAttributeValueEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-            mAttributeValueOptionsLabelText.setText("");
+            binding.attributeValueText.setEnabled(false);
+            binding.attributeValueText.setVisibility(VISIBLE);
+            binding.attributeValueSeekbar.setVisibility(View.GONE);
+            binding.attributeValueSwitch.setVisibility(View.GONE);
+            binding.attributeValueButton.setVisibility(View.GONE);
+            binding.attributeValueText.setFilters(new InputFilter[]{});
+            binding.attributeValueText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            binding.attributeValueOptionsLabel.setText("");
 
             mController.start(deviceModel, attribute);
 
@@ -170,7 +135,7 @@ public class AttributeEditorView extends ScreenView {
     public void stop() {
         if (isStarted()) {
             mController.stop();
-            mAttributeValueEditText.hideKeyboard();
+            binding.attributeValueText.hideKeyboard();
             mPopupMenu = null;
             startExitTransition();
         }
@@ -183,17 +148,17 @@ public class AttributeEditorView extends ScreenView {
     }
 
     public void setEditorEnabled(boolean enabled) {
-        mAttributeValueButton.setEnabled(enabled);
-        mAttributeValueEditText.setEnabled(enabled && mValueEditTextEnabled);
-        mAttributeValueSeekBar.setEnabled(enabled);
-        mAttributeValueSwitch.setEnabled(enabled);
+        binding.attributeValueButton.setEnabled(enabled);
+        binding.attributeValueText.setEnabled(enabled && mValueEditTextEnabled);
+        binding.attributeValueSeekbar.setEnabled(enabled);
+        binding.attributeValueSwitch.setEnabled(enabled);
     }
 
     public void addEnumItem(String label, String value) {
-        mAttributeValueButton.setVisibility(View.VISIBLE);
+        binding.attributeValueButton.setVisibility(View.VISIBLE);
 
         if (mPopupMenu == null) {
-            mPopupMenu = new PopupMenu(getContext(), mAttributeValueButton, Gravity.BOTTOM);
+            mPopupMenu = new PopupMenu(getContext(), binding.attributeValueButton, Gravity.BOTTOM);
         }
 
         final MenuItem item = mPopupMenu.getMenu().add(label);
@@ -215,33 +180,33 @@ public class AttributeEditorView extends ScreenView {
     }
 
     public void setAttributeValueEnumText(String label) {
-        mAttributeValueOptionsLabelText.setText(label);
+        binding.attributeValueOptionsLabel.setText(label);
     }
 
     public void setAttributeIdText(int id) {
-        mAttributeIdText.setText(Integer.toString(id));
+        binding.attributeIdText.setText(Integer.toString(id));
     }
 
     public void setAttributeLabelText(@Nullable String label) {
-        mAttributeLabelText.setText(label != null ? label : "");
+        binding.attributeLabelText.setText(label != null ? label : "");
     }
 
     public void setAttributeDataTypeText(@Nullable String s) {
-        mAttributeDataTypeText.setText(s != null ? s : "-");
+        binding.attributeDataTypeText.setText(s != null ? s : "-");
     }
 
     public void setAttributeTimestampText(@Nullable String s) {
-        mAttributeTimestampText.setText(s != null ? s : "-");
+        binding.attributeTimestampText.setText(s != null ? s : "-");
     }
 
     public void setAttributeValueText(String valueText) {
-        mAttributeValueEditText.setText(valueText != null ? valueText : "");
+        binding.attributeValueText.setText(valueText != null ? valueText : "");
     }
 
     public void setAttributeValueSwitch(boolean value) {
-        mAttributeValueSwitch.setOnCheckedChangeListener(null);
-        mAttributeValueSwitch.setChecked(value);
-        mAttributeValueSwitch.setOnCheckedChangeListener(mSwitchChangeListener);
+        binding.attributeValueSwitch.setOnCheckedChangeListener(null);
+        binding.attributeValueSwitch.setChecked(value);
+        binding.attributeValueSwitch.setOnCheckedChangeListener(mSwitchChangeListener);
     }
 
     public void setAttributeValueEditorType(ValueEditorType editorType) {
@@ -255,7 +220,7 @@ public class AttributeEditorView extends ScreenView {
 
             case TEXT:
                 mValueEditTextEnabled = true;
-                mAttributeValueEditText.setEnabled(true);
+                binding.attributeValueText.setEnabled(true);
                 break;
 
             case NUMBER_DECIMAL:
@@ -263,49 +228,47 @@ public class AttributeEditorView extends ScreenView {
             case NUMBER:
                 numberInputType |= InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
                 mValueEditTextEnabled = true;
-                mAttributeValueEditText.setEnabled(true);
-                mAttributeValueEditText.setInputType(numberInputType);
-                mAttributeValueSeekBar.setVisibility(View.VISIBLE);
+                binding.attributeValueText.setEnabled(true);
+                binding.attributeValueText.setInputType(numberInputType);
+                binding.attributeValueSeekbar.setVisibility(View.VISIBLE);
                 break;
 
             case BOOLEAN:
-                mAttributeValueSwitch.setVisibility(VISIBLE);
+                binding.attributeValueSwitch.setVisibility(VISIBLE);
                 break;
 
             case BYTES:
                 mValueEditTextEnabled = true;
-                mAttributeValueEditText.setEnabled(true);
-                mAttributeValueEditText.setFilters(new InputFilter[]{new CharacterInputFilter("0123456789ABCDEF")});
-                mAttributeValueEditText.setInputType(mAttributeValueEditText.getInputType() | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+                binding.attributeValueText.setEnabled(true);
+                binding.attributeValueText.setFilters(new InputFilter[]{new CharacterInputFilter("0123456789ABCDEF")});
+                binding.attributeValueText.setInputType(binding.attributeValueText.getInputType() | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
                 break;
         }
     }
 
     public void setAttributeValueSliderMax(int max) {
-        mAttributeValueSeekBar.setMax(max);
+        binding.attributeValueSeekbar.setMax(max);
     }
 
     public void setAttributeValueSliderProportion(double proportion) {
-        mAttributeValueSeekBar.setOnSeekBarChangeListener(null);
-        mAttributeValueSeekBar.setProgress((int) Math.round(proportion * (double) mAttributeValueSeekBar.getMax()));
-        mAttributeValueSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
+        binding.attributeValueSeekbar.setOnSeekBarChangeListener(null);
+        binding.attributeValueSeekbar.setProgress((int) Math.round(proportion * (double) binding.attributeValueSeekbar.getMax()));
+        binding.attributeValueSeekbar.setOnSeekBarChangeListener(mSeekBarChangeListener);
     }
 
     public double getAttributeValueSliderProportion() {
-        return Math.min((double) mAttributeValueSeekBar.getProgress() / (double) mAttributeValueSeekBar.getMax(), 1.0);
+        return Math.min((double) binding.attributeValueSeekbar.getProgress() / (double) binding.attributeValueSeekbar.getMax(), 1.0);
     }
 
-    @OnClick(R.id.attribute_value_button)
     void onClickAttributeButton() {
         mPopupMenu.show();
     }
 
-    @OnEditorAction(R.id.attribute_value_text)
     boolean onAttributeValueEditorAction(TextView textView, int actionId, KeyEvent event) {
 
         if (AferoEditText.isDone(actionId, event)) {
             mController.onAttributeValueTextEditorChanged(textView.getText().toString());
-            mAttributeValueEditText.hideKeyboard();
+            binding.attributeValueText.hideKeyboard();
         }
 
         return true;
@@ -313,18 +276,18 @@ public class AttributeEditorView extends ScreenView {
 
     private void startEnterTransition() {
         setVisibility(VISIBLE);
-        mScrimView.setAlpha(0);
-        mScrimView.animate().alpha(1).setDuration(ENTER_TRANSITION_DURATION);
-        mAttributeCard.setAlpha(0);
-        mAttributeCard.setScaleY(.1f);
-        mAttributeCard.animate().scaleY(1).alpha(1)
+        binding.viewScrim.setAlpha(0);
+        binding.viewScrim.animate().alpha(1).setDuration(ENTER_TRANSITION_DURATION);
+        binding.attributeEditorCard.setAlpha(0);
+        binding.attributeEditorCard.setScaleY(.1f);
+        binding.attributeEditorCard.animate().scaleY(1).alpha(1)
                 .setInterpolator(mEnterTransitionInterpolator)
                 .setDuration(ENTER_TRANSITION_DURATION);
     }
 
     private void startExitTransition() {
-        mScrimView.animate().alpha(0).setDuration(EXIT_TRANSITION_DURATION);
-        mAttributeCard.animate().scaleY(.1f).alpha(0)
+        binding.viewScrim.animate().alpha(0).setDuration(EXIT_TRANSITION_DURATION);
+        binding.attributeEditorCard.animate().scaleY(.1f).alpha(0)
                 .setDuration(EXIT_TRANSITION_DURATION)
                 .withEndAction(new Runnable() {
                     @Override

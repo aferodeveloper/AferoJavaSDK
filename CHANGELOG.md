@@ -1,5 +1,10 @@
 Change Log
 ==========
+Version 1.6.0 *(2025-11-06)*
+----------------------------
+* Update target version to 35 and minSDK to 21.
+* Updates Hubby to 1.0.978
+
 Version 1.5.4 *(2023-06-30)*
 ----------------------------
 * Make schedule put public.

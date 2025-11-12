@@ -1,5 +1,11 @@
-/*
- * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
- */
-
 include ':app'
+
+// For development only
+//include ':afero-sdk-android'
+//project(':afero-sdk-android').projectDir = new File(settingsDir, '../../afero-sdk-android')
+//include ':afero-sdk-core'
+//project(':afero-sdk-core').projectDir = new File(settingsDir, '../../afero-sdk-core')
+//include ':afero-sdk-client-retrofit2'
+//project(':afero-sdk-client-retrofit2').projectDir = new File(settingsDir, '../../afero-sdk-client-retrofit2')
+//include ':afero-sdk-softhub'
+//project(':afero-sdk-softhub').projectDir = new File(settingsDir, '../../afero-sdk-softhub')

@@ -2,14 +2,18 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
 
 android {
-    compileSdkVersion 30
+    namespace "io.afero.sdk.android"
+    compileSdkVersion 35
 
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 30
+        minSdkVersion 21
+        targetSdkVersion 35
         versionCode 1
         versionName rootProject.version
     }
@@ -19,6 +23,21 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            // withJavadocJar()
+	}
+    }
+}
+
+task javadocJar(type: Jar) {
+    archiveClassifier.set("javadoc")
+    from android.sourceSets.main.java.srcDirs
 }
 
 dependencies {
@@ -26,48 +45,29 @@ dependencies {
 
     implementation project(path: ':afero-sdk-core')
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 
-// build a jar with source files
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
-    failOnError false
-    source = android.sourceSets.main.java.sourceFiles
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
-    android.libraryVariants.all { variant ->
-        if (variant.name == 'release') {
-            classpath += variant.javaCompileProvider.get().classpath
-        }
-    }
-}
-// build a jar with javadoc
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
-
+afterEvaluate {
 publishing {
-    publications {
-        aar(MavenPublication) {
-
-            version = rootProject.version
-            artifactId project.getName()
-            groupId rootProject.group
-
-            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-            artifact javadocJar
-        }
+    repositories {
+        maven {
+	    url = 'https://afero.jfrog.io/afero/afero-java-sdk'
+	    credentials {
+	        username = project.findProperty('aferoArtifactoryUserName') ?: ""
+		password = project.findProperty('aferoArtifactoryPassword') ?: ""
+            }
+	}
     }
+    publications {
+        release(MavenPublication) {
+	    from components.release
+	    artifact javadocJar
+            groupId rootProject.group
+	    version = rootProject.version
+	    artifactId project.name
+	}
+    }
+}
 }

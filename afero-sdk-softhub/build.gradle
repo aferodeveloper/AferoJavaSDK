@@ -2,7 +2,10 @@
  * Copyright (c) 2014-2017 Afero, Inc. All rights reserved.
  */
 
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
 
 repositories {
     maven {
@@ -20,21 +23,25 @@ repositories {
     }
 }
 
-final String hubbyVersion = "1.0.957"
+final String hubbyVersion = "1.0.978"
 final String hubType = project.findProperty('aferoSofthubType') ?: '"CONSUMER"'
 
 android {
-    compileSdkVersion 30
+    namespace "io.afero.sdk.softhub"
+    compileSdkVersion 35
 
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 30
-
+        minSdkVersion 21
+        targetSdkVersion 35
         versionCode 1
-        versionName rootProject.version
+        versionName rootProject.version // Correct: Inherits version from root.
 
-        buildConfigField 'String', 'HUBBY_VERSION', '"'+hubbyVersion+'"'
+        buildConfigField 'String', 'HUBBY_VERSION', '"' + hubbyVersion + '"'
         buildConfigField 'String', 'HUB_TYPE', hubType
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     buildTypes {
@@ -43,82 +50,62 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-}
 
-dependencies {
-    api fileTree(include: ['*.jar'], dir: 'libs')
+    lintOptions {
+        abortOnError false
+    }
 
-    implementation project(path: ':afero-sdk-core')
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 
-    api "io.afero.sdk:hubby:${hubbyVersion}@aar"
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
 
-    implementation 'io.reactivex:rxjava:1.3.0'
-    implementation 'com.android.support:support-annotations:28.0.0'
-
-    // https://github.com/robolectric/robolectric
-    testImplementation 'org.robolectric:robolectric:3.3.1'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'com.squareup.retrofit2:retrofit:2.3.0'
-}
-
-// build a jar with source files
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
-    failOnError false
-    source = android.sourceSets.main.java.sourceFiles
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
-    android.libraryVariants.all { variant ->
-        if (variant.name == 'release') {
-            classpath += variant.javaCompileProvider.get().classpath
+    // It automatically creates a publication using the 'release' variant's AAR.
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
         }
     }
 }
 
-// build a jar with javadoc
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
+dependencies {
+    api fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(path: ':afero-sdk-core')
+    api "io.afero.sdk:hubby:${hubbyVersion}@aar"
+    implementation 'io.reactivex:rxjava:1.3.8'
+    implementation 'androidx.annotation:annotation:1.9.1'
+    testImplementation 'org.robolectric:robolectric:4.16'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.squareup.retrofit2:retrofit:3.0.0'
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
 
-publishing {
-    publications {
-        aar(MavenPublication) {
+                groupId = 'io.afero.sdk'
+                artifactId = 'afero-sdk-softhub'
+                version = rootProject.version
+            }
+        }
+        repositories {
+            maven {
+                url = 'https://afero.jfrog.io/afero/afero-java-sdk'
 
-            version = rootProject.version
-            artifactId project.getName()
-            groupId rootProject.group
-
-            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-            artifact javadocJar
-
-            pom.withXml {
-                def dependenciesNode = asNode().appendNode('dependencies')
-
-                configurations.api.allDependencies.each {
-                    def hasGroup = it.group != null
-                    def hasName = (it.name != null && !"unspecified".equals(it.name))
-                    def hasVersion = (it.version != null && !"unspecified".equals(it.version))
-
-                    if (hasGroup && hasName && hasVersion) {
-                        def depNode = dependenciesNode.appendNode('dependency')
-                        depNode.appendNode('groupId', it.group)
-                        depNode.appendNode('artifactId', it.name)
-                        depNode.appendNode('version', it.version)
-                    }
+                credentials {
+                    username = project.aferoArtifactoryUserName
+                    password = project.aferoArtifactoryPassword
                 }
             }
         }
     }
 }
-
-

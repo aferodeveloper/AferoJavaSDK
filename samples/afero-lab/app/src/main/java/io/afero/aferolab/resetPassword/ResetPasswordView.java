@@ -6,31 +6,21 @@ package io.afero.aferolab.resetPassword;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 import io.afero.aferolab.R;
-import io.afero.aferolab.widget.AferoEditText;
-import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.aferolab.databinding.ViewResetPasswordBinding;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 
 public class ResetPasswordView extends ScreenView {
 
-    @BindView(R.id.edit_text_reset_code)
-    AferoEditText resetCodeEditText;
-
-    @BindView(R.id.edit_text_password)
-    AferoEditText passwordEditText;
-
-    @BindView(R.id.progress_reset_password)
-    ProgressSpinnerView progressView;
+    private ViewResetPasswordBinding binding;
 
     private ResetPasswordController mController;
 
@@ -54,7 +44,8 @@ public class ResetPasswordView extends ScreenView {
     @Override
     public void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewResetPasswordBinding.bind(this);
+        binding.buttonResetPassword.setOnClickListener(v -> onClickRequestCode());
     }
 
     public ResetPasswordView start(AferoClient aferoClient) {
@@ -63,7 +54,7 @@ public class ResetPasswordView extends ScreenView {
         mController = new ResetPasswordController(this, aferoClient);
         mController.start();
 
-        resetCodeEditText.showKeyboard();
+        binding.editTextResetCode.showKeyboard();
 
         return this;
     }
@@ -81,18 +72,17 @@ public class ResetPasswordView extends ScreenView {
         return false;
     }
 
-    @OnClick(R.id.button_reset_password)
     void onClickRequestCode() {
-        resetCodeEditText.hideKeyboard();
-        passwordEditText.hideKeyboard();
-        mController.onClickResetPassword(resetCodeEditText.getText().toString(), passwordEditText.getText().toString());
+        binding.editTextResetCode.hideKeyboard();
+        binding.editTextPassword.hideKeyboard();
+        mController.onClickResetPassword(binding.editTextResetCode.getText().toString(), binding.editTextPassword.getText().toString());
     }
 
     void showProgress() {
-        progressView.show();
+        binding.progressResetPassword.getRoot().setVisibility(View.VISIBLE);
     }
 
     void hideProgress() {
-        progressView.hide();
+        binding.progressResetPassword.getRoot().setVisibility(View.GONE);
     }
 }

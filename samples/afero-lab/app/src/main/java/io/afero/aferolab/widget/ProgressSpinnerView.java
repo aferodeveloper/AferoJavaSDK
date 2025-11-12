@@ -7,20 +7,16 @@ package io.afero.aferolab.widget;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
-import android.widget.ProgressBar;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import io.afero.aferolab.R;
+import io.afero.aferolab.databinding.ViewProgressBinding;
 
 public class ProgressSpinnerView extends FrameLayout {
 
-    @BindView(R.id.view_progress)
-    ProgressBar mProgressBar;
+    private ViewProgressBinding binding;
 
     public ProgressSpinnerView(@NonNull Context context) {
         super(context);
@@ -37,17 +33,16 @@ public class ProgressSpinnerView extends FrameLayout {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewProgressBinding.bind(this);
     }
 
     public void show() {
         setVisibility(VISIBLE);
-        mProgressBar.setVisibility(VISIBLE);
+        binding.viewProgress.setVisibility(VISIBLE);
     }
 
     public void hide() {
         setVisibility(GONE);
-        mProgressBar.setVisibility(GONE);
+        binding.viewProgress.setVisibility(GONE);
     }
 }
-

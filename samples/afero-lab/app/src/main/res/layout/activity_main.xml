@@ -84,8 +84,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingStart="20dp"
-            android:paddingTop="15dp"
             android:paddingEnd="20dp"
+            android:paddingTop="15dp"
             android:visibility="gone">
 
             <TextView
@@ -108,19 +108,12 @@
         </LinearLayout>
 
 
-        <io.afero.aferolab.deviceList.DeviceListView xmlns:android="http://schemas.android.com/apk/res/android"
+        <io.afero.aferolab.deviceList.DeviceListView
             android:id="@+id/device_list_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="10dp"
-            android:clickable="true">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/device_recycler_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
-        </io.afero.aferolab.deviceList.DeviceListView>
+            android:clickable="true" />
 
 
     </LinearLayout>

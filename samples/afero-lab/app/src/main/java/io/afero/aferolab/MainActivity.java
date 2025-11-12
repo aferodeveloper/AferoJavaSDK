@@ -20,8 +20,6 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -32,7 +30,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+
 import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationException;
 import net.openid.appauth.AuthorizationRequest;
@@ -47,15 +45,10 @@ import net.openid.appauth.TokenResponse;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.OnEditorAction;
 import io.afero.aferolab.addDevice.AddDeviceView;
 import io.afero.aferolab.addDevice.AddSetupModeDeviceView;
-import io.afero.aferolab.attributeEditor.AttributeEditorView;
+import io.afero.aferolab.databinding.ActivityMainBinding;
 import io.afero.aferolab.deviceInspector.DeviceInspectorView;
-import io.afero.aferolab.deviceList.DeviceListView;
 import io.afero.aferolab.helper.BackStack;
 import io.afero.aferolab.helper.PermissionsHelper;
 import io.afero.aferolab.helper.PrefsHelper;
@@ -106,44 +99,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final Observer<AferoSofthub> mAferoSofthubStartObserver = new RxUtils.IgnoreResponseObserver<>();
 
-    @BindView(R.id.root_view)
-    ViewGroup mRootView;
-
-    @BindView(R.id.app_toolbar)
-    Toolbar mAppToolbar;
-
-    @BindView(R.id.device_list_view)
-    DeviceListView mDeviceListView;
-
-    @BindView(R.id.device_inspector)
-    DeviceInspectorView mDeviceInspectorView;
-
-    @BindView(R.id.attribute_editor)
-    AttributeEditorView mAttributeEditorView;
-
-    @BindView(R.id.edit_text_email)
-    AferoEditText mEmailEditText;
-
-    @BindView(R.id.edit_text_password)
-    AferoEditText mPasswordEditText;
-
-    @BindView(R.id.button_forgot_password)
-    Button mForgotPasswordButton;
-
-    @BindView(R.id.button_sign_in)
-    Button mSignInButton;
-
-    @BindView(R.id.group_sign_in)
-    ViewGroup mSignInGroup;
-
-    @BindView(R.id.group_status)
-    ViewGroup mStatusGroup;
-
-    @BindView(R.id.text_account_name)
-    TextView mAccountNameText;
-
-    @BindView(R.id.text_network_status)
-    TextView mNetworkStatus;
+    private ActivityMainBinding binding;
 
     private BackStack<ScreenView> mBackStack = new BackStack<>();
     private LabClientHelper clientHelper;
@@ -151,13 +107,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        ButterKnife.bind(this);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         ScreenView.setBackStack(mBackStack);
 
-        setSupportActionBar(mAppToolbar);
+        setSupportActionBar(binding.appToolbar);
 
         AndroidClock.init();
         AfLog.init(new AndroidLog("AfLab"));
@@ -193,14 +148,14 @@ public class MainActivity extends AppCompatActivity {
 
                             exchangeAuthorizationCode(response);
                         } else {
-                            mSignInButton.setEnabled(true);
+                            binding.buttonSignIn.setEnabled(true);
                         }
                     });
             mAferoClient = new AferoClientRetrofit2(configBuilder.build(), clientHelper.getClient());
         } else {
             throw new IllegalArgumentException("Either configure client secret or auth/token/redirect url");
         }
-        
+
         mAferoClient.setOwnerAndActiveAccountId(accountId);
 
         mDeviceCollection = new DeviceCollection(mAferoClient);
@@ -211,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                     .subscribe(new DeviceCollectionStartObserver(this));
         }
 
-        mDeviceEventSource = (ConclaveDeviceEventSource)mDeviceCollection.getDeviceEventSource();
+        mDeviceEventSource = (ConclaveDeviceEventSource) mDeviceCollection.getDeviceEventSource();
         mDeviceEventSourceConnectObserver = new DeviceEventSourceConnectObserver(this);
 
         mConclaveStatusSubscription = mDeviceEventSource.observeConclaveStatus()
@@ -238,37 +193,45 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mAferoSofthub.observeSetupModeDevices()
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(new Observer<AferoSofthub.SetupModeDeviceInfo>() {
-                @Override
-                public void onCompleted() {}
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<AferoSofthub.SetupModeDeviceInfo>() {
+                    @Override
+                    public void onCompleted() {
+                    }
 
-                @Override
-                public void onError(Throwable e) {}
+                    @Override
+                    public void onError(Throwable e) {
+                    }
 
-                @Override
-                public void onNext(AferoSofthub.SetupModeDeviceInfo setupModeDeviceInfo) {
-                    onSetupModeDeviceDetected(setupModeDeviceInfo);
-                }
-            });
+                    @Override
+                    public void onNext(AferoSofthub.SetupModeDeviceInfo setupModeDeviceInfo) {
+                        onSetupModeDeviceDetected(setupModeDeviceInfo);
+                    }
+                });
 
-        mDeviceListView.start(mDeviceCollection);
-        mDeviceListView.getDeviceOnClick()
+        binding.deviceListView.start(mDeviceCollection);
+        binding.deviceListView.getDeviceOnClick()
                 .subscribe(new Action1<DeviceModel>() {
                     @Override
                     public void call(DeviceModel deviceModel) {
-                        mDeviceInspectorView.start(deviceModel, mDeviceCollection, mAferoClient);
-                        mDeviceInspectorView.getObservable().subscribe(new Observer<DeviceInspectorView>() {
+                        final DeviceInspectorView deviceInspectorView = DeviceInspectorView.create(binding.getRoot());
+                        deviceInspectorView.start(deviceModel, mDeviceCollection, mAferoClient);
+
+                        deviceInspectorView.getObservable().subscribe(new Observer<DeviceInspectorView>() {
                             @Override
                             public void onCompleted() {
-                                stopDeviceInspector();
+                                if (deviceInspectorView.isStarted()) {
+                                    deviceInspectorView.stop();
+                                }
                             }
 
                             @Override
-                            public void onError(Throwable e) {}
+                            public void onError(Throwable e) {
+                            }
 
                             @Override
-                            public void onNext(DeviceInspectorView deviceInspectorView) {}
+                            public void onNext(DeviceInspectorView deviceInspectorView) {
+                            }
                         });
                     }
                 });
@@ -286,6 +249,10 @@ public class MainActivity extends AppCompatActivity {
         showConclaveStatus(ConclaveClient.Status.DISCONNECTED);
 
         PermissionsHelper.checkRequiredPermissions(this);
+
+        binding.buttonSignIn.setOnClickListener(v -> onClickSignIn());
+        binding.buttonForgotPassword.setOnClickListener(v -> onClickForgotPassword());
+        binding.editTextPassword.setOnEditorActionListener((textView, actionId, event) -> onEditorActionSignIn(textView, actionId, event));
     }
 
     @MainThread
@@ -303,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             clientAuthentication = mAuthState.getClientAuthentication();
         } catch (ClientAuthentication.UnsupportedAuthenticationMethod ex) {
-            mSignInButton.setEnabled(false);
+            binding.buttonSignIn.setEnabled(false);
 
             Log.d("main", "Token request cannot be made, client authentication for the token "
                     + "endpoint could not be constructed (%s)", ex);
@@ -314,7 +281,6 @@ public class MainActivity extends AppCompatActivity {
                 clientAuthentication,
                 callback);
     }
-
 
 
     @WorkerThread
@@ -336,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
             mAferoClient.usersMe()
                     .subscribe(new SignInObserver(this));
         }
-        mSignInButton.setEnabled(true);
+        binding.buttonSignIn.setEnabled(true);
         setupViews();
     }
 
@@ -385,23 +351,19 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_add_device:
-                onActionAddDevice();
-                return true;
-
-            case R.id.action_sign_out:
-                onActionSignOut();
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
-
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_add_device) {
+            onActionAddDevice();
+            return true;
+        } else if (itemId == R.id.action_sign_out) {
+            onActionSignOut();
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     void onActionAddDevice() {
-        final AddDeviceView addDeviceView = AddDeviceView.create(mRootView);
+        final AddDeviceView addDeviceView = AddDeviceView.create(binding.getRoot());
         addDeviceView.start(mDeviceCollection, mAferoClient);
         addDeviceView.getObservable().subscribe(new Observer<AddDeviceView>() {
             @Override
@@ -410,10 +372,12 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(Throwable e) {}
+            public void onError(Throwable e) {
+            }
 
             @Override
-            public void onNext(AddDeviceView addDeviceView) {}
+            public void onNext(AddDeviceView addDeviceView) {
+            }
         });
     }
 
@@ -443,52 +407,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void stopDeviceInspector() {
-        if (mDeviceInspectorView.isStarted()) {
-            mDeviceInspectorView.stop();
-        }
-    }
-
     private void setupViews() {
         if (BuildConfig.AFERO_CLIENT_SECRET == null) {
-            mEmailEditText.setVisibility(View.GONE);
-            mPasswordEditText.setVisibility(View.GONE);
-            mForgotPasswordButton.setVisibility(View.GONE);
+            binding.editTextEmail.setVisibility(View.GONE);
+            binding.editTextPassword.setVisibility(View.GONE);
+            binding.buttonForgotPassword.setVisibility(View.GONE);
         }
 
         if (isSignedIn()) {
-            mSignInGroup.setVisibility(View.GONE);
-            mStatusGroup.setVisibility(View.VISIBLE);
+            binding.groupSignIn.setVisibility(View.GONE);
+            binding.groupStatus.setVisibility(View.VISIBLE);
 
-            mAccountNameText.setText(PrefsHelper.getAccountName(this));
+            binding.textAccountName.setText(PrefsHelper.getAccountName(this));
         } else {
-            mSignInGroup.setVisibility(View.VISIBLE);
-            mStatusGroup.setVisibility(View.GONE);
-            mEmailEditText.showKeyboard();
+            binding.groupSignIn.setVisibility(View.VISIBLE);
+            binding.groupStatus.setVisibility(View.GONE);
+            binding.editTextEmail.showKeyboard();
         }
     }
 
     private void showConclaveStatus(ConclaveClient.Status status) {
-        mNetworkStatus.setText(status.toString());
+        binding.textNetworkStatus.setText(status.toString());
     }
 
     private void showNoNetworkView() {
-        mNetworkStatus.setText(R.string.no_network);
+        binding.textNetworkStatus.setText(R.string.no_network);
     }
 
     private void hideNoNetworkView() {
     }
 
     private void startSofthub() {
-        Log.d("main","#### Start softhub ");
+        Log.d("main", "#### Start softhub ");
         if (!mAferoSofthub.isRunning()) {
             mAferoSofthub.start()
-                .subscribe(mAferoSofthubStartObserver);
+                    .subscribe(mAferoSofthubStartObserver);
         }
     }
 
     private void onSetupModeDeviceDetected(AferoSofthub.SetupModeDeviceInfo setupModeDeviceInfo) {
-        final AddSetupModeDeviceView view = AddSetupModeDeviceView.create(mRootView);
+        final AddSetupModeDeviceView view = AddSetupModeDeviceView.create(binding.getRoot());
         view.start(mDeviceCollection, mAferoClient, setupModeDeviceInfo);
         view.getObservable().subscribe(new Observer<AddSetupModeDeviceView>() {
             @Override
@@ -497,14 +455,15 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(Throwable e) {}
+            public void onError(Throwable e) {
+            }
 
             @Override
-            public void onNext(AddSetupModeDeviceView addDeviceView) {}
+            public void onNext(AddSetupModeDeviceView addDeviceView) {
+            }
         });
     }
 
-    @OnEditorAction(R.id.edit_text_password)
     public boolean onEditorActionSignIn(TextView textView, int actionId, KeyEvent event) {
         if (AferoEditText.isDone(actionId, event)) {
             if (textView.getId() == R.id.edit_text_password) {
@@ -515,13 +474,12 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    @OnClick(R.id.button_sign_in)
     public void onClickSignIn() {
         if (BuildConfig.AFERO_OAUTH_AUTH_URL != null
                 && BuildConfig.AFERO_OAUTH_REDIRECT_SCHEME != null &&
                 BuildConfig.AFERO_OAUTH_REDIRECT_HOST != null) {
 
-            mSignInButton.setEnabled(false);
+            binding.buttonSignIn.setEnabled(false);
             showConclaveStatus(ConclaveClient.Status.CONNECTING);
 
             AuthorizationRequest.Builder authRequestBuilder =
@@ -532,26 +490,25 @@ public class MainActivity extends AppCompatActivity {
                             ResponseTypeValues.CODE, // the response_type value: we want a code
                             Uri.parse(BuildConfig.AFERO_OAUTH_REDIRECT_SCHEME + "://" + BuildConfig.AFERO_OAUTH_REDIRECT_HOST)
                     );
-            authRequestBuilder.setScopes("openid","offline_access");
+            authRequestBuilder.setScopes("openid", "offline_access");
             Intent authIntent = mAuthService.getAuthorizationRequestIntent(authRequestBuilder.build());
 
             launcher.launch(authIntent);
         } else {
 
-            mPasswordEditText.hideKeyboard();
-            startSignIn(mEmailEditText.getText().toString(), mPasswordEditText.getText().toString());
+            binding.editTextPassword.hideKeyboard();
+            startSignIn(binding.editTextEmail.getText().toString(), binding.editTextPassword.getText().toString());
         }
     }
 
-    @OnClick(R.id.button_forgot_password)
     public void onClickForgotPassword() {
-        mPasswordEditText.hideKeyboard();
-        RequestCodeView.create(mRootView).start(mAferoClient);
+        binding.editTextPassword.hideKeyboard();
+        RequestCodeView.create(binding.getRoot()).start(mAferoClient);
     }
 
     private void startSignIn(String email, String password) {
-        mSignInGroup.setVisibility(View.GONE);
-        mStatusGroup.setVisibility(View.VISIBLE);
+        binding.groupSignIn.setVisibility(View.GONE);
+        binding.groupStatus.setVisibility(View.VISIBLE);
 
         showConclaveStatus(ConclaveClient.Status.CONNECTING);
 
@@ -565,7 +522,7 @@ public class MainActivity extends AppCompatActivity {
     private void onSignIn(UserDetails userDetails) {
         AfLog.d("#### onSignIn");
 
-        mPasswordEditText.setText("");
+        binding.editTextPassword.setText("");
 
         // listen for token refresh failures
         observeTokenRefresh();
@@ -597,19 +554,19 @@ public class MainActivity extends AppCompatActivity {
         startDeviceStream();
     }
 
-    private void setName(final String name){
+    private void setName(final String name) {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                mAccountNameText.setText(name);
+                binding.textAccountName.setText(name);
 
             }
         });
     }
 
     private void onSignInError(Throwable e) {
-        mNetworkStatus.setText(e.getMessage());
-        mPasswordEditText.setText("");
+        binding.textNetworkStatus.setText(e.getMessage());
+        binding.editTextPassword.setText("");
         onSignOut();
     }
 
@@ -652,28 +609,25 @@ public class MainActivity extends AppCompatActivity {
         return clientHelper != null ? clientHelper.getToken() : mAferoClient.getToken();
     }
 
-    private void observeTokenRefresh() {
-        if (clientHelper != null) {
-            if (mTokenRefreshSubscription == null) {
-                AfLog.d("#### Start listening to new tokens");
-                mTokenRefreshSubscription = clientHelper.tokenRefreshObservable()
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new TokenObserver(this));
-            }  else {
-                AfLog.d("#### already listening to new tokens");
-
-            }
-
+private void observeTokenRefresh() {
+    if (clientHelper != null) {
+        if (mTokenRefreshSubscription == null) {
+            AfLog.d("#### Start listening to new tokens");
+            mTokenRefreshSubscription = clientHelper.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
         } else {
-            if (mTokenRefreshSubscription == null) {
-
-                mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new TokenObserver(this));
-            }
+            AfLog.d("#### already listening to new tokens");
         }
-
+    } else {
+        if (mTokenRefreshSubscription == null) {
+            mTokenRefreshSubscription = mAferoClient.tokenRefreshObservable()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new TokenObserver(this));
+        }
     }
+}
+
 
     private boolean isSignedIn() {
         return getToken() != null;
@@ -682,8 +636,8 @@ public class MainActivity extends AppCompatActivity {
     private void startDeviceStream() {
         if (mDeviceEventSource != null && (!mDeviceEventSource.isConnected()) && mDeviceEventStreamSubscription == null) {
             mDeviceEventStreamSubscription = startDeviceEventStream()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(mDeviceEventSourceConnectObserver);
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(mDeviceEventSourceConnectObserver);
         }
     }
 
@@ -740,9 +694,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return registerClientID()
-            .flatMap(
-                new RxUtils.FlatMapper<Response<Void>, ConclaveDeviceEventSource>(startStreamObservable)
-            );
+                .flatMap(
+                        new RxUtils.FlatMapper<Response<Void>, ConclaveDeviceEventSource>(startStreamObservable)
+                );
     }
 
     private Observable<Response<Void>> registerClientID() {
@@ -757,12 +711,12 @@ public class MainActivity extends AppCompatActivity {
             final String userId = mUserId;
             if (userId != null && !userId.isEmpty()) {
                 return mAferoClient.postDeviceInfo(userId, deviceInfo)
-                    .doOnNext(new Action1<Response<Void>>() {
-                        @Override
-                        public void call(Response<Void> response) {
-                            ClientID.setIDWasRegistered(true);
-                        }
-                    });
+                        .doOnNext(new Action1<Response<Void>>() {
+                            @Override
+                            public void call(Response<Void> response) {
+                                ClientID.setIDWasRegistered(true);
+                            }
+                        });
             }
         }
 

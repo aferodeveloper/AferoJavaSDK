@@ -8,8 +8,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
 import android.os.PowerManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.util.Log;
+import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
@@ -554,12 +557,18 @@ public class AferoSofthub {
 
         @Override
         public void setupModeDeviceDetected(String deviceId, String assId, long profileVersion) {
-            AfLog.d("HubbyNotificationCallback.secureHubAssociationNeeded: assId=" + assId);
+            AfLog.d("HubbyNotificationCallback.setupModeDeviceDetected: deviceId=" + deviceId + " assId=" + assId);
             AferoSofthub hub = mRef.get();
             if (hub != null) {
                 hub.onSetupModeDeviceDetected(deviceId, assId, profileVersion);
             }
         }
+
+        @Override
+        public void setupModeDeviceGone(final String deviceId) {
+            AfLog.d("HubbyNotificationCallback.setupModeDeviceGone: deviceId=" + deviceId);
+        }
+
 
         private CompleteReason completeReasonfromInt(int i) {
             for (CompleteReason cr : mCompleteReasonValues) {

@@ -9,19 +9,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 import io.afero.aferolab.R;
-import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.aferolab.databinding.ViewAddSetupModeDeviceBinding;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
@@ -32,8 +29,7 @@ import rx.subjects.PublishSubject;
 
 public class AddSetupModeDeviceView extends ScreenView {
 
-    @BindView(R.id.add_device_progress)
-    ProgressSpinnerView mProgressView;
+    private ViewAddSetupModeDeviceBinding binding;
 
     private AddSetupModeDeviceController mController;
     private final PublishSubject<AddSetupModeDeviceView> mViewSubject = PublishSubject.create();
@@ -62,7 +58,8 @@ public class AddSetupModeDeviceView extends ScreenView {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewAddSetupModeDeviceBinding.bind(this);
+        binding.addDeviceButton.setOnClickListener(v -> onAddDeviceClick());
     }
 
     public void start(DeviceCollection deviceCollection, AferoClient aferoClient, AferoSofthub.SetupModeDeviceInfo deviceInfo) {
@@ -85,8 +82,7 @@ public class AddSetupModeDeviceView extends ScreenView {
         return mViewSubject;
     }
 
-    @OnClick(R.id.add_device_button)
-    public void onAddDeviceClick(Button addButton) {
+    public void onAddDeviceClick() {
         try {
             mController.addDevice(mDeviceInfo.associationId);
         } catch (Exception e) {
@@ -121,11 +117,11 @@ public class AddSetupModeDeviceView extends ScreenView {
     }
 
     public void showProgress() {
-        mProgressView.show();
+        binding.addDeviceProgress.getRoot().setVisibility(View.VISIBLE);
     }
 
     public void hideProgress() {
-        mProgressView.hide();
+        binding.addDeviceProgress.getRoot().setVisibility(View.GONE);
     }
 
     public void showErrorAlert(@StringRes int messageStringId) {

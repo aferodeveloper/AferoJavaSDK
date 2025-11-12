@@ -5,50 +5,62 @@
 package io.afero.aferolab.addDevice;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Size;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.Result;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.common.InputImage;
 
-import java.util.Collections;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.afero.aferolab.R;
-import io.afero.aferolab.widget.ProgressSpinnerView;
+import io.afero.aferolab.databinding.ViewAddDeviceBinding;
 import io.afero.aferolab.widget.ScreenView;
 import io.afero.sdk.client.afero.AferoClient;
 import io.afero.sdk.device.DeviceCollection;
 import io.afero.sdk.log.AfLog;
-import me.dm7.barcodescanner.zxing.ZXingScannerView;
 import rx.Observable;
 import rx.subjects.PublishSubject;
 
-public class AddDeviceView extends ScreenView implements ZXingScannerView.ResultHandler {
+public class AddDeviceView extends ScreenView {
 
-    @BindView(R.id.scanner_view_container)
-    ViewGroup mScannerViewContainer;
-
-    @BindView(R.id.add_device_progress)
-    ProgressSpinnerView mProgressView;
+    private ViewAddDeviceBinding binding;
 
     private AddDeviceController mController;
-    private ZXingScannerView mScannerView;
-    private boolean mIsCameraStarted;
     private final PublishSubject<AddDeviceView> mViewSubject = PublishSubject.create();
+
+    private PreviewView mPreviewView;
+    private ProcessCameraProvider mCameraProvider;
+    private BarcodeScanner mBarcodeScanner;
+    private ExecutorService mCameraExecutor;
+    private volatile boolean mIsScanning = true;
+
 
     public static AddDeviceView create(ViewGroup parent) {
         AddDeviceView view = (AddDeviceView) LayoutInflater.from(parent.getContext())
@@ -73,25 +85,17 @@ public class AddDeviceView extends ScreenView implements ZXingScannerView.Result
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        ButterKnife.bind(this);
+        binding = ViewAddDeviceBinding.bind(this);
 
-        mScannerView = new ZXingScannerView(mScannerViewContainer.getContext());
-        mScannerView.setFormats(Collections.singletonList(BarcodeFormat.QR_CODE));
-        mScannerView.setClickable(true);
-        mScannerView.setMaskColor(Color.TRANSPARENT);
-        mScannerView.setBorderColor(Color.TRANSPARENT);
-        mScannerView.setAutoFocus(true);
-        mScannerView.setShouldScaleToFill(true);
-        mScannerView.setSquareViewFinder(true);
-
-        mScannerView.setResultHandler(this);
-
-        mScannerViewContainer.addView(mScannerView);
+        mCameraExecutor = Executors.newSingleThreadExecutor();
+        mPreviewView = new PreviewView(getContext());
+        binding.scannerViewContainer.addView(mPreviewView);
     }
 
     public void start(DeviceCollection deviceCollection, AferoClient aferoClient) {
         pushOnBackStack();
 
+        mIsScanning = true;
         mController = new AddDeviceController(this, deviceCollection, aferoClient);
         mController.start();
 
@@ -116,24 +120,123 @@ public class AddDeviceView extends ScreenView implements ZXingScannerView.Result
         boolean hasCameraPermission = ContextCompat.checkSelfPermission(getContext(),
                 Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
         if (hasCameraPermission) {
-            mScannerView.startCamera();
-            mIsCameraStarted = true;
+            final ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getContext());
+            cameraProviderFuture.addListener(() -> {
+                try {
+                    mCameraProvider = cameraProviderFuture.get();
+                    bindCameraUseCases();
+                } catch (ExecutionException | InterruptedException e) {
+                    AfLog.e(e.toString());
+                }
+            }, ContextCompat.getMainExecutor(getContext()));
         } else {
             showPermissionAlert();
         }
     }
 
-    public void resumeCamera() {
-        if (mIsCameraStarted) {
-            mScannerView.resumeCameraPreview(this);
-        } else {
-            mScannerView.startCamera();
+    private void bindCameraUseCases() {
+        if (mCameraProvider == null) {
+            return;
+        }
+
+        mCameraProvider.unbindAll();
+
+        Preview preview = new Preview.Builder().build();
+
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build();
+
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(1280, 720))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+
+        BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build();
+        mBarcodeScanner = BarcodeScanning.getClient(options);
+
+        imageAnalysis.setAnalyzer(mCameraExecutor, imageProxy -> {
+            if (!mIsScanning) {
+                imageProxy.close();
+                return;
+            }
+
+            @SuppressLint("UnsafeOptInUsageError")
+            android.media.Image mediaImage = imageProxy.getImage();
+            if (mediaImage != null) {
+                InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+                mBarcodeScanner.process(image)
+                        .addOnSuccessListener(barcodes -> {
+                            if (barcodes.size() > 0) {
+                                mIsScanning = false;
+                                String associationId = barcodes.get(0).getRawValue();
+                                if (associationId != null) {
+                                    post(() -> mController.addDevice(associationId));
+                                } else {
+                                    post(this::showScanError);
+                                }
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            AfLog.d("Scan error: " + e.getLocalizedMessage());
+                            post(this::showScanError);
+                        })
+                        .addOnCompleteListener(task -> imageProxy.close());
+            } else {
+                imageProxy.close();
+            }
+        });
+
+        try {
+            LifecycleOwner lifecycleOwner = findLifecycleOwner();
+            if (lifecycleOwner == null) {
+                AfLog.e("Could not find LifecycleOwner to bind camera.");
+                return;
+            }
+
+            mCameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis);
+            preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
+        } catch (Exception e) {
+            AfLog.e(e.toString());
         }
     }
 
+    private void showScanError() {
+        new AlertDialog.Builder(getContext())
+                .setMessage(R.string.error_qr_code_scan_generic_failure)
+                .setPositiveButton(R.string.button_title_ok,
+                        (dialog, id) -> {
+                            resumeCamera();
+                            dialog.cancel();
+                        }).show();
+    }
+
+
+    public void resumeCamera() {
+        mIsScanning = true;
+    }
+
     public void stopCamera() {
-        mScannerView.stopCamera();
-        mIsCameraStarted = false;
+        mIsScanning = false;
+        if (mCameraProvider != null) {
+            mCameraProvider.unbindAll();
+        }
+        if (mCameraExecutor != null) {
+            mCameraExecutor.shutdown();
+        }
+    }
+
+    private LifecycleOwner findLifecycleOwner() {
+        Context context = getContext();
+        while (context instanceof ContextWrapper) {
+            if (context instanceof LifecycleOwner) {
+                return (LifecycleOwner) context;
+            }
+            context = ((ContextWrapper) context).getBaseContext();
+        }
+        return null;
     }
 
     public void showPermissionAlert() {
@@ -141,48 +244,14 @@ public class AddDeviceView extends ScreenView implements ZXingScannerView.Result
                 .setTitle(R.string.camera_access_title)
                 .setMessage(R.string.permission_camera_rationale)
                 .setPositiveButton(R.string.button_title_ok,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                dialog.cancel();
-                            }
-                        }).show();
-    }
-
-    @Override
-    public void handleResult(Result result) {
-        try {
-            String associationId = result.getText();
-            mController.addDevice(associationId);
-        } catch (Exception e) {
-            AfLog.d("Scan error: " + e.getLocalizedMessage());
-
-            new AlertDialog.Builder(getContext())
-                    .setMessage(R.string.error_qr_code_scan_generic_failure)
-                    .setPositiveButton(R.string.button_title_ok,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int id) {
-                                    resumeCamera();
-                                    dialog.cancel();
-                                }
-                            }).show();
-        }
+                        (dialog, id) -> dialog.cancel()).show();
     }
 
     public void askUserForTransferVerification() {
         new AlertDialog.Builder(getContext())
                 .setMessage(R.string.error_create_device_transfer)
-                .setNegativeButton(R.string.button_title_cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        resumeAfterFailedAssociate();
-                    }
-                })
-                .setPositiveButton(R.string.button_title_transfer, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        mController.onTransferVerified();
-                    }
-                })
+                .setNegativeButton(R.string.button_title_cancel, (dialogInterface, i) -> resumeAfterFailedAssociate())
+                .setPositiveButton(R.string.button_title_transfer, (dialogInterface, i) -> mController.onTransferVerified())
                 .show();
     }
 
@@ -191,22 +260,17 @@ public class AddDeviceView extends ScreenView implements ZXingScannerView.Result
     }
 
     public void showProgress() {
-        mProgressView.show();
+        binding.addDeviceProgress.getRoot().setVisibility(View.VISIBLE);
     }
 
     public void hideProgress() {
-        mProgressView.hide();
+        binding.addDeviceProgress.getRoot().setVisibility(View.GONE);
     }
 
     public void showErrorAlert(@StringRes int messageStringId) {
         new AlertDialog.Builder(getContext())
                 .setMessage(messageStringId)
-                .setPositiveButton(R.string.button_title_ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        resumeAfterFailedAssociate();
-                    }
-                })
+                .setPositiveButton(R.string.button_title_ok, (dialogInterface, i) -> resumeAfterFailedAssociate())
                 .show();
     }
 
